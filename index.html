@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8" />
+    <title>Vývoj fondu</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f8f8f8;
+        }
+
+        #chartContainer {
+            width: 900px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        select {
+            display: block;
+            width: 300px;
+            margin: 0 auto 20px auto;
+            font-size: 16px;
+            padding: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="chartContainer">
+    <h2>Vývoj fondu</h2>
+
+    <!-- ▼ dropdown -->
+    <select id="fundSelect">
+        <option value="UNIQADPS001">Akciový fond – UNIQADPS001</option>
+        <option value="UNIQADPS002">Dluhopisový fond – UNIQADPS002</option>
+        <option value="UNIQADPS003">Povinný konzervativní fond – UNIQADPS003</option>
+        <option value="UNIQADPS004">Vyvážený fond – UNIQADPS004</option>
+    </select>
+
+    <canvas id="fundChart" width="900" height="400"></canvas>
+</div>
+
+<script>
+
+let chart = null;
+
+// 🟢 API endpoint Function App
+const API_BASE = "https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data";
+
+// Pokud chceš používat Function Key, doplň:
+// const FUNCTION_KEY = "xxx";
+// … a pak:
+// const url = `${API_BASE}?isin=${isin}&code=${FUNCTION_KEY}`;
+
+// Jinak používej Anonymous endpoint:
+const FUNCTION_KEY = null;
+
+// 🟦 načti data pro zvolený ISIN
+async function loadFundData(isin) {
+
+    let url = `${API_BASE}?isin=${isin}`;
+    if (FUNCTION_KEY) url += `&code=${FUNCTION_KEY}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // seřadit dle data
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const labels = data.map(d => d.date);
+    const values = data.map(d => d.value);
+
+    // zničíme starý graf (pokud existuje)
+    if (chart) {
+        chart.destroy();
+    }
+
+    const ctx = document.getElementById("fundChart").getContext("2d");
+
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [{
+                label: "Hodnota jednotky (CZK)",
+                data: values,
+                borderColor: "rgb(0, 120, 0)",
+                backgroundColor: "rgba(0, 200, 0, 0.2)",
+                fill: true,
+                tension: 0.2,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+
+// 🟩 Spuštění při prvním načtení
+loadFundData("UNIQADPS001");
+
+// 🟪 obsluha změny fondu
+document.getElementById("fundSelect").addEventListener("change", (e) => {
+    loadFundData(e.target.value);
+});
+</script>
+
+</body>
+</html>
