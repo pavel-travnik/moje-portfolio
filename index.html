@@ -80,7 +80,7 @@ const API_BASE = "https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azur
 
 async function loadDPS() {
     try {
-        const res = await fetch(API_BASE_URL);
+        const res = await fetch(API_BASE);
         if (!res.ok) throw new Error("API chyba");
         const data = await res.json();
 
