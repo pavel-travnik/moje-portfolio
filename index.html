@@ -72,7 +72,7 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.2rem 1rem 3rem;}
 /* ============================================
    KONFIGURACE API
    ============================================ */
-const API_BASE = "https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data?isin=UNIQADPS001&code=CitP-pusUsjuAOQKbBJ9Mm1OE4QDSFghxyWPfJdWsONdAzFu9Pbutw==" // případně uprav
+const API_BASE = "https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data?code=CitP-pusUsjuAOQKbBJ9Mm1OE4QDSFghxyWPfJdWsONdAzFu9Pbutw==" // případně uprav
 
 /* ============================================
    NAČTENÍ DAT Z API get_dps_data
@@ -80,7 +80,7 @@ const API_BASE = "https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azur
 
 async function loadDPS() {
     try {
-        const res = await fetch(`${API_BASE_URL}/get_dps_data`);
+        const res = await fetch(API_BASE_URL);
         if (!res.ok) throw new Error("API chyba");
         const data = await res.json();
 
