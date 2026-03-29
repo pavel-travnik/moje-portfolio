@@ -1,0 +1,9 @@
+{
+  "routes": [
+    {
+      "route": "/api/dps",
+      "allowedRoles": ["anonymous"],
+      "rewrite": "https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data?isin=UNIQADPS001&code=CitP-pusUsjuAOQKbBJ9Mm1OE4QDSFghxyWPfJdWsONdAzFu9Pbutw=="
+    }
+  ]
+}
