@@ -1,163 +1,59 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PT Portfolios – Prototyp</title>
-
-<style>
-/* === TVŮJ DESIGN === */
-:root{
- --bg:#1F2A1E; --bg-soft:#1F2A1E; --text:#D4AF37; --muted:#8AAE6D;
- --green:#0B3D2E; --green-2:#0F4D3A; --gold:#C9A646;
- --border:#C9A646; --shadow:0 2px 10px rgba(0,0,0,.03);
- --pos:#1f6f54; --neg:#b00020;
- --radius:16px;
- --space:1.25rem;
- --maxw:1080px;
-}
-html,body{
- margin:0;padding:0;background:var(--bg);color:var(--text);
- font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial;
-}
-
-/* layout + card */
-main{max-width:var(--maxw);margin:0 auto;padding:1.2rem 1rem 3rem;}
-.card{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);
-      padding:var(--space);box-shadow:var(--shadow);}
-
-/* grid */
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
-.chart{height:260px;border:1px dashed #e2e4e8;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
-
-/* KPI */
-.kpi{color:var(--gold);font-weight:700;font-size:2rem;}
-.chip{padding:.25rem .6rem;border-radius:999px;border:1px solid var(--border);font-weight:600}
-.chip.pos{color:var(--pos);background:#f0fbf6;border-color:#d7efe5}
-.chip.neg{color:var(--neg);background:#fff4f5;border-color:#f2ced3}
-</style>
+    <meta charset="utf-8">
+    <title>Investiční přehled</title>
+<link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
-<main>
 
-<h1 style="color:var(--gold)">Vývoj DPS fondu</h1>
-<p class="muted">Automaticky načteno z API: <strong>get_dps_data</strong></p>
+<!-- HEADER -->
+<header class="main-header">
+  <img src="img/logo.png" class="logo" alt="Logo">
+     <h1>Moje-portfolio.cz</h1>
 
-<!-- KPI -->
-<div class="grid-3" style="margin-bottom:1rem">
-  <div class="card">
-    <div class="muted">Poslední hodnota</div>
-    <div class="kpi" id="kpi-last">–</div>
-  </div>
-  <div class="card">
-    <div class="muted">Změna od minula</div>
-    <div><span id="kpi-change" class="chip">–</span></div>
-  </div>
-  <div class="card">
-    <div class="muted">Počet záznamů</div>
-    <div class="kpi" id="kpi-count">–</div>
-  </div>
+  <nav class="main-nav">
+      <a href="/penze" data-page="penze">Penzijní fondy</a>
+    <a href="#fondy">Podílové fondy</a>
+    <a href="#akcie">Akcie</a>
+    <a href="#meny">Měny</a>
+    <a href="#detail">Detail</a>
+  </nav>
+</header>
+
+<div class="layout">
+
+    <aside class="sidebar-left"></aside>
+
+    <!-- ✅ HLAVNÍ OKNO -->
+    <main id="mainContent" class="content">
+        <h1>Vítej</h1>
+        <p>Vyber sekci z menu.</p>
+    </main>
+
+ <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h3>Rychlá navigace</h3>
+
+    <nav class="side-links">
+      <a href="#penze">Penzijní fondy</a>
+      <a href="#fondy">Podílové fondy</a>
+      <a href="#akcie">Akcie</a>
+      <a href="#meny">Měny</a>
+      <a href="#detail">Detail</a>
+    </nav>
+  </aside>
+
 </div>
 
-<!-- GRAF -->
-<div class="card">
-  <h3 class="muted" style="margin-top:0;margin-bottom:1rem">Historický graf DPS</h3>
-  <div id="chart-portfolio" class="chart">Načítám data…</div>
-</div>
+<!-- FOOTER -->
+<footer class="footer">
+  <a href="#">GDPR</a>
+  <a href="#">Investiční upozornění</a>
+  <a href="#">Zákonné informace</a>
+</footer>
 
-</main>
-
-<script>
-/* ============================================
-   KONFIGURACE API
-   ============================================ */
-const API_URL = "https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data"; // případně uprav
-
-/* ============================================
-   NAČTENÍ DAT Z API get_dps_data
-   ============================================ */
-
-async function loadDPS() {
-    try {
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error("API chyba");
-        const data = await res.json();
-
-        // seřadíme podle data
-        data.sort((a,b)=> new Date(a.date) - new Date(b.date));
-        renderKPI(data);
-        renderPortfolioChart(data);
-
-    } catch (err) {
-        console.error(err);
-        document.getElementById("chart-portfolio").textContent = "Chyba načtení API.";
-    }
-}
-
-/* ============================================
-   KPI (poslední hodnota, změna)
-   ============================================ */
-
-function renderKPI(data){
-    const last = data[data.length-1];
-    const prev = data[data.length-2];
-
-    document.getElementById("kpi-last").textContent = last.value.toFixed(4) + " " + last.currency;
-    document.getElementById("kpi-count").textContent = data.length;
-
-    if(prev){
-        const diff = last.value - prev.value;
-        const pct  = (diff / prev.value) * 100;
-        const chip = document.getElementById("kpi-change");
-        chip.textContent = `${diff>=0?"+":""}${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
-        chip.classList.toggle("pos", diff>=0);
-        chip.classList.toggle("neg", diff<0);
-    }
-}
-
-/* ============================================
-   VYKRESLENÍ GRAFU (bez knihoven)
-   ============================================ */
-
-function renderPortfolioChart(history){
-    const div = document.getElementById("chart-portfolio");
-    div.innerHTML = "";
-
-    const canvas = document.createElement("canvas");
-    canvas.width = div.clientWidth;
-    canvas.height = div.clientHeight;
-    div.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
-
-    const values = history.map(p=>p.value);
-    const minV = Math.min(...values);
-    const maxV = Math.max(...values);
-
-    const pts = history.map((p,i)=>({
-        x: (i/(history.length-1)) * canvas.width,
-        y: canvas.height - ((p.value - minV)/(maxV - minV)) * canvas.height
-    }));
-
-    // čára
-    ctx.beginPath();
-    ctx.strokeStyle = "#C9A646";
-    ctx.lineWidth = 2;
-
-    pts.forEach((pt,i)=>{
-        if(i===0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-    });
-
-    ctx.stroke();
-}
-
-/* ============================================
-   START
-   ============================================ */
-loadDPS();
-
-</script>
-
+<script src="js/app.js"></script>
 </body>
 </html>
