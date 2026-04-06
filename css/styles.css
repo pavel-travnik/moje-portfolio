@@ -171,3 +171,66 @@ body {
   0% { background-position: 0% }
   100% { background-position: 200% }
 }
+
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+a:hover {
+    color: #C9A24D; /* zlatá */
+}
+
+/* NAV */
+.main-nav {
+  position: relative;
+}
+
+/* DROPDOWN KONTEJNER */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* TLAČÍTKO */
+.dropdown-toggle {
+  background: none;
+  border: none;
+  color: #C9A24D; /* zlatá */
+  font-size: 15px;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+/* MENU – SKRYTÉ */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #123f1a; /* tmavší zelená */
+  min-width: 220px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.25);
+  display: none;
+  z-index: 1000;
+}
+
+/* POLOŽKY */
+.dropdown-menu a {
+  display: block;
+  padding: 10px 16px;
+  color: white;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.dropdown-menu a:hover {
+  background: rgba(255,255,255,.08);
+  color: #C9A24D;
+}
+
+/* ZOBRAZENÍ PŘI HOVER */
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
