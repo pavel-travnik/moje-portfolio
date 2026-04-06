@@ -4,7 +4,9 @@ function loadPensionFunds() {
 
   grid.innerHTML = '<p>Načítám data…</p>';
 
-  fetch('/api/get_dps_funds')
+  const API_KEY = '8iuq_2RxWprgAWajp6pvw5SCxXhmrJpsktg4RTxqt10TAzFupskUwA==';
+
+  fetch(`/api/get_dps_funds?code=${API_KEY}`)
     .then(res => {
       if (!res.ok) throw new Error('API error');
       return res.json();
