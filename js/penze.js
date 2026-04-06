@@ -6,7 +6,7 @@ function loadPensionFunds() {
 
   const API_KEY = '8iuq_2RxWprgAWajp6pvw5SCxXhmrJpsktg4RTxqt10TAzFupskUwA==';
 
-  fetch(`/api/get_dps_funds?code=${API_KEY}`)
+  fetch('https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds')
     .then(res => {
       if (!res.ok) throw new Error('API error');
       return res.json();
