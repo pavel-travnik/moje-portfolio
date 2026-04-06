@@ -146,3 +146,28 @@ body {
   font-size:12px;
   margin:0 16px;
 }
+
+.gold-text {
+  background: linear-gradient(
+    120deg,
+    #D4AF37,
+    #FFF3B0,
+    #C9A227,
+    #D4AF37
+  );
+  background-size: 200%;
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 10px rgba(212,175,55,0.7),
+    0 0 25px rgba(212,175,55,0.6);
+
+  animation: shine 3s infinite linear;
+}
+
+@keyframes shine {
+  0% { background-position: 0% }
+  100% { background-position: 200% }
+}
