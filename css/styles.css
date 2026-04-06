@@ -1,0 +1,148 @@
+body {
+  margin:0;
+  font-family:Inter, Arial, sans-serif;
+  background:#0D3512;
+}
+
+.header, .footer {
+  background:#0D3512;
+  color:white;
+  padding:16px 32px;
+}
+
+.header nav a {
+  margin-left:20px;
+  color:white;
+  text-decoration:none;
+}
+
+.layout {
+  display:grid;
+  grid-template-columns:60px 1fr 280px;
+  background:#fff;
+  min-height:80vh;
+}
+
+.content {
+  padding:40px;
+}
+
+.sidebar-right a {
+  display:block;
+  padding:12px;
+  color:#0D3512;
+  text-decoration:none;
+}
+
+/* STRÁNKA PENZE */
+.penze-page h1 {
+    margin-bottom: 32px;
+    color:#0D3512;
+}
+
+.fund-grid {
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:28px;
+}
+
+.fund-card {
+    border:2px solid #C9A24D;
+    border-radius:14px;
+    padding:24px;
+    background:#ffffff;
+    transition:.2s;
+}
+
+.fund-card:hover {
+    transform:translateY(-4px);
+    box-shadow:0 6px 20px rgba(0,0,0,.08);
+}
+
+.fund-card h2 {
+    margin:0 0 8px;
+    font-size:18px;
+    color:#0D3512;
+}
+
+.company {
+    margin:0 0 16px;
+    font-size:14px;
+    color:#555;
+}
+
+.yield {
+    font-size:15px;
+    color:#1f1f1f;
+}
+
+/* HEADER */
+.main-header {
+  background:var(--green);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 32px;
+  border-bottom:1px solid rgba(255,255,255,.15);
+}
+
+.logo {
+  height:120px;
+}
+
+.main-nav a {
+  margin-left:24px;
+  color:white;
+  font-size:14px;
+}
+
+.main-nav a:hover {
+  color:var(--gold);
+}
+
+/* PAGE */
+.page {
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:32px;
+  background:white;
+  padding:40px;
+}
+
+/* CONTENT */
+.card {
+  border-bottom:1px solid #e5e5e5;
+  padding-bottom:24px;
+  margin-bottom:32px;
+}
+
+.card h2 {
+  margin-top:0;
+  color:#0D3512;
+}
+
+/* SIDEBAR */
+.sidebar {
+  border-left:1px solid #e5e5e5;
+  padding-left:24px;
+}
+
+.side-links a {
+  display:block;
+  margin-bottom:14px;
+  color:#0D3512;
+  font-size:14px;
+}
+
+/* FOOTER */
+.footer {
+  background:var(--green);
+  text-align:center;
+  padding:20px;
+}
+
+.footer a {
+  color:white;
+  font-size:12px;
+  margin:0 16px;
+}
