@@ -1,3 +1,5 @@
+console.log('✅ penze.js načten');
+
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   if (!grid) return;
