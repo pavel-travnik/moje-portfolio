@@ -130,3 +130,42 @@ function loadFundDetail(isin) {
   // /api/get_dps_data?isin=...
   // + vykreslení grafu (Chart.js)
 }
+
+// ------------------ penze
+
+function loadPensionFunds() {
+  console.log('✅ loadPensionFunds spuštěna');
+
+  const grid = document.getElementById('fundGrid');
+  if (!grid) {
+    console.error('❌ fundGrid nenalezen');
+    return;
+  }
+
+  grid.innerHTML = '<p>Načítám data…</p>';
+
+  fetch('https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds')
+    .then(res => {
+      console.log('STATUS:', res.status);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(funds => {
+      console.log('✅ DATA:', funds);
+      grid.innerHTML = '';
+
+      funds.forEach(fund => {
+        const card = document.createElement('div');
+        card.className = 'fund-card';
+        card.innerHTML = `
+          <h2>${fund.name}</h2>
+          <div class="provider">${fund.provider}</div>
+        `;
+        grid.appendChild(card);
+      });
+    })
+    .catch(err => {
+      console.error('❌ FETCH ERROR:', err);
+      grid.innerHTML = '<p>Chyba při načítání dat.</p>';
+    });
+}
