@@ -1,96 +1,138 @@
 // ===================================================
-// === HLAVNÍ KONTEJNER ===============================
+// HLAVNÍ KONTEJNER
 // ===================================================
 const main = document.getElementById('mainContent');
 
+
 // ===================================================
-// === SPA ROUTING ====================================
+// SPA ROUTER
 // ===================================================
-function loadPage(page) {
+function loadPage(page, pushState = true) {
 
-    // ✅ DETAIL FONDU
-    if (page.startsWith('penze/')) {
-        const isin = page.split('/')[1];
-        loadFundDetail(isin);
-        return;
-    }
+  // DETAIL FONDU: /penze/ISIN
+  if (page.startsWith('penze/')) {
+    const isin = page.split('/')[1];
+    loadFundDetail(isin);
+    return;
+  }
 
-    fetch(`pages/${page}.html`)
-        .then(res => {
-            if (!res.ok) throw new Error();
-            return res.text();
-        })
-        .then(html => {
-            main.innerHTML = html;
+  // KLASICKÁ STRÁNKA
+  fetch(`pages/${page}.html`)
+    .then(res => {
+      if (!res.ok) throw new Error('Page not found');
+      return res.text();
+    })
+    .then(html => {
+      main.innerHTML = html;
 
-            // ✅ speciální hook pro penze
-            if (page === 'penze') {
-                loadPensionFunds();
-            }
-        })
-        .catch(() => {
-            main.innerHTML = `<h1>404</h1><p>Obsah nenalezen</p>`;
-        });
+      if (page === 'penze') {
+        loadPensionFunds();
+      }
+
+      if (pushState) {
+        history.pushState({ page }, '', `/${page}`);
+      }
+    })
+    .catch(() => {
+      main.innerHTML = '<h2>404</h2><p>Obsah nenalezen</p>';
+    });
 }
 
+
 // ===================================================
-// === MENU / ODKAZY =================================
+// MENU – ZACHYCENÍ KLIKŮ
 // ===================================================
 document.addEventListener('click', (e) => {
-    const link = e.target.closest('a[data-page]');
-    if (!link) return;
+  const link = e.target.closest('a[data-page]');
+  if (!link) return;
 
-    e.preventDefault();
-    loadPage(link.dataset.page);
+  e.preventDefault();
+  loadPage(link.dataset.page);
 });
 
-// ===================================================
-// === INIT ===========================================
-// ===================================================
-document.addEventListener('DOMContentLoaded', () => {
-    loadPage('penze');
-});
 
 // ===================================================
-// === PENZE – PŘEHLED FONDŮ ==========================
+// BACK / FORWARD
+// ===================================================
+window.addEventListener('popstate', (e) => {
+  if (e.state?.page) {
+    loadPage(e.state.page, false);
+  }
+});
+
+
+// ===================================================
+// INIT – NAČTENÍ PODLE URL
+// ===================================================
+(function init() {
+  const path = location.pathname.replace(/^\/+/, '');
+  if (path) {
+    loadPage(path, false);
+  }
+})();
+
+
+// ===================================================
+// PENZE – PŘEHLED FONDŮ
 // ===================================================
 function loadPensionFunds() {
-    const grid = document.getElementById('fundGrid');
-    if (!grid) return;
+  const grid = document.getElementById('fundGrid');
+  if (!grid) return;
 
-    grid.innerHTML = '<p>Načítám fondy…</p>';
+  grid.innerHTML = '<p>Načítám fondy…</p>';
 
-    fetch('https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds')
-        .then(res => res.json())
-        .then(funds => {
-            grid.innerHTML = '';
+  fetch('https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds')
+    .then(res => {
+      if (!res.ok) throw new Error('API error');
+      return res.json();
+    })
+    .then(funds => {
+      grid.innerHTML = '';
 
-            funds.forEach(fund => {
-                const card = document.createElement('div');
-                card.className = 'fund-card';
+      if (!funds.length) {
+        grid.innerHTML = '<p>Žádné fondy k dispozici.</p>';
+        return;
+      }
 
-                card.innerHTML = `
-                    <h3>${fund.name}</h3>
-                    <p>${fund.provider}</p>
-                    <p>Výnos 3 roky: <strong>${fund.yield3y ?? '–'} %</strong></p>
-                `;
+      funds.forEach(fund => {
+        const card = document.createElement('div');
+        card.className = 'fund-card';
 
-                card.addEventListener('click', () => {
-                    loadFundDetail(fund.isin);
-                });
+        card.innerHTML = `
+          <h2>${fund.name}</h2>
+          <div class="provider">${fund.provider}</div>
+        `;
 
-                grid.appendChild(card);
-            });
-        })
-        .catch(() => {
-            grid.innerHTML = '<p>Chyba při načítání dat.</p>';
+        card.addEventListener('click', () => {
+          openFundDetail(fund.isin);
         });
+
+        grid.appendChild(card);
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba při načítání dat.</p>';
+    });
 }
 
-// ===================================================
-// === DETAIL FONDU ===================================
-// ===================================================
 
+// ===================================================
+// DETAIL FONDU – ROUTING
+// ===================================================
+function openFundDetail(isin) {
+  history.pushState(
+    { page: `penze/${isin}` },
+    '',
+    `/penze/${isin}`
+  );
+  loadFundDetail(isin);
+}
+
+
+// ===================================================
+// DETAIL FONDU – OBSAH
+// ===================================================
 function loadFundDetail(isin) {
   main.innerHTML = `
     <h1>Detail fondu</h1>
@@ -115,7 +157,6 @@ function loadFundDetail(isin) {
 
   document.querySelector('.back-btn').onclick = () => loadPage('penze');
 
-  // napojení přepínačů
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
       document
@@ -129,6 +170,10 @@ function loadFundDetail(isin) {
   loadDPS(isin, '3Y');
 }
 
+
+// ===================================================
+// API – DETAIL FONDU
+// ===================================================
 const DPS_API_URL =
   'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
 
@@ -142,12 +187,11 @@ async function loadDPS(isin, period = '3Y') {
 
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // 🔹 FILTRACE OBDOBÍ
-    const now = new Date();
+    // FILTRACE OBDOBÍ
     if (period !== 'MAX') {
       const years = period === '1Y' ? 1 : 3;
-      const from = new Date(now);
-      from.setFullYear(now.getFullYear() - years);
+      const from = new Date();
+      from.setFullYear(from.getFullYear() - years);
       data = data.filter(d => new Date(d.date) >= from);
     }
 
@@ -161,20 +205,10 @@ async function loadDPS(isin, period = '3Y') {
   }
 }
 
-    // seřazení podle data
-    data.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    renderKPI(data);
-    renderPortfolioChart(data);
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById('chart-portfolio').textContent =
-      'Chyba načtení API.';
-  }
-}
-
-
+// ===================================================
+// KPI
+// ===================================================
 function renderKPI(data) {
   const last = data[data.length - 1];
   const prev = data[data.length - 2];
@@ -182,6 +216,7 @@ function renderKPI(data) {
   document.getElementById(
     'kpi-last'
   ).textContent = `${last.value.toFixed(4)} ${last.currency}`;
+
   document.getElementById('kpi-count').textContent = data.length;
 
   if (prev) {
@@ -196,7 +231,15 @@ function renderKPI(data) {
   }
 }
 
+
+// ===================================================
+// GRAF – CANVAS + RESPONZIVITA
+// ===================================================
+let lastChartData = null;
+
 function renderPortfolioChart(history) {
+  lastChartData = history;
+
   const div = document.getElementById('chart-portfolio');
   div.innerHTML = '';
 
@@ -206,14 +249,13 @@ function renderPortfolioChart(history) {
   div.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
-
   const padding = 40;
 
   const values = history.map(p => p.value);
   const minV = Math.min(...values);
   const maxV = Math.max(...values);
 
-  // osy
+  // Osy
   ctx.strokeStyle = '#999';
   ctx.lineWidth = 1;
 
@@ -229,18 +271,15 @@ function renderPortfolioChart(history) {
   ctx.lineTo(canvas.width - 10, canvas.height - padding);
   ctx.stroke();
 
-  // popisky Y
+  // Popisky
   ctx.fillStyle = '#666';
   ctx.font = '12px Arial';
   ctx.fillText(maxV.toFixed(2), 5, 20);
   ctx.fillText(minV.toFixed(2), 5, canvas.height - padding);
 
-  // data
+  // Křivka
   const pts = history.map((p, i) => ({
-    x:
-      padding +
-      (i / (history.length - 1)) *
-        (canvas.width - padding - 10),
+    x: padding + (i / (history.length - 1)) * (canvas.width - padding - 10),
     y:
       canvas.height -
       padding -
@@ -248,7 +287,6 @@ function renderPortfolioChart(history) {
         (canvas.height - padding - 20)
   }));
 
-  // křivka
   ctx.beginPath();
   ctx.strokeStyle = '#C9A646';
   ctx.lineWidth = 2;
@@ -261,14 +299,10 @@ function renderPortfolioChart(history) {
   ctx.stroke();
 }
 
-let lastChartData = null;
 
-function renderPortfolioChart(history) {
-  lastChartData = history;
-  // … zbytek funkce beze změny
-}
-
-// při změně velikosti okna
+// ===================================================
+// RESIZE
+// ===================================================
 window.addEventListener('resize', () => {
   if (lastChartData) {
     renderPortfolioChart(lastChartData);
