@@ -102,33 +102,64 @@ function loadFundDetail(isin) {
       <div>Počet záznamů: <strong id="kpi-count">–</strong></div>
     </div>
 
-    <div id="chart-portfolio" style="height:300px;"></div>
+    <div class="period-switch">
+      <button data-period="1Y">1Y</button>
+      <button data-period="3Y" class="active">3Y</button>
+      <button data-period="MAX">MAX</button>
+    </div>
+
+    <div id="chart-portfolio" style="height:320px;"></div>
 
     <button class="back-btn">← Zpět na přehled fondů</button>
   `;
 
-  document.querySelector('.back-btn').addEventListener('click', () => {
-    loadPage('penze');
+  document.querySelector('.back-btn').onclick = () => loadPage('penze');
+
+  // napojení přepínačů
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
+      document
+        .querySelectorAll('.period-switch button')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadDPS(isin, btn.dataset.period);
+    };
   });
 
-  loadDPS(isin);
+  loadDPS(isin, '3Y');
 }
 
 const DPS_API_URL =
   'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
 
-async function loadDPS(isin) {
+async function loadDPS(isin, period = '3Y') {
   try {
     const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
     if (!res.ok) throw new Error('API chyba');
 
-    const data = await res.json();
+    let data = await res.json();
+    if (!data.length) return;
 
-    if (!data.length) {
-      document.getElementById('chart-portfolio').textContent =
-        'Žádná data k dispozici.';
-      return;
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 🔹 FILTRACE OBDOBÍ
+    const now = new Date();
+    if (period !== 'MAX') {
+      const years = period === '1Y' ? 1 : 3;
+      const from = new Date(now);
+      from.setFullYear(now.getFullYear() - years);
+      data = data.filter(d => new Date(d.date) >= from);
     }
+
+    renderKPI(data);
+    renderPortfolioChart(data);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('chart-portfolio').textContent =
+      'Chyba načtení API.';
+  }
+}
 
     // seřazení podle data
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -176,17 +207,48 @@ function renderPortfolioChart(history) {
 
   const ctx = canvas.getContext('2d');
 
-  const values = history.map((p) => p.value);
+  const padding = 40;
+
+  const values = history.map(p => p.value);
   const minV = Math.min(...values);
   const maxV = Math.max(...values);
 
+  // osy
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1;
+
+  // Y osa
+  ctx.beginPath();
+  ctx.moveTo(padding, 10);
+  ctx.lineTo(padding, canvas.height - padding);
+  ctx.stroke();
+
+  // X osa
+  ctx.beginPath();
+  ctx.moveTo(padding, canvas.height - padding);
+  ctx.lineTo(canvas.width - 10, canvas.height - padding);
+  ctx.stroke();
+
+  // popisky Y
+  ctx.fillStyle = '#666';
+  ctx.font = '12px Arial';
+  ctx.fillText(maxV.toFixed(2), 5, 20);
+  ctx.fillText(minV.toFixed(2), 5, canvas.height - padding);
+
+  // data
   const pts = history.map((p, i) => ({
-    x: (i / (history.length - 1)) * canvas.width,
+    x:
+      padding +
+      (i / (history.length - 1)) *
+        (canvas.width - padding - 10),
     y:
       canvas.height -
-      ((p.value - minV) / (maxV - minV)) * canvas.height,
+      padding -
+      ((p.value - minV) / (maxV - minV)) *
+        (canvas.height - padding - 20)
   }));
 
+  // křivka
   ctx.beginPath();
   ctx.strokeStyle = '#C9A646';
   ctx.lineWidth = 2;
@@ -198,3 +260,17 @@ function renderPortfolioChart(history) {
 
   ctx.stroke();
 }
+
+let lastChartData = null;
+
+function renderPortfolioChart(history) {
+  lastChartData = history;
+  // … zbytek funkce beze změny
+}
+
+// při změně velikosti okna
+window.addEventListener('resize', () => {
+  if (lastChartData) {
+    renderPortfolioChart(lastChartData);
+  }
+});
