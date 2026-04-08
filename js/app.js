@@ -114,6 +114,36 @@ function loadFundDetail(isin) {
   loadDPS(isin);
 }
 
+const DPS_API_URL =
+  'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+
+async function loadDPS(isin) {
+  try {
+    const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
+    if (!res.ok) throw new Error('API chyba');
+
+    const data = await res.json();
+
+    if (!data.length) {
+      document.getElementById('chart-portfolio').textContent =
+        'Žádná data k dispozici.';
+      return;
+    }
+
+    // seřazení podle data
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    renderKPI(data);
+    renderPortfolioChart(data);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('chart-portfolio').textContent =
+      'Chyba načtení API.';
+  }
+}
+
+
 function renderKPI(data) {
   const last = data[data.length - 1];
   const prev = data[data.length - 2];
