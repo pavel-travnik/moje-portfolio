@@ -234,3 +234,29 @@ a:hover {
 .dropdown:hover .dropdown-menu {
   display: block;
 }
+
+.period-switch {
+  margin: 16px 0;
+}
+
+.period-switch button {
+  margin-right: 8px;
+  padding: 6px 12px;
+  border: 1px solid #C9A646;
+  background: white;
+  cursor: pointer;
+}
+
+.period-switch button.active {
+  background: #C9A646;
+  color: white;
+}
+
+.kpi-bar {
+  display: flex;
+  gap: 24px;
+  margin: 16px 0;
+}
+
+.pos { color: green; }
+.neg { color: red; }
