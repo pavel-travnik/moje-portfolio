@@ -53,7 +53,10 @@ function loadPage(page, pushState = true) {
 document.addEventListener('click', e => {
     const link = e.target.closest('a[data-page]');
     if (!link) return;
+
     e.preventDefault();
+    e.stopPropagation();
+
     loadPage(link.dataset.page);
 });
 
@@ -119,7 +122,9 @@ function loadFundDetail(isin) {
         <button class="back-btn">← Zpět na přehled fondů</button>
     `;
 
-    document.querySelector('.back-btn').onclick = () => loadPage('penze');
+    document.querySelector('.back-btn').onclick = () => {
+    history.back();
+	};
 
     document.querySelectorAll('.period-switch button').forEach(btn => {
         btn.onclick = () => {
@@ -264,6 +269,8 @@ function renderPortfolioChart(history, containerId) {
     lastChartData = history;
 
     const div = document.getElementById(containerId);
+    if (!div) return;
+
     div.innerHTML = '';
 
     const canvas = document.createElement('canvas');
@@ -272,17 +279,77 @@ function renderPortfolioChart(history, containerId) {
     div.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
+
+    const padding = 40;
+    const w = canvas.width;
+    const h = canvas.height;
+
     const values = history.map(p => p.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+    const minV = Math.min(...values);
+    const maxV = Math.max(...values);
 
-    ctx.strokeStyle = '#C9A646';
+    // =============================
+    // OSY
+    // =============================
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+
+    // Y osa
     ctx.beginPath();
+    ctx.moveTo(padding, 10);
+    ctx.lineTo(padding, h - padding);
+    ctx.stroke();
 
-    history.forEach((p, i) => {
-        const x = (i / (history.length - 1)) * canvas.width;
-        const y = canvas.height - ((p.value - min) / (max - min)) * canvas.height;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    // X osa
+    ctx.beginPath();
+    ctx.moveTo(padding, h - padding);
+    ctx.lineTo(w - 10, h - padding);
+    ctx.stroke();
+
+    // =============================
+    // POPISKY Y
+    // =============================
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+
+    ctx.fillText(maxV.toFixed(2), 5, 20);
+    ctx.fillText(minV.toFixed(2), 5, h - padding);
+
+    // =============================
+    // POPISKY X (čas)
+    // =============================
+    if (history.length > 1 && history[0].date && history.at(-1).date) {
+        ctx.fillText(
+            history[0].date,
+            padding,
+            h - 8
+        );
+        ctx.fillText(
+            history.at(-1).date,
+            w - 110,
+            h - 8
+        );
+    }
+
+    // =============================
+    // KŘIVKA
+    // =============================
+    const pts = history.map((p, i) => ({
+        x: padding + (i / (history.length - 1)) * (w - padding - 10),
+        y:
+            h -
+            padding -
+            ((p.value - minV) / (maxV - minV)) *
+                (h - padding - 20),
+    }));
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#C9A646';
+    ctx.lineWidth = 2;
+
+    pts.forEach((pt, i) => {
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
     });
 
     ctx.stroke();
