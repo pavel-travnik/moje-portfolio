@@ -4,25 +4,31 @@
 const main = document.getElementById('mainContent');
 
 // ===================================================
+// API URL
+// ===================================================
+const DPS_API_URL =
+    'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+
+const STOCK_API_URL =
+    'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
+
+// ===================================================
 // SPA ROUTER
 // ===================================================
 function loadPage(page, pushState = true) {
 
-    // DETAIL FONDU: /penze/ISIN
+    // DETAIL FONDU
     if (page.startsWith('penze/')) {
-        const isin = page.split('/')[1];
-        loadFundDetail(isin);
+        loadFundDetail(page.split('/')[1]);
         return;
     }
 
-    // DETAIL AKCIE: /akcie/TICKER
+    // DETAIL AKCIE
     if (page.startsWith('akcie/')) {
-        const ticker = page.split('/')[1];
-        loadStockDetail(ticker);
+        loadStockDetail(page.split('/')[1]);
         return;
     }
 
-    // KLASICKÁ STRÁNKA
     fetch(`pages/${page}.html`)
         .then(res => {
             if (!res.ok) throw new Error('Page not found');
@@ -31,58 +37,38 @@ function loadPage(page, pushState = true) {
         .then(html => {
             main.innerHTML = html;
 
-            if (page === 'penze') {
-                loadPensionFunds();
-            }
+            if (page === 'penze') loadPensionFunds();
+            if (page === 'akcie') loadStocks();
 
-            if (page === 'akcie') {
-                loadStocks();
-            }
-
-            if (pushState) {
-                history.pushState({ page }, '', `/${page}`);
-            }
+            if (pushState) history.pushState({ page }, '', `/${page}`);
         })
         .catch(() => {
-            main.innerHTML = `
-                <h3>404</h3>
-                <p>Obsah nenalezen</p>
-            `;
+            main.innerHTML = `<h3>404</h3><p>Obsah nenalezen</p>`;
         });
 }
 
 // ===================================================
-// MENU – ZACHYCENÍ KLIKŮ
+// MENU + HISTORY
 // ===================================================
-document.addEventListener('click', (e) => {
+document.addEventListener('click', e => {
     const link = e.target.closest('a[data-page]');
     if (!link) return;
-
     e.preventDefault();
     loadPage(link.dataset.page);
 });
 
-// ===================================================
-// BACK / FORWARD
-// ===================================================
-window.addEventListener('popstate', (e) => {
-    if (e.state?.page) {
-        loadPage(e.state.page, false);
-    }
+window.addEventListener('popstate', e => {
+    if (e.state?.page) loadPage(e.state.page, false);
 });
 
-// ===================================================
-// INIT – NAČTENÍ PODLE URL
-// ===================================================
+// INIT
 (function init() {
     const path = location.pathname.replace(/^\/+/, '');
-    if (path) {
-        loadPage(path, false);
-    }
+    loadPage(path || 'penze', false);
 })();
 
 // ===================================================
-// PENZE – PŘEHLED FONDŮ
+// PENZE – PŘEHLED
 // ===================================================
 function loadPensionFunds() {
     const grid = document.getElementById('fundGrid');
@@ -91,70 +77,36 @@ function loadPensionFunds() {
     grid.innerHTML = '<p>Načítám fondy…</p>';
 
     fetch('https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds')
-        .then(res => {
-            if (!res.ok) throw new Error('API error');
-            return res.json();
-        })
+        .then(r => r.json())
         .then(funds => {
             grid.innerHTML = '';
-
-            if (!funds.length) {
-                grid.innerHTML = '<p>Žádné fondy k dispozici.</p>';
-                return;
-            }
-
-            funds.forEach(fund => {
+            funds.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'fund-card';
-                card.innerHTML = `
-                    <h3>${fund.name}</h3>
-                    <small>${fund.provider}</small>
-                `;
-                card.addEventListener('click', () => {
-                    openFundDetail(fund.isin);
-                });
+                card.innerHTML = `<h3>${f.name}</h3><small>${f.provider}</small>`;
+                card.onclick = () => openFundDetail(f.isin);
                 grid.appendChild(card);
             });
-        })
-        .catch(() => {
-            grid.innerHTML = '<p>Chyba při načítání dat.</p>';
         });
 }
 
-// ===================================================
-// DETAIL FONDU – ROUTING
-// ===================================================
 function openFundDetail(isin) {
-    history.pushState(
-        { page: `penze/${isin}` },
-        '',
-        `/penze/${isin}`
-    );
+    history.pushState({ page: `penze/${isin}` }, '', `/penze/${isin}`);
     loadFundDetail(isin);
 }
 
 // ===================================================
-// DETAIL FONDU – OBSAH
+// DETAIL FONDU
 // ===================================================
 function loadFundDetail(isin) {
     main.innerHTML = `
-        <h2>Detail fondu</h2>
-
+        <h3>Detail fondu</h3>
         <p><strong>ISIN:</strong> ${isin}</p>
 
         <div class="kpi-row">
-            <div class="kpi">
-                <span>Poslední hodnota</span>
-                <strong id="kpi-last">–</strong>
-            </div>
-            <div class="kpi">
-                <span>Změna</span>
-                <strong id="kpi-change">–</strong>
-            </div>
-            <div class="kpi">
-                <span>Počet záznamů</span>
-                <strong id="kpi-count">–</strong>
-            </div>
+            <div class="kpi"><span>Poslední hodnota</span><strong id="kpi-last">–</strong></div>
+            <div class="kpi"><span>Změna</span><strong id="kpi-change">–</strong></div>
+            <div class="kpi"><span>Počet záznamů</span><strong id="kpi-count">–</strong></div>
         </div>
 
         <div class="period-switch">
@@ -163,8 +115,7 @@ function loadFundDetail(isin) {
             <button data-period="MAX">MAX</button>
         </div>
 
-        <div id="chart-portfolio"></div>
-
+        <div id="chart-portfolio" style="height:300px"></div>
         <button class="back-btn">← Zpět na přehled fondů</button>
     `;
 
@@ -172,10 +123,8 @@ function loadFundDetail(isin) {
 
     document.querySelectorAll('.period-switch button').forEach(btn => {
         btn.onclick = () => {
-            document
-                .querySelectorAll('.period-switch button')
+            document.querySelectorAll('.period-switch button')
                 .forEach(b => b.classList.remove('active'));
-
             btn.classList.add('active');
             loadDPS(isin, btn.dataset.period);
         };
@@ -184,63 +133,32 @@ function loadFundDetail(isin) {
     loadDPS(isin, '3Y');
 }
 
-// ===================================================
-// API – DETAIL FONDU
-// ===================================================
-const DPS_API_URL =
-  'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
-
-async function loadDPS(isin, period = '3Y') {
-  try {
-    const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
-    if (!res.ok) throw new Error('API chyba');
-
+async function loadDPS(isin, period) {
+    const res = await fetch(`${DPS_API_URL}?isin=${isin}`);
     let data = await res.json();
-    if (!data.length) return;
 
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // FILTRACE OBDOBÍ
-    if (period !== 'MAX') {
-      const years = period === '1Y' ? 1 : 3;
-      const from = new Date();
-      from.setFullYear(from.getFullYear() - years);
-      data = data.filter(d => new Date(d.date) >= from);
-    }
+    data = filterPeriod(data, period);
 
     renderKPI(data);
-    renderPortfolioChart(data);
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById('chart-portfolio').textContent =
-      'Chyba načtení API.';
-  }
+    renderPortfolioChart(data.map(d => ({ value: d.value })), 'chart-portfolio');
 }
 
-// ===================================================
-// KPI
-// ===================================================
 function renderKPI(data) {
-  const last = data[data.length - 1];
-  const prev = data[data.length - 2];
+    const last = data.at(-1);
+    const prev = data.at(-2);
 
-  document.getElementById(
-    'kpi-last'
-  ).textContent = `${last.value.toFixed(4)} ${last.currency}`;
+    document.getElementById('kpi-last').textContent =
+        `${last.value.toFixed(4)} ${last.currency}`;
+    document.getElementById('kpi-count').textContent = data.length;
 
-  document.getElementById('kpi-count').textContent = data.length;
-
-  if (prev) {
-    const diff = last.value - prev.value;
-    const pct = (diff / prev.value) * 100;
-    const chip = document.getElementById('kpi-change');
-
-    chip.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(4)} (${pct.toFixed(
-      2
-    )}%)`;
-    chip.className = diff >= 0 ? 'pos' : 'neg';
-  }
+    if (prev) {
+        const diff = last.value - prev.value;
+        const pct = (diff / prev.value) * 100;
+        const el = document.getElementById('kpi-change');
+        el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
+        el.className = diff >= 0 ? 'pos' : 'neg';
+    }
 }
 
 // ===================================================
@@ -253,142 +171,131 @@ function loadStocks() {
     grid.innerHTML = '<p>Načítám akcie…</p>';
 
     fetch('https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks')
-        .then(res => {
-            if (!res.ok) throw new Error('API error');
-            return res.json();
-        })
+        .then(r => r.json())
         .then(stocks => {
             grid.innerHTML = '';
-
-            if (!stocks.length) {
-                grid.innerHTML = '<p>Žádné akcie k dispozici.</p>';
-                return;
-            }
-
-            stocks.forEach(stock => {
+            stocks.forEach(s => {
                 const card = document.createElement('div');
                 card.className = 'fund-card';
-                card.innerHTML = `
-                    <h3>${stock.name}</h3>
-                    <small>${stock.ticker}</small>
-                `;
-                card.onclick = () => openStockDetail(stock.ticker);
+                card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
+                card.onclick = () => openStockDetail(s.ticker);
                 grid.appendChild(card);
             });
-        })
-        .catch(() => {
-            grid.innerHTML = '<p>Chyba při načítání dat.</p>';
         });
 }
 
-// ===================================================
-// DETAIL AKCIE – ROUTING + OBSAH
-// ===================================================
 function openStockDetail(ticker) {
-    history.pushState(
-        { page: `akcie/${ticker}` },
-        '',
-        `/akcie/${ticker}`
-    );
+    history.pushState({ page: `akcie/${ticker}` }, '', `/akcie/${ticker}`);
     loadStockDetail(ticker);
 }
 
+// ===================================================
+// DETAIL AKCIE
+// ===================================================
 function loadStockDetail(ticker) {
     main.innerHTML = `
-        <h2>Detail akcie</h2>
-
+        <h3>Detail akcie</h3>
         <p><strong>Ticker:</strong> ${ticker}</p>
 
         <div class="kpi-row">
-            <div class="kpi">
-                <span>Cena</span>
-                <strong>–</strong>
-            </div>
-            <div class="kpi">
-                <span>Změna</span>
-                <strong>–</strong>
-            </div>
+            <div class="kpi"><span>Poslední cena</span><strong id="stock-kpi-last">–</strong></div>
+            <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change">–</strong></div>
+            <div class="kpi"><span>Počet záznamů</span><strong id="stock-kpi-count">–</strong></div>
         </div>
 
+        <div class="period-switch">
+            <button data-period="1Y">1Y</button>
+            <button data-period="3Y" class="active">3Y</button>
+            <button data-period="MAX">MAX</button>
+        </div>
+
+        <div id="chart-stock" style="height:300px"></div>
         <button class="back-btn">← Zpět na přehled akcií</button>
     `;
 
     document.querySelector('.back-btn').onclick = () => loadPage('akcie');
+
+    document.querySelectorAll('.period-switch button').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.period-switch button')
+                .forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadStockData(ticker, btn.dataset.period);
+        };
+    });
+
+    loadStockData(ticker, '3Y');
+}
+
+async function loadStockData(ticker, period) {
+    const res = await fetch(`${STOCK_API_URL}?ticker=${ticker}`);
+    let data = await res.json();
+
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    data = filterPeriod(data, period);
+
+    renderStockKPI(data);
+    renderPortfolioChart(data.map(d => ({ value: d.close })), 'chart-stock');
+}
+
+function renderStockKPI(data) {
+    const last = data.at(-1);
+    const prev = data.at(-2);
+
+    document.getElementById('stock-kpi-last').textContent =
+        `${last.close.toFixed(2)} ${last.currency}`;
+    document.getElementById('stock-kpi-count').textContent = data.length;
+
+    if (prev) {
+        const diff = last.close - prev.close;
+        const pct = (diff / prev.close) * 100;
+        const el = document.getElementById('stock-kpi-change');
+        el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
+        el.className = diff >= 0 ? 'pos' : 'neg';
+    }
 }
 
 // ===================================================
-// GRAF – CANVAS + RESPONZIVITA
+// GRAF
 // ===================================================
 let lastChartData = null;
 
-function renderPortfolioChart(history) {
-  lastChartData = history;
+function renderPortfolioChart(history, containerId) {
+    lastChartData = history;
 
-  const div = document.getElementById('chart-portfolio');
-  div.innerHTML = '';
+    const div = document.getElementById(containerId);
+    div.innerHTML = '';
 
-  const canvas = document.createElement('canvas');
-  canvas.width = div.clientWidth;
-  canvas.height = div.clientHeight;
-  div.appendChild(canvas);
+    const canvas = document.createElement('canvas');
+    canvas.width = div.clientWidth;
+    canvas.height = div.clientHeight;
+    div.appendChild(canvas);
 
-  const ctx = canvas.getContext('2d');
-  const padding = 40;
+    const ctx = canvas.getContext('2d');
+    const values = history.map(p => p.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
 
-  const values = history.map(p => p.value);
-  const minV = Math.min(...values);
-  const maxV = Math.max(...values);
+    ctx.strokeStyle = '#C9A646';
+    ctx.beginPath();
 
-  // Osy
-  ctx.strokeStyle = '#999';
-  ctx.lineWidth = 1;
+    history.forEach((p, i) => {
+        const x = (i / (history.length - 1)) * canvas.width;
+        const y = canvas.height - ((p.value - min) / (max - min)) * canvas.height;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
 
-  // Y osa
-  ctx.beginPath();
-  ctx.moveTo(padding, 10);
-  ctx.lineTo(padding, canvas.height - padding);
-  ctx.stroke();
-
-  // X osa
-  ctx.beginPath();
-  ctx.moveTo(padding, canvas.height - padding);
-  ctx.lineTo(canvas.width - 10, canvas.height - padding);
-  ctx.stroke();
-
-  // Popisky
-  ctx.fillStyle = '#666';
-  ctx.font = '12px Arial';
-  ctx.fillText(maxV.toFixed(2), 5, 20);
-  ctx.fillText(minV.toFixed(2), 5, canvas.height - padding);
-
-  // Křivka
-  const pts = history.map((p, i) => ({
-    x: padding + (i / (history.length - 1)) * (canvas.width - padding - 10),
-    y:
-      canvas.height -
-      padding -
-      ((p.value - minV) / (maxV - minV)) *
-        (canvas.height - padding - 20)
-  }));
-
-  ctx.beginPath();
-  ctx.strokeStyle = '#C9A646';
-  ctx.lineWidth = 2;
-
-  pts.forEach((pt, i) => {
-    if (i === 0) ctx.moveTo(pt.x, pt.y);
-    else ctx.lineTo(pt.x, pt.y);
-  });
-
-  ctx.stroke();
+    ctx.stroke();
 }
 
+// ===================================================
+// FILTRACE OBDOBÍ
+// ===================================================
+function filterPeriod(data, period) {
+    if (period === 'MAX') return data;
 
-// ===================================================
-// RESIZE
-// ===================================================
-window.addEventListener('resize', () => {
-  if (lastChartData) {
-    renderPortfolioChart(lastChartData);
-  }
-});
+    const years = period === '1Y' ? 1 : 3;
+    const from = new Date();
+    from.setFullYear(from.getFullYear() - years);
+    return data.filter(d => new Date(d.date) >= from);
+}
