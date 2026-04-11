@@ -188,55 +188,59 @@ function loadFundDetail(isin) {
 // API – DETAIL FONDU
 // ===================================================
 const DPS_API_URL =
-    'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+  'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
 
 async function loadDPS(isin, period = '3Y') {
-    try {
-        const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
-        if (!res.ok) throw new Error('API chyba');
+  try {
+    const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
+    if (!res.ok) throw new Error('API chyba');
 
-        let data = await res.json();
-        if (!data.length) return;
+    let data = await res.json();
+    if (!data.length) return;
 
-        data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        if (period !== 'MAX') {
-            const years = period === '1Y' ? 1 : 3;
-            const from = new Date();
-            from.setFullYear(from.getFullYear() - years);
-            data = data.filter(d => new Date(d.date) >= from);
-        }
-
-        renderKPI(data);
-        renderPortfolioChart(data);
-
-    } catch (err) {
-        document.getElementById('chart-portfolio').textContent =
-            'Chyba načtení API.';
+    // FILTRACE OBDOBÍ
+    if (period !== 'MAX') {
+      const years = period === '1Y' ? 1 : 3;
+      const from = new Date();
+      from.setFullYear(from.getFullYear() - years);
+      data = data.filter(d => new Date(d.date) >= from);
     }
+
+    renderKPI(data);
+    renderPortfolioChart(data);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('chart-portfolio').textContent =
+      'Chyba načtení API.';
+  }
 }
 
 // ===================================================
 // KPI
 // ===================================================
 function renderKPI(data) {
-    const last = data[data.length - 1];
-    const prev = data[data.length - 2];
+  const last = data[data.length - 1];
+  const prev = data[data.length - 2];
 
-    document.getElementById('kpi-last').textContent =
-        `${last.value.toFixed(4)} ${last.currency}`;
+  document.getElementById(
+    'kpi-last'
+  ).textContent = `${last.value.toFixed(4)} ${last.currency}`;
 
-    document.getElementById('kpi-count').textContent = data.length;
+  document.getElementById('kpi-count').textContent = data.length;
 
-    if (prev) {
-        const diff = last.value - prev.value;
-        const pct = (diff / prev.value) * 100;
-        const chip = document.getElementById('kpi-change');
+  if (prev) {
+    const diff = last.value - prev.value;
+    const pct = (diff / prev.value) * 100;
+    const chip = document.getElementById('kpi-change');
 
-        chip.textContent =
-            `${diff >= 0 ? '+' : ''}${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
-        chip.className = diff >= 0 ? 'pos' : 'neg';
-    }
+    chip.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(4)} (${pct.toFixed(
+      2
+    )}%)`;
+    chip.className = diff >= 0 ? 'pos' : 'neg';
+  }
 }
 
 // ===================================================
@@ -311,3 +315,80 @@ function loadStockDetail(ticker) {
 
     document.querySelector('.back-btn').onclick = () => loadPage('akcie');
 }
+
+// ===================================================
+// GRAF – CANVAS + RESPONZIVITA
+// ===================================================
+let lastChartData = null;
+
+function renderPortfolioChart(history) {
+  lastChartData = history;
+
+  const div = document.getElementById('chart-portfolio');
+  div.innerHTML = '';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = div.clientWidth;
+  canvas.height = div.clientHeight;
+  div.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const padding = 40;
+
+  const values = history.map(p => p.value);
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+
+  // Osy
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1;
+
+  // Y osa
+  ctx.beginPath();
+  ctx.moveTo(padding, 10);
+  ctx.lineTo(padding, canvas.height - padding);
+  ctx.stroke();
+
+  // X osa
+  ctx.beginPath();
+  ctx.moveTo(padding, canvas.height - padding);
+  ctx.lineTo(canvas.width - 10, canvas.height - padding);
+  ctx.stroke();
+
+  // Popisky
+  ctx.fillStyle = '#666';
+  ctx.font = '12px Arial';
+  ctx.fillText(maxV.toFixed(2), 5, 20);
+  ctx.fillText(minV.toFixed(2), 5, canvas.height - padding);
+
+  // Křivka
+  const pts = history.map((p, i) => ({
+    x: padding + (i / (history.length - 1)) * (canvas.width - padding - 10),
+    y:
+      canvas.height -
+      padding -
+      ((p.value - minV) / (maxV - minV)) *
+        (canvas.height - padding - 20)
+  }));
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#C9A646';
+  ctx.lineWidth = 2;
+
+  pts.forEach((pt, i) => {
+    if (i === 0) ctx.moveTo(pt.x, pt.y);
+    else ctx.lineTo(pt.x, pt.y);
+  });
+
+  ctx.stroke();
+}
+
+
+// ===================================================
+// RESIZE
+// ===================================================
+window.addEventListener('resize', () => {
+  if (lastChartData) {
+    renderPortfolioChart(lastChartData);
+  }
+});
