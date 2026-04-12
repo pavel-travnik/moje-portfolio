@@ -60,30 +60,34 @@ window.addEventListener('popstate', e => {
 // ROUTER
 // ===================================================
 function loadPage(page, pushState = true) {
-  if (page.startsWith('penze/')) {
-    loadFundDetail(page.split('/')[1]);
-    return;
-  }
-  if (page.startsWith('akcie/')) {
-    loadStockDetail(page.split('/')[1]);
-    return;
-  if (page.startsWith('etf/')) {
-    loadStockDetail(page.split('/')[1]);
-    return;
-  }
 
-  fetch(`pages/${page}.html`)
-    .then(r => r.ok ? r.text() : Promise.reject())
-    .then(html => {
-      main.innerHTML = html;
-      if (page === 'penze') loadPensionFunds();
-      if (page === 'akcie') loadStocks();
-      if (page === 'etf') loadEtfs();
-      if (pushState) history.pushState({ page }, '', `/${page}`);
-    })
-    .catch(() => {
-      main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
-    });
+ if (page.startsWith('penze/')) {
+  loadFundDetail(page.split('/')[1]);
+  return;
+ }
+
+ if (page.startsWith('akcie/')) {
+  loadStockDetail(page.split('/')[1]);
+  return;
+ }
+
+ if (page.startsWith('etf/')) {
+  loadStockDetail(page.split('/')[1]);
+  return;
+ }
+
+ fetch(`pages/${page}.html`)
+  .then(r => r.ok ? r.text() : Promise.reject())
+  .then(html => {
+   main.innerHTML = html;
+   if (page === 'penze') loadPensionFunds();
+   if (page === 'akcie') loadStocks();
+   if (page === 'etf') loadEtfs();
+   if (pushState) history.pushState({ page }, '', `/${page}`);
+  })
+  .catch(() => {
+   main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
+  });
 }
 
 // ===================================================
