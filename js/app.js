@@ -67,6 +67,9 @@ function loadPage(page, pushState = true) {
   if (page.startsWith('akcie/')) {
     loadStockDetail(page.split('/')[1]);
     return;
+  if (page.startsWith('etf/')) {
+    loadStockDetail(page.split('/')[1]);
+    return;
   }
 
   fetch(`pages/${page}.html`)
@@ -75,6 +78,7 @@ function loadPage(page, pushState = true) {
       main.innerHTML = html;
       if (page === 'penze') loadPensionFunds();
       if (page === 'akcie') loadStocks();
+      if (page === 'etf') loadEtfs();
       if (pushState) history.pushState({ page }, '', `/${page}`);
     })
     .catch(() => {
@@ -194,7 +198,10 @@ function loadStocks() {
     .then(r => r.json())
     .then(stocks => {
       grid.innerHTML = '';
-      stocks.forEach(s => {
+      
+     stocks
+      .filter(s => s.active === 1 && s.sector !== 'ETF')
+      .forEach(s => {
         const card = document.createElement('div');
         card.className = 'fund-card';
         card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
@@ -205,6 +212,37 @@ function loadStocks() {
         grid.appendChild(card);
       });
     });
+}
+
+
+function loadEtfs() {
+ const grid = document.getElementById('etfGrid');
+ if (!grid) return;
+
+ grid.innerHTML = '<p>Načítám ETF…</p>';
+
+ fetch(STOCK_LIST_API)
+  .then(r => r.json())
+  .then(stocks => {
+   grid.innerHTML = '';
+
+   stocks
+    .filter(s => s.active === 1 && s.sector === 'ETF')
+    .forEach(s => {
+     const card = document.createElement('div');
+     card.className = 'fund-card';
+     card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
+     card.onclick = () => {
+      history.pushState(
+       { page: `akcie/${s.ticker}` },
+       '',
+       `/akcie/${s.ticker}`
+      );
+      loadStockDetail(s.ticker);
+     };
+     grid.appendChild(card);
+    });
+  });
 }
 
 // ===================================================
