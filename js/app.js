@@ -215,14 +215,24 @@ function loadStockDetail(ticker) {
     <h3 id="stock-title">Detail akcie</h3>
     <p>
       <strong id="stock-name">–</strong><br>
-      <small>Ticker: ${ticker}</small>
+      <small>ID: ${ticker}</small>
     </p>
 
-    <div class="kpi-row">
-      <div class="kpi"><span>Poslední cena</span><strong id="stock-kpi-last">–</strong></div>
-      <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change">–</strong></div>
-      <div class="kpi"><span>Počet záznamů</span><strong id="stock-kpi-count">–</strong></div>
-    </div>
+<div class="kpi-row">
+  <div class="kpi">
+    <span>Poslední cena</span>
+    <strong id="stock-kpi-last">–</strong>
+  </div>
+  <div class="kpi">
+    <span>Denní změna</span>
+    <strong id="stock-kpi-change">–</strong>
+  </div>
+  <div class="kpi">
+    <span>Objem</span>
+    <strong id="stock-kpi-volume">–</strong>
+  </div>
+</div>
+
 
     <p id="stock-meta" class="meta">–</p>
 
@@ -285,22 +295,27 @@ function renderStockKPI(data) {
   const last = data.at(-1);
   const prev = data.at(-2);
 
-  document.getElementById('stock-kpi-last').textContent =
-    `${last.close.toFixed(2)} ${last.currency}`;
-  document.getElementById('stock-kpi-count').textContent = data.length;
+  const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
+  // Poslední cena + datum v závorce
+  document.getElementById('stock-kpi-last').textContent =
+    `${last.close.toFixed(2)} ${last.currency} (${dateStr})`;
+
+  // Objem
+  document.getElementById('stock-kpi-volume').textContent =
+    last.volume?.toLocaleString('cs-CZ') || '–';
+
+  // Denní změna
   if (prev) {
     const diff = last.close - prev.close;
     const pct = (diff / prev.close) * 100;
     const el = document.getElementById('stock-kpi-change');
+
     el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
+  } else {
+    document.getElementById('stock-kpi-change').textContent = '–';
   }
-
-  document.getElementById('stock-meta').textContent =
-    `Datum: ${new Date(last.date).toLocaleDateString('cs-CZ')} · Objem: ${
-      last.volume?.toLocaleString('cs-CZ') || '–'
-    } · Měna: ${last.currency}`;
 }
 
 // ===================================================
