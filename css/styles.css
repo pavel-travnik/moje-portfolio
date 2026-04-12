@@ -1,31 +1,98 @@
+/* =====================================
+   ZÁKLAD
+===================================== */
+
+:root {
+    --green: #0D3512;
+    --green-dark: #123f1a;
+    --gold: #C9A646;
+    --gold-light: rgba(201,162,70,0.15);
+    --text-dark: #1f1f1f;
+    --text-muted: #666;
+    --border-light: #e5e5e5;
+    --bg-light: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     font-family: Inter, Arial, sans-serif;
-    background: #0D3512;
+    background: var(--green);
+    color: var(--text-dark);
 }
 
-/* HEADER */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+a:hover {
+    color: var(--gold);
+}
+
+/* =====================================
+   HEADER
+===================================== */
+
 .main-header {
-    background: #0D3512;
+    background: var(--green);
     color: white;
-    padding: 12px 16px;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,.15);
 }
 
 .logo {
     height: 48px;
 }
 
-/* NAV */
-.main-nav { position: relative; }
+.main-header h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.gold-text {
+    background: linear-gradient(
+        120deg,
+        #D4AF37,
+        #FFF3B0,
+        #C9A227,
+        #D4AF37
+    );
+    background-size: 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s infinite linear;
+}
+
+@keyframes shine {
+    from { background-position: 0%; }
+    to { background-position: 200%; }
+}
+
+/* =====================================
+   NAV + DROPDOWN
+===================================== */
+
+.main-nav {
+    position: relative;
+}
+
+.dropdown {
+    position: relative;
+}
 
 .dropdown-toggle {
     background: none;
     border: none;
-    color: #C9A646;
-    font-size: 16px;
+    color: var(--gold);
+    font-size: 15px;
+    cursor: pointer;
     padding: 8px 12px;
 }
 
@@ -34,105 +101,252 @@ body {
     position: absolute;
     right: 0;
     top: 100%;
-    background: #123f1a;
-    border-radius: 8px;
+    background: var(--green-dark);
     min-width: 220px;
-    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,.25);
     z-index: 1000;
 }
 
-.dropdown-menu.open { display: block; }
+.dropdown-menu.open {
+    display: block;
+}
 
 .dropdown-menu a {
     display: block;
     padding: 12px 16px;
     color: white;
+    font-size: 14px;
 }
 
 .dropdown-menu a:hover {
-    background: rgba(255,255,255,.1);
-    color: #C9A646;
+    background: rgba(255,255,255,.08);
+    color: var(--gold);
 }
 
-/* LAYOUT */
+/* =====================================
+   LAYOUT
+===================================== */
+
 .layout {
     display: grid;
     grid-template-columns: 1fr 280px;
-    background: white;
+    background: var(--bg-light);
     min-height: 80vh;
 }
 
 .content {
-    padding: 32px;
+    padding: 40px;
 }
 
 .sidebar {
-    border-left: 1px solid #e5e5e5;
+    border-left: 1px solid var(--border-light);
     padding: 24px;
 }
 
-/* KARTY */
+.sidebar h3 {
+    margin-top: 0;
+}
+
+.side-links a {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 14px;
+    color: var(--green);
+}
+
+/* =====================================
+   GRID & KARTY (FONDY / AKCIE)
+===================================== */
+
 .fund-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: 28px;
 }
 
 .fund-card {
-    border: 2px solid #C9A646;
-    border-radius: 12px;
-    padding: 20px;
-    background: #fff;
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 24px;
+    background: var(--bg-light);
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
 }
 
-/* KPI */
+.fund-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+}
+
+.fund-card h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--green);
+}
+
+.fund-card small {
+    color: var(--text-muted);
+}
+
+/* =====================================
+   KPI
+===================================== */
+
 .kpi-row {
     display: flex;
-    gap: 16px;
+    gap: 24px;
     margin: 16px 0;
 }
 
 .kpi {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #ddd;
+    padding: 12px 16px;
+    border: 1px solid var(--border-light);
     border-radius: 8px;
+    min-width: 140px;
+    background: #fafafa;
 }
 
-/* STAVY */
-.pos { color: green; }
-.neg { color: red; }
+.kpi span {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+}
 
-/* FOOTER */
-.footer {
-    background: #0D3512;
+.kpi strong {
+    font-size: 16px;
+}
+
+.pos {
+    color: green;
+}
+
+.neg {
+    color: red;
+}
+
+/* =====================================
+   PERIOD SWITCH
+===================================== */
+
+.period-switch {
+    margin: 16px 0;
+}
+
+.period-switch button {
+    margin-right: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--gold);
+    background: white;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.period-switch button.active {
+    background: var(--gold);
     color: white;
-    text-align: center;
-    padding: 16px;
 }
 
-/* ==========================
-   MOBILE
-========================== */
+/* =====================================
+   GRAF
+===================================== */
+
+#chart-portfolio,
+#chart-stock {
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* =====================================
+   TLAČÍTKO ZPĚT
+===================================== */
+
+.back-btn {
+    margin-top: 24px;
+    padding: 12px 16px;
+    font-size: 15px;
+    background: white;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    cursor: pointer;
+    width: fit-content;
+}
+
+.back-btn:hover {
+    background: var(--gold);
+    color: white;
+}
+
+/* =====================================
+   FOOTER
+===================================== */
+
+.footer {
+    background: var(--green);
+    text-align: center;
+    padding: 20px;
+}
+
+.footer a {
+    color: white;
+    font-size: 12px;
+    margin: 0 16px;
+}
+
+/* =====================================
+   RESPONSIVE – MOBILE
+===================================== */
+
 @media (max-width: 768px) {
 
+    body {
+        font-size: 16px;
+    }
+
+    /* layout */
     .layout {
-        grid-template-columns: 1fr !important;
-    }
-
-    .sidebar {
-        display: none !important;
-    }
-
-    .fund-grid {
         grid-template-columns: 1fr;
     }
 
-    .kpi-row {
-        flex-direction: column;
+    .sidebar {
+        display: none;
     }
 
     .content {
         padding: 16px;
+    }
+
+    /* grid */
+    .fund-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .fund-card {
+        padding: 16px;
+    }
+
+    /* KPI */
+    .kpi-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .kpi {
+        width: 100%;
+    }
+
+    /* header */
+    .main-header h1 {
+        font-size: 16px;
+    }
+
+    .logo {
+        height: 40px;
+    }
+
+    /* back button */
+    .back-btn {
+        width: 100%;
     }
 }
