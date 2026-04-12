@@ -235,6 +235,26 @@ a:hover {
   display: block;
 }
 
+
+
+/* na mobilu zrušíme hover */
+@media (max-width: 768px) {
+    .dropdown:hover .dropdown-menu {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: 16px;
+    }
+
+    small {
+        font-size: 14px;
+    }
+}    
+
+
 .period-switch {
   margin: 16px 0;
 }
@@ -269,6 +289,51 @@ a:hover {
     border: 1px solid #e5e5e5;
     border-radius: 8px;
     min-width: 140px;
+}
+
+/* =====================================
+   RESPONSIVE – MOBILE FIRST
+===================================== */
+
+@media (max-width: 768px) {
+
+    /* CELÝ LAYOUT JEDEN SLOUPEC */
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .content {
+        padding: 16px;
+    }
+
+    .sidebar {
+        display: none; /* nebo přesun dolů */
+    }
+
+    /* KARTY FONDŮ / AKCIÍ */
+    .fund-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .fund-card {
+        padding: 16px;
+    }
+
+    /* KPI */
+    .kpi-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .kpi {
+        width: 100%;
+    }
+
+    /* NADPISY */
+    h1, h2, h3 {
+        line-height: 1.25;
+    }
 }
 
 .pos { color: green; }
