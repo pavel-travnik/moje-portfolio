@@ -13,42 +13,26 @@ const STOCK_API_URL =
     'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
 
 // ===================================================
-// SPA ROUTER
+// DROPDOWN – MOBILE SAFE
 // ===================================================
-function loadPage(page, pushState = true) {
+document.addEventListener('click', e => {
+    const toggle = e.target.closest('.dropdown-toggle');
+    const menu = document.querySelector('.dropdown-menu');
 
-    // DETAIL FONDU
-    if (page.startsWith('penze/')) {
-        loadFundDetail(page.split('/')[1]);
+    if (toggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        menu.classList.toggle('open');
         return;
     }
 
-    // DETAIL AKCIE
-    if (page.startsWith('akcie/')) {
-        loadStockDetail(page.split('/')[1]);
-        return;
+    if (menu && menu.classList.contains('open')) {
+        menu.classList.remove('open');
     }
-
-    fetch(`pages/${page}.html`)
-        .then(res => {
-            if (!res.ok) throw new Error('Page not found');
-            return res.text();
-        })
-        .then(html => {
-            main.innerHTML = html;
-
-            if (page === 'penze') loadPensionFunds();
-            if (page === 'akcie') loadStocks();
-
-            if (pushState) history.pushState({ page }, '', `/${page}`);
-        })
-        .catch(() => {
-            main.innerHTML = `<h3>404</h3><p>Obsah nenalezen</p>`;
-        });
-}
+});
 
 // ===================================================
-// MENU + HISTORY
+// SPA NAVIGATION
 // ===================================================
 document.addEventListener('click', e => {
     const link = e.target.closest('a[data-page]');
@@ -71,7 +55,42 @@ window.addEventListener('popstate', e => {
 })();
 
 // ===================================================
-// PENZE – PŘEHLED
+// ROUTER
+// ===================================================
+function loadPage(page, pushState = true) {
+
+    // DETAIL FONDU
+    if (page.startsWith('penze/')) {
+        loadFundDetail(page.split('/')[1]);
+        return;
+    }
+
+    // DETAIL AKCIE
+    if (page.startsWith('akcie/')) {
+        loadStockDetail(page.split('/')[1]);
+        return;
+    }
+
+    fetch(`pages/${page}.html`)
+        .then(res => {
+            if (!res.ok) throw new Error();
+            return res.text();
+        })
+        .then(html => {
+            main.innerHTML = html;
+
+            if (page === 'penze') loadPensionFunds();
+            if (page === 'akcie') loadStocks();
+
+            if (pushState) history.pushState({ page }, '', `/${page}`);
+        })
+        .catch(() => {
+            main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
+        });
+}
+
+// ===================================================
+// PENZE – PŘEHLED FONDŮ
 // ===================================================
 function loadPensionFunds() {
     const grid = document.getElementById('fundGrid');
@@ -87,15 +106,13 @@ function loadPensionFunds() {
                 const card = document.createElement('div');
                 card.className = 'fund-card';
                 card.innerHTML = `<h3>${f.name}</h3><small>${f.provider}</small>`;
-                card.onclick = () => openFundDetail(f.isin);
+                card.onclick = () => {
+                    history.pushState({ page: `penze/${f.isin}` }, '', `/penze/${f.isin}`);
+                    loadFundDetail(f.isin);
+                };
                 grid.appendChild(card);
             });
         });
-}
-
-function openFundDetail(isin) {
-    history.pushState({ page: `penze/${isin}` }, '', `/penze/${isin}`);
-    loadFundDetail(isin);
 }
 
 // ===================================================
@@ -118,13 +135,11 @@ function loadFundDetail(isin) {
             <button data-period="MAX">MAX</button>
         </div>
 
-        <div id="chart-portfolio" style="height:300px"></div>
-        <button class="back-btn">← Zpět na přehled fondů</button>
+        <div id="chart-portfolio"></div>
+        <button class="back-btn">← Zpět</button>
     `;
 
-    document.querySelector('.back-btn').onclick = () => {
-    history.back();
-	};
+    document.querySelector('.back-btn').onclick = () => history.back();
 
     document.querySelectorAll('.period-switch button').forEach(btn => {
         btn.onclick = () => {
@@ -139,17 +154,20 @@ function loadFundDetail(isin) {
 }
 
 async function loadDPS(isin, period) {
-    const res = await fetch(`${DPS_API_URL}?isin=${isin}`);
+    const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
     let data = await res.json();
 
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     data = filterPeriod(data, period);
 
-    renderKPI(data);
-    renderPortfolioChart(data.map(d => ({ value: d.value })), 'chart-portfolio');
+    renderFundKPI(data);
+    renderPortfolioChart(
+        data.map(d => ({ date: d.date, value: d.value })),
+        'chart-portfolio'
+    );
 }
 
-function renderKPI(data) {
+function renderFundKPI(data) {
     const last = data.at(-1);
     const prev = data.at(-2);
 
@@ -183,15 +201,13 @@ function loadStocks() {
                 const card = document.createElement('div');
                 card.className = 'fund-card';
                 card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
-                card.onclick = () => openStockDetail(s.ticker);
+                card.onclick = () => {
+                    history.pushState({ page: `akcie/${s.ticker}` }, '', `/akcie/${s.ticker}`);
+                    loadStockDetail(s.ticker);
+                };
                 grid.appendChild(card);
             });
         });
-}
-
-function openStockDetail(ticker) {
-    history.pushState({ page: `akcie/${ticker}` }, '', `/akcie/${ticker}`);
-    loadStockDetail(ticker);
 }
 
 // ===================================================
@@ -214,11 +230,11 @@ function loadStockDetail(ticker) {
             <button data-period="MAX">MAX</button>
         </div>
 
-        <div id="chart-stock" style="height:300px"></div>
-        <button class="back-btn">← Zpět na přehled akcií</button>
+        <div id="chart-stock"></div>
+        <button class="back-btn">← Zpět</button>
     `;
 
-    document.querySelector('.back-btn').onclick = () => loadPage('akcie');
+    document.querySelector('.back-btn').onclick = () => history.back();
 
     document.querySelectorAll('.period-switch button').forEach(btn => {
         btn.onclick = () => {
@@ -233,14 +249,17 @@ function loadStockDetail(ticker) {
 }
 
 async function loadStockData(ticker, period) {
-    const res = await fetch(`${STOCK_API_URL}?ticker=${ticker}`);
+    const res = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
     let data = await res.json();
 
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     data = filterPeriod(data, period);
 
     renderStockKPI(data);
-    renderPortfolioChart(data.map(d => ({ value: d.close })), 'chart-stock');
+    renderPortfolioChart(
+        data.map(d => ({ date: d.date, value: d.close })),
+        'chart-stock'
+    );
 }
 
 function renderStockKPI(data) {
@@ -261,12 +280,12 @@ function renderStockKPI(data) {
 }
 
 // ===================================================
-// GRAF
+// PROFESIONÁLNÍ GRAF (RESPONZIVNÍ)
 // ===================================================
 let lastChartData = null;
 
 function renderPortfolioChart(history, containerId) {
-    lastChartData = history;
+    lastChartData = { history, containerId };
 
     const div = document.getElementById(containerId);
     if (!div || history.length < 2) return;
@@ -275,7 +294,7 @@ function renderPortfolioChart(history, containerId) {
 
     const canvas = document.createElement('canvas');
     canvas.width = div.clientWidth;
-    canvas.height = Math.min(div.clientWidth * 0.6, 300);
+    canvas.height = Math.min(div.clientWidth * 0.65, 320);
     div.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
@@ -285,123 +304,78 @@ function renderPortfolioChart(history, containerId) {
     const h = canvas.height;
 
     const values = history.map(p => p.value);
-    const minV = Math.min(...values);
-    const maxV = Math.max(...values);
-    const range = maxV - minV || 1;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
 
-    // =========================
-    // POZADÍ
-    // =========================
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
-
-    // =========================
-    // HORIZONTÁLNÍ MŘÍŽKA
-    // =========================
+    // GRID + Y AXIS
     ctx.strokeStyle = '#e6e6e6';
-    ctx.lineWidth = 1;
-    const gridLines = 5;
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'right';
 
-    for (let i = 0; i <= gridLines; i++) {
-        const y =
-            padding.top +
-            (i / gridLines) * (h - padding.top - padding.bottom);
+    for (let i = 0; i <= 5; i++) {
+        const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
         ctx.beginPath();
         ctx.moveTo(padding.left, y);
         ctx.lineTo(w - padding.right, y);
         ctx.stroke();
-
-        // Y popisky (vpravo!)
-        const val = maxV - (i / gridLines) * range;
-        ctx.fillStyle = '#666';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText(val.toFixed(2), w - 6, y + 4);
+        ctx.fillText(
+            (max - (i / 5) * range).toFixed(2),
+            w - 8,
+            y + 4
+        );
     }
 
-    // =========================
-    // DATA BODY
-    // =========================
+    // DATA
     const points = history.map((p, i) => ({
-        x:
-            padding.left +
-            (i / (history.length - 1)) *
-                (w - padding.left - padding.right),
-        y:
-            padding.top +
-            ((maxV - p.value) / range) *
-                (h - padding.top - padding.bottom),
+        x: padding.left + (i / (history.length - 1)) *
+            (w - padding.left - padding.right),
+        y: padding.top + ((max - p.value) / range) *
+            (h - padding.top - padding.bottom),
     }));
 
-    // =========================
-    // FILL POD KŘIVKOU
-    // =========================
+    // FILL
     ctx.beginPath();
     ctx.moveTo(points[0].x, h - padding.bottom);
     points.forEach(pt => ctx.lineTo(pt.x, pt.y));
     ctx.lineTo(points.at(-1).x, h - padding.bottom);
-    ctx.closePath();
-
     ctx.fillStyle = 'rgba(201,162,70,0.15)';
     ctx.fill();
 
-    // =========================
-    // KŘIVKA
-    // =========================
+    // LINE
     ctx.beginPath();
-    ctx.strokeStyle = '#C9A646'; // investiční zlatá
+    ctx.strokeStyle = '#C9A646';
     ctx.lineWidth = 2;
     points.forEach((pt, i) =>
-        i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)
+        i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
     );
     ctx.stroke();
 
-    // =========================
-    // POSLEDNÍ BOD
-    // =========================
+    // LAST POINT
     const last = points.at(-1);
     ctx.beginPath();
     ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
     ctx.fillStyle = '#C9A646';
     ctx.fill();
-
-    // =========================
-    // X AXIS – DATUMY
-    // =========================
-    if (history[0].date && history.at(-1).date) {
-        ctx.fillStyle = '#666';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(history[0].date, padding.left, h - 8);
-
-        ctx.textAlign = 'right';
-        ctx.fillText(
-            history.at(-1).date,
-            w - padding.right,
-            h - 8
-        );
-    }
 }
 
+// RESIZE
+window.addEventListener('resize', () => {
+    if (!lastChartData) return;
+    renderPortfolioChart(
+        lastChartData.history,
+        lastChartData.containerId
+    );
+});
+
 // ===================================================
-// FILTRACE OBDOBÍ
+// Filtrované období
 // ===================================================
 function filterPeriod(data, period) {
     if (period === 'MAX') return data;
-
     const years = period === '1Y' ? 1 : 3;
     const from = new Date();
     from.setFullYear(from.getFullYear() - years);
     return data.filter(d => new Date(d.date) >= from);
 }
-
-document.addEventListener('click', e => {
-    const toggle = e.target.closest('.dropdown-toggle');
-    if (!toggle) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const menu = toggle.nextElementSibling;
-    menu.classList.toggle('open');
-});
