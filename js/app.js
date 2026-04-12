@@ -269,90 +269,118 @@ function renderPortfolioChart(history, containerId) {
     lastChartData = history;
 
     const div = document.getElementById(containerId);
-    if (!div) return;
+    if (!div || history.length < 2) return;
 
     div.innerHTML = '';
 
     const canvas = document.createElement('canvas');
     canvas.width = div.clientWidth;
-    canvas.height = div.clientHeight;
+    canvas.height = Math.min(div.clientWidth * 0.6, 300);
     div.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
 
-    const padding = 40;
+    const padding = { top: 20, right: 60, bottom: 30, left: 20 };
     const w = canvas.width;
     const h = canvas.height;
 
     const values = history.map(p => p.value);
     const minV = Math.min(...values);
     const maxV = Math.max(...values);
+    const range = maxV - minV || 1;
 
-    // =============================
-    // OSY
-    // =============================
-    ctx.strokeStyle = '#999';
+    // =========================
+    // POZADÍ
+    // =========================
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    // =========================
+    // HORIZONTÁLNÍ MŘÍŽKA
+    // =========================
+    ctx.strokeStyle = '#e6e6e6';
     ctx.lineWidth = 1;
+    const gridLines = 5;
 
-    // Y osa
+    for (let i = 0; i <= gridLines; i++) {
+        const y =
+            padding.top +
+            (i / gridLines) * (h - padding.top - padding.bottom);
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(w - padding.right, y);
+        ctx.stroke();
+
+        // Y popisky (vpravo!)
+        const val = maxV - (i / gridLines) * range;
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(val.toFixed(2), w - 6, y + 4);
+    }
+
+    // =========================
+    // DATA BODY
+    // =========================
+    const points = history.map((p, i) => ({
+        x:
+            padding.left +
+            (i / (history.length - 1)) *
+                (w - padding.left - padding.right),
+        y:
+            padding.top +
+            ((maxV - p.value) / range) *
+                (h - padding.top - padding.bottom),
+    }));
+
+    // =========================
+    // FILL POD KŘIVKOU
+    // =========================
     ctx.beginPath();
-    ctx.moveTo(padding, 10);
-    ctx.lineTo(padding, h - padding);
+    ctx.moveTo(points[0].x, h - padding.bottom);
+    points.forEach(pt => ctx.lineTo(pt.x, pt.y));
+    ctx.lineTo(points.at(-1).x, h - padding.bottom);
+    ctx.closePath();
+
+    ctx.fillStyle = 'rgba(201,162,70,0.15)';
+    ctx.fill();
+
+    // =========================
+    // KŘIVKA
+    // =========================
+    ctx.beginPath();
+    ctx.strokeStyle = '#C9A646'; // investiční zlatá
+    ctx.lineWidth = 2;
+    points.forEach((pt, i) =>
+        i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)
+    );
     ctx.stroke();
 
-    // X osa
+    // =========================
+    // POSLEDNÍ BOD
+    // =========================
+    const last = points.at(-1);
     ctx.beginPath();
-    ctx.moveTo(padding, h - padding);
-    ctx.lineTo(w - 10, h - padding);
-    ctx.stroke();
+    ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#C9A646';
+    ctx.fill();
 
-    // =============================
-    // POPISKY Y
-    // =============================
-    ctx.fillStyle = '#666';
-    ctx.font = '12px Arial';
+    // =========================
+    // X AXIS – DATUMY
+    // =========================
+    if (history[0].date && history.at(-1).date) {
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(history[0].date, padding.left, h - 8);
 
-    ctx.fillText(maxV.toFixed(2), 5, 20);
-    ctx.fillText(minV.toFixed(2), 5, h - padding);
-
-    // =============================
-    // POPISKY X (čas)
-    // =============================
-    if (history.length > 1 && history[0].date && history.at(-1).date) {
-        ctx.fillText(
-            history[0].date,
-            padding,
-            h - 8
-        );
+        ctx.textAlign = 'right';
         ctx.fillText(
             history.at(-1).date,
-            w - 110,
+            w - padding.right,
             h - 8
         );
     }
-
-    // =============================
-    // KŘIVKA
-    // =============================
-    const pts = history.map((p, i) => ({
-        x: padding + (i / (history.length - 1)) * (w - padding - 10),
-        y:
-            h -
-            padding -
-            ((p.value - minV) / (maxV - minV)) *
-                (h - padding - 20),
-    }));
-
-    ctx.beginPath();
-    ctx.strokeStyle = '#C9A646';
-    ctx.lineWidth = 2;
-
-    pts.forEach((pt, i) => {
-        if (i === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-    });
-
-    ctx.stroke();
 }
 
 // ===================================================
@@ -366,3 +394,14 @@ function filterPeriod(data, period) {
     from.setFullYear(from.getFullYear() - years);
     return data.filter(d => new Date(d.date) >= from);
 }
+
+document.addEventListener('click', e => {
+    const toggle = e.target.closest('.dropdown-toggle');
+    if (!toggle) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const menu = toggle.nextElementSibling;
+    menu.classList.toggle('open');
+});
