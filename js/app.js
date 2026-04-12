@@ -12,6 +12,9 @@ const DPS_API_URL =
 const STOCK_API_URL =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
 
+const STOCK_LIST_API =
+  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
+
 // ===================================================
 // DROPDOWN – MOBILE SAFE
 // ===================================================
@@ -25,7 +28,6 @@ document.addEventListener('click', e => {
     menu.classList.toggle('open');
     return;
   }
-
   if (menu && menu.classList.contains('open')) {
     menu.classList.remove('open');
   }
@@ -62,23 +64,17 @@ function loadPage(page, pushState = true) {
     loadFundDetail(page.split('/')[1]);
     return;
   }
-
   if (page.startsWith('akcie/')) {
     loadStockDetail(page.split('/')[1]);
     return;
   }
 
   fetch(`pages/${page}.html`)
-    .then(res => {
-      if (!res.ok) throw new Error();
-      return res.text();
-    })
+    .then(r => r.ok ? r.text() : Promise.reject())
     .then(html => {
       main.innerHTML = html;
-
       if (page === 'penze') loadPensionFunds();
       if (page === 'akcie') loadStocks();
-
       if (pushState) history.pushState({ page }, '', `/${page}`);
     })
     .catch(() => {
@@ -87,7 +83,7 @@ function loadPage(page, pushState = true) {
 }
 
 // ===================================================
-// PENZE – PŘEHLED FONDŮ
+// PENZE – PŘEHLED
 // ===================================================
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
@@ -101,21 +97,14 @@ function loadPensionFunds() {
     .then(r => r.json())
     .then(funds => {
       grid.innerHTML = '';
-
       funds.forEach(f => {
         const card = document.createElement('div');
         card.className = 'fund-card';
         card.innerHTML = `<h3>${f.name}</h3><small>${f.provider}</small>`;
-
         card.onclick = () => {
-          history.pushState(
-            { page: `penze/${f.isin}` },
-            '',
-            `/penze/${f.isin}`
-          );
+          history.pushState({ page: `penze/${f.isin}` }, '', `/penze/${f.isin}`);
           loadFundDetail(f.isin);
         };
-
         grid.appendChild(card);
       });
     });
@@ -149,10 +138,8 @@ function loadFundDetail(isin) {
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
-      document
-        .querySelectorAll('.period-switch button')
+      document.querySelectorAll('.period-switch button')
         .forEach(b => b.classList.remove('active'));
-
       btn.classList.add('active');
       loadDPS(isin, btn.dataset.period);
     };
@@ -164,14 +151,12 @@ function loadFundDetail(isin) {
 async function loadDPS(isin, period) {
   const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
   let data = await res.json();
-
   if (!Array.isArray(data)) data = [];
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
   data = filterPeriod(data, period);
 
   renderFundKPI(data);
-
   renderPortfolioChart(
     data.map(d => ({ date: d.date, value: d.value })),
     'chart-portfolio'
@@ -180,20 +165,17 @@ async function loadDPS(isin, period) {
 
 function renderFundKPI(data) {
   if (!data.length) return;
-
   const last = data.at(-1);
   const prev = data.at(-2);
 
   document.getElementById('kpi-last').textContent =
     `${last.value.toFixed(4)} ${last.currency}`;
-
   document.getElementById('kpi-count').textContent = data.length;
 
   if (prev) {
     const diff = last.value - prev.value;
     const pct = (diff / prev.value) * 100;
     const el = document.getElementById('kpi-change');
-
     el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
   }
@@ -208,27 +190,18 @@ function loadStocks() {
 
   grid.innerHTML = '<p>Načítám akcie…</p>';
 
-  fetch(
-    'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks'
-  )
+  fetch(STOCK_LIST_API)
     .then(r => r.json())
     .then(stocks => {
       grid.innerHTML = '';
-
       stocks.forEach(s => {
         const card = document.createElement('div');
         card.className = 'fund-card';
         card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
-
         card.onclick = () => {
-          history.pushState(
-            { page: `akcie/${s.ticker}` },
-            '',
-            `/akcie/${s.ticker}`
-          );
+          history.pushState({ page: `akcie/${s.ticker}` }, '', `/akcie/${s.ticker}`);
           loadStockDetail(s.ticker);
         };
-
         grid.appendChild(card);
       });
     });
@@ -239,14 +212,19 @@ function loadStocks() {
 // ===================================================
 function loadStockDetail(ticker) {
   main.innerHTML = `
-    <h3>Detail akcie</h3>
-    <p><strong>Ticker:</strong> ${ticker}</p>
+    <h3 id="stock-title">Detail akcie</h3>
+    <p>
+      <strong id="stock-name">–</strong><br>
+      <small>Ticker: ${ticker}</small>
+    </p>
 
     <div class="kpi-row">
       <div class="kpi"><span>Poslední cena</span><strong id="stock-kpi-last">–</strong></div>
       <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change">–</strong></div>
       <div class="kpi"><span>Počet záznamů</span><strong id="stock-kpi-count">–</strong></div>
     </div>
+
+    <p id="stock-meta" class="meta">–</p>
 
     <div class="period-switch">
       <button data-period="1Y">1Y</button>
@@ -262,22 +240,32 @@ function loadStockDetail(ticker) {
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
-      document
-        .querySelectorAll('.period-switch button')
+      document.querySelectorAll('.period-switch button')
         .forEach(b => b.classList.remove('active'));
-
       btn.classList.add('active');
       loadStockData(ticker, btn.dataset.period);
     };
   });
 
+  loadStockName(ticker);
   loadStockData(ticker, '3Y');
+}
+
+async function loadStockName(ticker) {
+  try {
+    const res = await fetch(STOCK_LIST_API);
+    const stocks = await res.json();
+    const stock = stocks.find(s => s.ticker === ticker);
+    if (stock) {
+      document.getElementById('stock-name').textContent = stock.name;
+      document.getElementById('stock-title').textContent = stock.name;
+    }
+  } catch {}
 }
 
 async function loadStockData(ticker, period) {
   const res = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
   let data = await res.json();
-
   if (!Array.isArray(data)) data = [];
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -285,7 +273,6 @@ async function loadStockData(ticker, period) {
   const finalData = filtered.length ? filtered : data;
 
   renderStockKPI(finalData);
-
   renderPortfolioChart(
     finalData.map(d => ({ date: d.date, value: d.close })),
     'chart-stock'
@@ -300,17 +287,20 @@ function renderStockKPI(data) {
 
   document.getElementById('stock-kpi-last').textContent =
     `${last.close.toFixed(2)} ${last.currency}`;
-
   document.getElementById('stock-kpi-count').textContent = data.length;
 
   if (prev) {
     const diff = last.close - prev.close;
     const pct = (diff / prev.close) * 100;
     const el = document.getElementById('stock-kpi-change');
-
     el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
   }
+
+  document.getElementById('stock-meta').textContent =
+    `Datum: ${new Date(last.date).toLocaleDateString('cs-CZ')} · Objem: ${
+      last.volume?.toLocaleString('cs-CZ') || '–'
+    } · Měna: ${last.currency}`;
 }
 
 // ===================================================
@@ -320,7 +310,6 @@ let lastChartData = null;
 
 function renderPortfolioChart(history, containerId) {
   lastChartData = { history, containerId };
-
   const div = document.getElementById(containerId);
   if (!div || history.length < 2) return;
 
@@ -346,30 +335,21 @@ function renderPortfolioChart(history, containerId) {
   ctx.textAlign = 'right';
 
   for (let i = 0; i <= 5; i++) {
-    const y =
-      padding.top + (i / 5) * (h - padding.top - padding.bottom);
-
+    const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
     ctx.lineTo(w - padding.right, y);
     ctx.stroke();
-
-    ctx.fillText(
-      (max - (i / 5) * range).toFixed(2),
-      w - 8,
-      y + 4
-    );
+    ctx.fillText((max - (i / 5) * range).toFixed(2), w - 8, y + 4);
   }
 
   const points = history.map((p, i) => ({
-    x:
-      padding.left +
+    x: padding.left +
       (i / (history.length - 1)) *
-        (w - padding.left - padding.right),
-    y:
-      padding.top +
+      (w - padding.left - padding.right),
+    y: padding.top +
       ((max - p.value) / range) *
-        (h - padding.top - padding.bottom)
+      (h - padding.top - padding.bottom)
   }));
 
   ctx.beginPath();
@@ -388,13 +368,12 @@ function renderPortfolioChart(history, containerId) {
   ctx.stroke();
 }
 
+// ===================================================
 // RESIZE
+// ===================================================
 window.addEventListener('resize', () => {
   if (!lastChartData) return;
-  renderPortfolioChart(
-    lastChartData.history,
-    lastChartData.containerId
-  );
+  renderPortfolioChart(lastChartData.history, lastChartData.containerId);
 });
 
 // ===================================================
@@ -402,10 +381,8 @@ window.addEventListener('resize', () => {
 // ===================================================
 function filterPeriod(data, period) {
   if (period === 'MAX') return data;
-
   const years = period === '1Y' ? 1 : 3;
   const from = new Date();
   from.setFullYear(from.getFullYear() - years);
-
   return data.filter(d => new Date(d.date) >= from);
 }
