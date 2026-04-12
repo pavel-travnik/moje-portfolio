@@ -1,340 +1,138 @@
 body {
-  margin:0;
-  font-family:Inter, Arial, sans-serif;
-  background:#0D3512;
-}
-
-.header, .footer {
-  background:#0D3512;
-  color:white;
-  padding:16px 32px;
-}
-
-.header nav a {
-  margin-left:20px;
-  color:white;
-  text-decoration:none;
-}
-
-.layout {
-  display:grid;
-  grid-template-columns:60px 1fr 280px;
-  background:#fff;
-  min-height:80vh;
-}
-
-.content {
-  padding:40px;
-}
-
-.sidebar-right a {
-  display:block;
-  padding:12px;
-  color:#0D3512;
-  text-decoration:none;
-}
-
-/* STRÁNKA PENZE */
-.penze-page h1 {
-    margin-bottom: 32px;
-    color:#0D3512;
-}
-
-.fund-grid {
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:28px;
-}
-
-.fund-card {
-    border:2px solid #C9A24D;
-    border-radius:14px;
-    padding:24px;
-    background:#ffffff;
-    transition:.2s;
-}
-
-.fund-card:hover {
-    transform:translateY(-4px);
-    box-shadow:0 6px 20px rgba(0,0,0,.08);
-}
-
-.fund-card h2 {
-    margin:0 0 8px;
-    font-size:18px;
-    color:#0D3512;
-}
-
-.company {
-    margin:0 0 16px;
-    font-size:14px;
-    color:#555;
-}
-
-.yield {
-    font-size:15px;
-    color:#1f1f1f;
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #0D3512;
 }
 
 /* HEADER */
 .main-header {
-  background:var(--green);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:16px 32px;
-  border-bottom:1px solid rgba(255,255,255,.15);
+    background: #0D3512;
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .logo {
-  height:120px;
-}
-
-.main-nav a {
-  margin-left:24px;
-  color:white;
-  font-size:14px;
-}
-
-.main-nav a:hover {
-  color:var(--gold);
-}
-
-/* PAGE */
-.page {
-  display:grid;
-  grid-template-columns:1fr 320px;
-  gap:32px;
-  background:white;
-  padding:40px;
-}
-
-/* CONTENT */
-.card {
-  border-bottom:1px solid #e5e5e5;
-  padding-bottom:24px;
-  margin-bottom:32px;
-}
-
-.card h2 {
-  margin-top:0;
-  color:#0D3512;
-}
-
-/* SIDEBAR */
-.sidebar {
-  border-left:1px solid #e5e5e5;
-  padding-left:24px;
-}
-
-.side-links a {
-  display:block;
-  margin-bottom:14px;
-  color:#0D3512;
-  font-size:14px;
-}
-
-/* FOOTER */
-.footer {
-  background:var(--green);
-  text-align:center;
-  padding:20px;
-}
-
-.footer a {
-  color:white;
-  font-size:12px;
-  margin:0 16px;
-}
-
-.gold-text {
-  background: linear-gradient(
-    120deg,
-    #D4AF37,
-    #FFF3B0,
-    #C9A227,
-    #D4AF37
-  );
-  background-size: 200%;
-
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-
-  text-shadow:
-    0 0 10px rgba(212,175,55,0.7),
-    0 0 25px rgba(212,175,55,0.6);
-
-  animation: shine 3s infinite linear;
-}
-
-@keyframes shine {
-  0% { background-position: 0% }
-  100% { background-position: 200% }
-}
-
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-
-a:hover {
-    color: #C9A24D; /* zlatá */
+    height: 48px;
 }
 
 /* NAV */
-.main-nav {
-  position: relative;
-}
+.main-nav { position: relative; }
 
-/* DROPDOWN KONTEJNER */
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-/* TLAČÍTKO */
 .dropdown-toggle {
-  background: none;
-  border: none;
-  color: #C9A24D; /* zlatá */
-  font-size: 15px;
-  cursor: pointer;
-  padding: 8px 12px;
+    background: none;
+    border: none;
+    color: #C9A646;
+    font-size: 16px;
+    padding: 8px 12px;
 }
 
-/* MENU – SKRYTÉ */
 .dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #123f1a; /* tmavší zelená */
-  min-width: 220px;
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0,0,0,.25);
-  display: none;
-  z-index: 1000;
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #123f1a;
+    border-radius: 8px;
+    min-width: 220px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    z-index: 1000;
 }
 
-/* POLOŽKY */
+.dropdown-menu.open { display: block; }
+
 .dropdown-menu a {
-  display: block;
-  padding: 10px 16px;
-  color: white;
-  font-size: 14px;
-  text-decoration: none;
+    display: block;
+    padding: 12px 16px;
+    color: white;
 }
 
 .dropdown-menu a:hover {
-  background: rgba(255,255,255,.08);
-  color: #C9A24D;
+    background: rgba(255,255,255,.1);
+    color: #C9A646;
 }
 
-/* ZOBRAZENÍ PŘI HOVER */
-.dropdown:hover .dropdown-menu {
-  display: block;
+/* LAYOUT */
+.layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    background: white;
+    min-height: 80vh;
 }
 
-
-
-/* na mobilu zrušíme hover */
-@media (max-width: 768px) {
-    .dropdown:hover .dropdown-menu {
-        display: none;
-    }
+.content {
+    padding: 32px;
 }
 
-@media (max-width: 768px) {
-    body {
-        font-size: 16px;
-    }
-
-    small {
-        font-size: 14px;
-    }
-}    
-
-
-.period-switch {
-  margin: 16px 0;
+.sidebar {
+    border-left: 1px solid #e5e5e5;
+    padding: 24px;
 }
 
-.period-switch button {
-  margin-right: 8px;
-  padding: 6px 12px;
-  border: 1px solid #C9A646;
-  background: white;
-  cursor: pointer;
+/* KARTY */
+.fund-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
 }
 
-.period-switch button.active {
-  background: #C9A646;
-  color: white;
+.fund-card {
+    border: 2px solid #C9A646;
+    border-radius: 12px;
+    padding: 20px;
+    background: #fff;
 }
 
-.kpi-bar {
-  display: flex;
-  gap: 24px;
-  margin: 16px 0;
-}
-
+/* KPI */
 .kpi-row {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     margin: 16px 0;
 }
 
 .kpi {
-    padding: 12px 16px;
-    border: 1px solid #e5e5e5;
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
     border-radius: 8px;
-    min-width: 140px;
 }
 
-/* =====================================
-   RESPONSIVE – MOBILE FIRST
-===================================== */
+/* STAVY */
+.pos { color: green; }
+.neg { color: red; }
 
+/* FOOTER */
+.footer {
+    background: #0D3512;
+    color: white;
+    text-align: center;
+    padding: 16px;
+}
+
+/* ==========================
+   MOBILE
+========================== */
 @media (max-width: 768px) {
 
-    /* CELÝ LAYOUT JEDEN SLOUPEC */
     .layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .sidebar {
+        display: none !important;
+    }
+
+    .fund-grid {
         grid-template-columns: 1fr;
+    }
+
+    .kpi-row {
+        flex-direction: column;
     }
 
     .content {
         padding: 16px;
     }
-
-    .sidebar {
-        display: none; /* nebo přesun dolů */
-    }
-
-    /* KARTY FONDŮ / AKCIÍ */
-    .fund-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .fund-card {
-        padding: 16px;
-    }
-
-    /* KPI */
-    .kpi-row {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .kpi {
-        width: 100%;
-    }
-
-    /* NADPISY */
-    h1, h2, h3 {
-        line-height: 1.25;
-    }
 }
-
-.pos { color: green; }
-.neg { color: red; }
