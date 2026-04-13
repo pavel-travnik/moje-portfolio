@@ -210,7 +210,7 @@ function loadStocks() {
         card.className = 'fund-card';
         card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
         card.onclick = () => {
-          history.pushState({ page: `akcie/${s.ticker}` }, '', `/akcie/${s.ticker}`);
+          history.pushState({ page: `etf/${s.ticker}` }, '', `/etf/${s.ticker}`);
           loadStockDetail(s.ticker);
         };
         grid.appendChild(card);
@@ -238,9 +238,9 @@ function loadEtfs() {
      card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
      card.onclick = () => {
       history.pushState(
-       { page: `akcie/${s.ticker}` },
+       { page: `etf/${s.ticker}` },
        '',
-       `/akcie/${s.ticker}`
+       `/etf/${s.ticker}`
       );
       loadStockDetail(s.ticker);
      };
