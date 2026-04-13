@@ -204,7 +204,7 @@ function loadStocks() {
       grid.innerHTML = '';
       
      stocks
-      .filter(s => s.active === 1 && s.sector !== 'ETF')
+      .filter(s => s.sector !== 'ETF')
       .forEach(s => {
         const card = document.createElement('div');
         card.className = 'fund-card';
@@ -231,7 +231,7 @@ function loadEtfs() {
    grid.innerHTML = '';
 
    stocks
-    .filter(s => s.active === 1 && s.sector === 'ETF')
+    .filter(s => s.sector === 'ETF')
     .forEach(s => {
      const card = document.createElement('div');
      card.className = 'fund-card';
