@@ -255,6 +255,8 @@ function loadEtfs() {
         .forEach(s => {
           const card = document.createElement('div');
           card.className = 'fund-card';
+
+          // STEJNÁ STRUKTURA JAKO PENZE
           card.innerHTML = `
             <h3>${s.name}</h3>
             <small>${s.ticker}</small>
@@ -497,14 +499,26 @@ function loadCurrencies() {
     .then(r => r.json())
     .then(list => {
       grid.innerHTML = '';
+
       list.forEach(c => {
         const card = document.createElement('div');
         card.className = 'fund-card';
-        card.innerHTML = `<h3>${c.code}</h3><small>${c.name}</small>`;
+
+        // STEJNÁ STRUKTURA JAKO PENZE
+        card.innerHTML = `
+          <h3>${c.name}</h3>
+          <small>${c.code}</small>
+        `;
+
         card.onclick = () => {
-          history.pushState({ page: `meny/${c.code}` }, '', `/meny/${c.code}`);
+          history.pushState(
+            { page: `meny/${c.code}` },
+            '',
+            `/meny/${c.code}`
+          );
           loadCurrencyDetail(c.code);
         };
+
         grid.appendChild(card);
       });
     });
