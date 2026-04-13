@@ -12,6 +12,9 @@ const DPS_API_URL =
 const STOCK_API_URL =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
 
+const CURRENCY_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_currencies';
+const CURRENCY_DATA_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_currency_data';
+
 const STOCK_LIST_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
 
@@ -78,6 +81,11 @@ function loadPage(page, pushState = true) {
   return;
  }
 
+ if (page.startsWith('meny/')) {
+  loadCurrencyDetail(page.split('/')[1]);
+  return;
+ }
+
  if (page.startsWith('etf/')) {
   loadStockDetail(page.split('/')[1]);
   return;
@@ -89,6 +97,7 @@ function loadPage(page, pushState = true) {
    main.innerHTML = html;
    if (page === 'penze') loadPensionFunds();
    if (page === 'akcie') loadStocks();
+   if (page === 'meny') loadCurrencies();
    if (page === 'etf') loadEtfs();
    if (pushState) history.pushState({ page }, '', `/${page}`);
   })
@@ -469,4 +478,107 @@ function filterPeriod(data, period) {
   }
 
   return data.filter(d => new Date(d.date) >= from);
+}
+
+
+// ===================================================
+// MĚNY – PŘEHLED
+// ===================================================
+function loadCurrencies() {
+  const grid = document.getElementById('currencyGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '<p>Načítám měny…</p>';
+
+  fetch(CURRENCY_LIST_API)
+    .then(r => r.json())
+    .then(list => {
+      grid.innerHTML = '';
+      list.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'fund-card';
+        card.innerHTML = `<h3>${c.code}</h3><small>${c.name}</small>`;
+        card.onclick = () => {
+          history.pushState({ page: `meny/${c.code}` }, '', `/meny/${c.code}`);
+          loadCurrencyDetail(c.code);
+        };
+        grid.appendChild(card);
+      });
+    });
+}
+
+// ===================================================
+// DETAIL MĚNY
+// ===================================================
+function loadCurrencyDetail(code) {
+  main.innerHTML = `
+    <h3>Detail měny</h3>
+    <p><strong>${code}</strong></p>
+
+    <div class="kpi-row">
+      <div class="kpi"><span>Aktuální kurz</span><strong id="cur-kpi-last">–</strong></div>
+      <div class="kpi"><span>Změna</span><strong id="cur-kpi-change">–</strong></div>
+      <div class="kpi"><span>Záznamů</span><strong id="cur-kpi-count">–</strong></div>
+    </div>
+
+    <div class="period-switch">
+      <button data-period="1M">1M</button>
+      <button data-period="6M">6M</button>
+      <button data-period="1Y">1Y</button>
+      <button data-period="3Y" class="active">3Y</button>
+      <button data-period="MAX">MAX</button>
+    </div>
+
+    <div id="chart-currency"></div>
+    <button class="back-btn">← Zpět</button>
+  `;
+
+  document.querySelector('.back-btn').onclick = () => history.back();
+
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.period-switch button')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadCurrencyData(code, btn.dataset.period);
+    };
+  });
+
+  loadCurrencyData(code, '3Y');
+}
+
+async function loadCurrencyData(code, period) {
+  const res = await fetch(`${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`);
+  let data = await res.json();
+  if (!Array.isArray(data)) data = [];
+
+  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const filtered = filterPeriod(data, period);
+  const finalData = filtered.length ? filtered : data;
+
+  renderCurrencyKPI(finalData);
+  renderPortfolioChart(
+    finalData.map(d => ({ date: d.date, value: d.value })),
+    'chart-currency'
+  );
+}
+
+function renderCurrencyKPI(data) {
+  if (!data.length) return;
+
+  const last = data.at(-1);
+  const prev = data.at(-2);
+
+  document.getElementById('cur-kpi-last').textContent =
+    `${last.value.toFixed(4)} CZK`;
+
+  document.getElementById('cur-kpi-count').textContent = data.length;
+
+  if (prev) {
+    const diff = last.value - prev.value;
+    const pct = (diff / prev.value) * 100;
+    const el = document.getElementById('cur-kpi-change');
+    el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
+    el.className = diff >= 0 ? 'pos' : 'neg';
+  }
 }
