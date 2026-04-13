@@ -240,35 +240,38 @@ function loadStocks() {
 
 
 function loadEtfs() {
- const grid = document.getElementById('etfGrid');
- if (!grid) return;
+  const grid = document.getElementById('etfGrid');
+  if (!grid) return;
 
- grid.innerHTML = '<p>Načítám ETF…</p>';
+  grid.innerHTML = '<p>Načítám ETF…</p>';
 
- fetch(STOCK_LIST_API)
-  .then(r => r.json())
-  .then(stocks => {
-   grid.innerHTML = '';
+  fetch(STOCK_LIST_API)
+    .then(r => r.json())
+    .then(stocks => {
+      grid.innerHTML = '';
 
-   stocks
-    .filter(s => s.sector === 'ETF')
-    .forEach(s => {
-     const card = document.createElement('div');
-     card.className = 'fund-card';
-     card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
-     card.onclick = () => {
+      stocks
+        .filter(s => s.sector === 'ETF')
+        .forEach(s => {
+          const card = document.createElement('div');
+          card.className = 'fund-card';
+          card.innerHTML = `
+            <h3>${s.name}</h3>
+            <small>${s.ticker}</small>
+          `;
 
-history.pushState(
-  { page: `etf/${s.ticker}` },
-  '',
-  `/etf/${s.ticker}`
-);
+          card.onclick = () => {
+            history.pushState(
+              { page: `etf/${s.ticker}` },
+              '',
+              `/etf/${s.ticker}`
+            );
+            loadStockDetail(s.ticker);
+          };
 
-      loadStockDetail(s.ticker);
-     };
-     grid.appendChild(card);
+          grid.appendChild(card);
+        });
     });
-  });
 }
 
 // ===================================================
