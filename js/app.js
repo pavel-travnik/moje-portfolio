@@ -53,7 +53,14 @@ window.addEventListener('popstate', e => {
 // ===================================================
 (function init() {
   const path = location.pathname.replace(/^\/+/, '');
-  loadPage(path || 'penze', false);
+
+  // pokud je root (/), zobraz úvodní stránku
+  if (!path || path === 'index.html') {
+    loadPage('uvod', false);
+    return;
+  }
+
+  loadPage(path, false);
 })();
 
 // ===================================================
@@ -132,11 +139,15 @@ function loadFundDetail(isin) {
       <div class="kpi"><span>Počet záznamů</span><strong id="kpi-count">–</strong></div>
     </div>
 
-    <div class="period-switch">
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
-    </div>
+
+<div class="period-switch">
+  <button data-period="1M">1M</button>
+  <button data-period="6M">6M</button>
+  <button data-period="1Y">1Y</button>
+  <button data-period="3Y" class="active">3Y</button>
+  <button data-period="MAX">MAX</button>
+</div>
+
 
     <div id="chart-portfolio"></div>
     <button class="back-btn">← Zpět</button>
@@ -237,11 +248,13 @@ function loadEtfs() {
      card.className = 'fund-card';
      card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
      card.onclick = () => {
-      history.pushState(
-       { page: `etf/${s.ticker}` },
-       '',
-       `/etf/${s.ticker}`
-      );
+
+history.pushState(
+  { page: `etf/${s.ticker}` },
+  '',
+  `/etf/${s.ticker}`
+);
+
       loadStockDetail(s.ticker);
      };
      grid.appendChild(card);
@@ -278,11 +291,15 @@ function loadStockDetail(ticker) {
 
     <p id="stock-meta" class="meta">–</p>
 
-    <div class="period-switch">
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
-    </div>
+
+<div class="period-switch">
+  <button data-period="1M">1M</button>
+  <button data-period="6M">6M</button>
+  <button data-period="1Y">1Y</button>
+  <button data-period="3Y" class="active">3Y</button>
+  <button data-period="MAX">MAX</button>
+</div>
+
 
     <div id="chart-stock"></div>
     <button class="back-btn">← Zpět</button>
@@ -438,8 +455,18 @@ window.addEventListener('resize', () => {
 // ===================================================
 function filterPeriod(data, period) {
   if (period === 'MAX') return data;
-  const years = period === '1Y' ? 1 : 3;
+
   const from = new Date();
-  from.setFullYear(from.getFullYear() - years);
+
+  if (period === '1M') {
+    from.setMonth(from.getMonth() - 1);
+  } else if (period === '6M') {
+    from.setMonth(from.getMonth() - 6);
+  } else if (period === '1Y') {
+    from.setFullYear(from.getFullYear() - 1);
+  } else if (period === '3Y') {
+    from.setFullYear(from.getFullYear() - 3);
+  }
+
   return data.filter(d => new Date(d.date) >= from);
 }
