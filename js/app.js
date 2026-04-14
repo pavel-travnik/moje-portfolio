@@ -191,13 +191,11 @@ function loadFundDetail(isin) {
   `;
 
   
+
 document.querySelector('.back-btn').onclick = () => {
-  if (history.length > 1) {
-    history.back();
-  } else {
-    loadPage('penze', true); // nebo 'akcie' / 'meny'
-  }
+  loadPage('penze', true);
 };
+
 
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -356,13 +354,11 @@ function loadStockDetail(ticker) {
   `;
 
   
+
 document.querySelector('.back-btn').onclick = () => {
-  if (history.length > 1) {
-    history.back();
-  } else {
-    loadPage('akcie', true); // nebo 'akcie' / 'meny'
-  }
+  loadPage('akcie', true);
 };
+
 
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -595,13 +591,11 @@ function loadCurrencyDetail(code) {
   `;
 
   
+
 document.querySelector('.back-btn').onclick = () => {
-  if (history.length > 1) {
-    history.back();
-  } else {
-    loadPage('meny', true); // nebo 'akcie' / 'meny'
-  }
+  loadPage('meny', true);
 };
+
 
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
