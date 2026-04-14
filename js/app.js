@@ -1,5 +1,5 @@
 // ===================================================
-// HLAVNÍ KONTEJNER
+// HLAVNi KONTEJNER
 // ===================================================
 const main = document.getElementById('mainContent');
 
@@ -8,69 +8,76 @@ const main = document.getElementById('mainContent');
 // ===================================================
 const DPS_API_URL =
   'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
-const DPS_FUNDS_API =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds';
+
 const STOCK_API_URL =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
+
+const CURRENCY_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_currencies';
+const CURRENCY_DATA_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_currency_data';
+
 const STOCK_LIST_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
-const CURRENCY_LIST_API =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_currencies';
-const CURRENCY_DATA_API =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_currency_data';
 
 // ===================================================
-// MENU SPA NAVIGACE – POZOR: JEN MENU
+// DROPDOWN MOBILE SAFE
 // ===================================================
-function initMenuNavigation() {
-  document.querySelectorAll('a[data-page]').forEach(link => {
-    link.onclick = e => {
-      e.preventDefault();
-      const page = link.dataset.page;
-      closeDropdown();
-      loadPage(page);
-    };
-  });
-}
 
-// ===================================================
-// DROPDOWN
-// ===================================================
-const dropdownToggle = document.querySelector('.dropdown-toggle');
-const dropdownMenu = document.querySelector('.dropdown-menu');
+document.addEventListener('click', e => {
+  const link = e.target.closest('a[data-page]');
+  if (!link) return;
 
-function closeDropdown() {
-  dropdownMenu?.classList.remove('open');
-}
-
-dropdownToggle?.addEventListener('click', e => {
   e.preventDefault();
-  e.stopPropagation();
-  dropdownMenu.classList.toggle('open');
+  e.stopImmediatePropagation();
+
+  const page = link.dataset.page;
+
+  // zavĹ™Ă­t dropdown (jinak zĹŻstane otevĹ™enĂ˝)
+  document.querySelector('.dropdown-menu')?.classList.remove('open');
+
+  loadPage(page);
 });
 
-document.addEventListener('click', () => closeDropdown());
 
 // ===================================================
-// HISTORY
+// SPA NAVIGATION
 // ===================================================
-window.onpopstate = e => {
+document.addEventListener('click', e => {
+  const link = e.target.closest('a[data-page]');
+  if (!link) return;
+  e.preventDefault();
+  e.stopPropagation();
+  loadPage(link.dataset.page);
+});
+
+window.addEventListener('popstate', e => {
   if (e.state?.page) loadPage(e.state.page, false);
-};
+});
 
 // ===================================================
 // INIT
 // ===================================================
-(() => {
-  initMenuNavigation();
+(function init() {
   const path = location.pathname.replace(/^\/+/, '');
-  loadPage(path || 'uvod', false);
+
+  // pokud je root (/), zobraz ĂşvodnĂ­ strĂˇnku
+  if (!path || path === 'index.html') {
+    loadPage('uvod', false);
+    return;
+  }
+
+  loadPage(path, false);
 })();
 
 // ===================================================
 // ROUTER
 // ===================================================
 function loadPage(page, pushState = true) {
+
+
+  // đź‘‰ kdyĹľ jsme v detailu a klikneme na menu
+  if (page.includes('/')) {
+    page = page.split('/')[0];
+  }
 
   if (page.startsWith('penze/')) {
     loadFundDetail(page.split('/')[1]);
@@ -82,35 +89,54 @@ function loadPage(page, pushState = true) {
     return;
   }
 
-  if (page.startsWith('meny/')) {
-    loadCurrencyDetail(page.split('/')[1]);
-    return;
-  }
 
-  fetch(`pages/${page}.html`)
-    .then(r => r.text())
-    .then(html => {
-      main.innerHTML = html;
+ if (page.startsWith('penze/')) {
+  loadFundDetail(page.split('/')[1]);
+  return;
+ }
 
-      if (page === 'penze') loadPensionFunds();
-      if (page === 'akcie') loadStocks();
-      if (page === 'etf') loadEtfs();
-      if (page === 'meny') loadCurrencies();
+ if (page.startsWith('akcie/')) {
+  loadStockDetail(page.split('/')[1]);
+  return;
+ }
 
-      if (pushState) history.pushState({ page }, '', `/${page}`);
-    });
+ if (page.startsWith('meny/')) {
+  loadCurrencyDetail(page.split('/')[1]);
+  return;
+ }
+
+ if (page.startsWith('etf/')) {
+  loadStockDetail(page.split('/')[1]);
+  return;
+ }
+
+ fetch(`pages/${page}.html`)
+  .then(r => r.ok ? r.text() : Promise.reject())
+  .then(html => {
+   main.innerHTML = html;
+   if (page === 'penze') loadPensionFunds();
+   if (page === 'akcie') loadStocks();
+   if (page === 'meny') loadCurrencies();
+   if (page === 'etf') loadEtfs();
+   if (pushState) history.pushState({ page }, '', `/${page}`);
+  })
+  .catch(() => {
+   main.innerHTML = '<h3>404</h3><p>StrĂˇnka nenalezena</p>';
+  });
 }
 
 // ===================================================
-// PENZE – PŘEHLED
+// PENZE preHLED
 // ===================================================
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   if (!grid) return;
 
-  grid.innerHTML = 'Načítám…';
+  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm fondyâ€¦</p>';
 
-  fetch(DPS_FUNDS_API)
+  fetch(
+    'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds'
+  )
     .then(r => r.json())
     .then(funds => {
       grid.innerHTML = '';
@@ -133,49 +159,55 @@ function loadPensionFunds() {
 function loadFundDetail(isin) {
   main.innerHTML = `
     <h3>Detail fondu</h3>
+    <p><strong>ISIN:</strong> ${isin}</p>
+
     <div class="kpi-row">
-      <div class="kpi"><span>Hodnota</span><strong id="kpi-last">–</strong></div>
-      <div class="kpi"><span>Změna</span><strong id="kpi-change">–</strong></div>
-      <div class="kpi"><span>Záznamů</span><strong id="kpi-count">–</strong></div>
+      <div class="kpi"><span>PoslednĂ­ hodnota</span><strong id="kpi-last">â€“</strong></div>
+      <div class="kpi"><span>ZmÄ›na</span><strong id="kpi-change">â€“</strong></div>
+      <div class="kpi"><span>PoÄŤet zĂˇznamĹŻ</span><strong id="kpi-count">â€“</strong></div>
     </div>
-    <div class="period-switch">
-      <button data-period="1M">1M</button>
-      <button data-period="6M">6M</button>
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
-    </div>
+
+
+<div class="period-switch">
+  <button data-period="1M">1M</button>
+  <button data-period="6M">6M</button>
+  <button data-period="1Y">1Y</button>
+  <button data-period="3Y" class="active">3Y</button>
+  <button data-period="MAX">MAX</button>
+</div>
+
+
     <div id="chart-portfolio"></div>
-    <button class="back-btn">← Zpět</button>
+    <button class="back-btn">â† ZpÄ›t</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
 
-  document.querySelectorAll('.period-switch button').forEach(b => {
-    b.onclick = () => {
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
       document.querySelectorAll('.period-switch button')
-        .forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      loadDPS(isin, b.dataset.period);
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadDPS(isin, btn.dataset.period);
     };
   });
 
   loadDPS(isin, '3Y');
 }
 
-// ===================================================
-// PENZE DATA
-// ===================================================
 async function loadDPS(isin, period) {
-  const r = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
-  let data = await r.json();
-  if (!Array.isArray(data)) return;
+  const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
+  let data = await res.json();
+  if (!Array.isArray(data)) data = [];
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
   data = filterPeriod(data, period);
 
   renderFundKPI(data);
-  renderChart(data.map(d => ({ value: d.value })), 'chart-portfolio');
+  renderPortfolioChart(
+    data.map(d => ({ date: d.date, value: d.value })),
+    'chart-portfolio'
+  );
 }
 
 function renderFundKPI(data) {
@@ -189,7 +221,7 @@ function renderFundKPI(data) {
 
   if (prev) {
     const diff = last.value - prev.value;
-    const pct = diff / prev.value * 100;
+    const pct = (diff / prev.value) * 100;
     const el = document.getElementById('kpi-change');
     el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
@@ -197,45 +229,334 @@ function renderFundKPI(data) {
 }
 
 // ===================================================
-// AKCIE / ETF – PŘEHLEDY
+// AKCIE preEHLED
 // ===================================================
-function loadStocks() { loadStockGrid(false); }
-function loadEtfs() { loadStockGrid(true); }
-
-function loadStockGrid(isETF) {
-  const grid = document.getElementById(isETF ? 'etfGrid' : 'stockGrid');
+function loadStocks() {
+  const grid = document.getElementById('stockGrid');
   if (!grid) return;
 
-  grid.innerHTML = 'Načítám…';
+  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm akcieâ€¦</p>';
 
   fetch(STOCK_LIST_API)
     .then(r => r.json())
-    .then(list => {
+    .then(stocks => {
       grid.innerHTML = '';
-      list.filter(s => (s.sector === 'ETF') === isETF)
+      
+     stocks
+      .filter(s => s.sector !== 'ETF')
+      .forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'fund-card';
+        card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
+        card.onclick = () => {
+          history.pushState({ page: `etf/${s.ticker}` }, '', `/etf/${s.ticker}`);
+          loadStockDetail(s.ticker);
+        };
+        grid.appendChild(card);
+      });
+    });
+}
+
+
+function loadEtfs() {
+  const grid = document.getElementById('etfGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm ETFâ€¦</p>';
+
+  fetch(STOCK_LIST_API)
+    .then(r => r.json())
+    .then(stocks => {
+      grid.innerHTML = '';
+
+      stocks
+        .filter(s => s.sector === 'ETF')
         .forEach(s => {
           const card = document.createElement('div');
           card.className = 'fund-card';
-          card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
+
+          // STEJNĂ STRUKTURA JAKO PENZE
+          card.innerHTML = `
+            <h3>${s.name}</h3>
+            <small>${s.ticker}</small>
+          `;
+
           card.onclick = () => {
-            history.pushState({ page: `etf/${s.ticker}` }, '', `/etf/${s.ticker}`);
+            history.pushState(
+              { page: `etf/${s.ticker}` },
+              '',
+              `/etf/${s.ticker}`
+            );
             loadStockDetail(s.ticker);
           };
+
           grid.appendChild(card);
         });
     });
 }
 
 // ===================================================
-// DETAIL AKCIE / ETF
+// DETAIL AKCIE
 // ===================================================
 function loadStockDetail(ticker) {
   main.innerHTML = `
-    <h3>Detail ${ticker}</h3>
+    <h3 id="stock-title">Detail akcie</h3>
+    <p>
+      <strong id="stock-name">â€“</strong><br>
+      <small>ID: ${ticker}</small>
+    </p>
+
+<div class="kpi-row">
+  <div class="kpi">
+    <span>PoslednĂ­ cena</span>
+    <strong id="stock-kpi-last">â€“</strong>
+  </div>
+  <div class="kpi">
+    <span>DennĂ­ zmÄ›na</span>
+    <strong id="stock-kpi-change">â€“</strong>
+  </div>
+  <div class="kpi">
+    <span>Objem</span>
+    <strong id="stock-kpi-volume">â€“</strong>
+  </div>
+</div>
+
+
+    <p id="stock-meta" class="meta">â€“</p>
+
+
+<div class="period-switch">
+  <button data-period="1M">1M</button>
+  <button data-period="6M">6M</button>
+  <button data-period="1Y">1Y</button>
+  <button data-period="3Y" class="active">3Y</button>
+  <button data-period="MAX">MAX</button>
+</div>
+
+
+    <div id="chart-stock"></div>
+    <button class="back-btn">â† ZpÄ›t</button>
+  `;
+
+  document.querySelector('.back-btn').onclick = () => history.back();
+
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.period-switch button')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadStockData(ticker, btn.dataset.period);
+    };
+  });
+
+  loadStockName(ticker);
+  loadStockData(ticker, '3Y');
+}
+
+async function loadStockName(ticker) {
+  try {
+    const res = await fetch(STOCK_LIST_API);
+    const stocks = await res.json();
+    const stock = stocks.find(s => s.ticker === ticker);
+    if (stock) {
+      document.getElementById('stock-name').textContent = stock.name;
+      document.getElementById('stock-title').textContent = stock.name;
+    }
+  } catch {}
+}
+
+async function loadStockData(ticker, period) {
+  const res = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
+  let data = await res.json();
+  if (!Array.isArray(data)) data = [];
+
+  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const filtered = filterPeriod(data, period);
+  const finalData = filtered.length ? filtered : data;
+
+  renderStockKPI(finalData);
+  renderPortfolioChart(
+    finalData.map(d => ({ date: d.date, value: d.close })),
+    'chart-stock'
+  );
+}
+
+function renderStockKPI(data) {
+  if (!data.length) return;
+
+  const last = data.at(-1);
+  const prev = data.at(-2);
+
+  const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
+
+  // PoslednĂ­ cena + datum v zĂˇvorce
+  document.getElementById('stock-kpi-last').textContent =
+    `${last.close.toFixed(2)} ${last.currency} (${dateStr})`;
+
+  // Objem
+  document.getElementById('stock-kpi-volume').textContent =
+    last.volume?.toLocaleString('cs-CZ') || 'â€“';
+
+  // DennĂ­ zmÄ›na
+  if (prev) {
+    const diff = last.close - prev.close;
+    const pct = (diff / prev.close) * 100;
+    const el = document.getElementById('stock-kpi-change');
+
+    el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
+    el.className = diff >= 0 ? 'pos' : 'neg';
+  } else {
+    document.getElementById('stock-kpi-change').textContent = 'â€“';
+  }
+}
+
+// ===================================================
+// GRAF (SPOLEcne)
+// ===================================================
+let lastChartData = null;
+
+function renderPortfolioChart(history, containerId) {
+  lastChartData = { history, containerId };
+  const div = document.getElementById(containerId);
+  if (!div || history.length < 2) return;
+
+  div.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = div.clientWidth;
+  canvas.height = Math.min(div.clientWidth * 0.65, 320);
+  div.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const padding = { top: 20, right: 60, bottom: 30, left: 20 };
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const values = history.map(p => p.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  ctx.strokeStyle = '#e6e6e6';
+  ctx.fillStyle = '#666';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'right';
+
+  for (let i = 0; i <= 5; i++) {
+    const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(w - padding.right, y);
+    ctx.stroke();
+    ctx.fillText((max - (i / 5) * range).toFixed(2), w - 8, y + 4);
+  }
+
+  const points = history.map((p, i) => ({
+    x: padding.left +
+      (i / (history.length - 1)) *
+      (w - padding.left - padding.right),
+    y: padding.top +
+      ((max - p.value) / range) *
+      (h - padding.top - padding.bottom)
+  }));
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, h - padding.bottom);
+  points.forEach(pt => ctx.lineTo(pt.x, pt.y));
+  ctx.lineTo(points.at(-1).x, h - padding.bottom);
+  ctx.fillStyle = 'rgba(201,162,70,0.15)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#C9A646';
+  ctx.lineWidth = 2;
+  points.forEach((pt, i) =>
+    i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
+  );
+  ctx.stroke();
+}
+
+// ===================================================
+// RESIZE
+// ===================================================
+window.addEventListener('resize', () => {
+  if (!lastChartData) return;
+  renderPortfolioChart(lastChartData.history, lastChartData.containerId);
+});
+
+// ===================================================
+// FILTRACE OBDOBi
+// ===================================================
+function filterPeriod(data, period) {
+  if (period === 'MAX') return data;
+
+  const from = new Date();
+
+  if (period === '1M') {
+    from.setMonth(from.getMonth() - 1);
+  } else if (period === '6M') {
+    from.setMonth(from.getMonth() - 6);
+  } else if (period === '1Y') {
+    from.setFullYear(from.getFullYear() - 1);
+  } else if (period === '3Y') {
+    from.setFullYear(from.getFullYear() - 3);
+  }
+
+  return data.filter(d => new Date(d.date) >= from);
+}
+
+
+// ===================================================
+// MeNY PreHLED
+// ===================================================
+function loadCurrencies() {
+  const grid = document.getElementById('currencyGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm mÄ›nyâ€¦</p>';
+
+  fetch(CURRENCY_LIST_API)
+    .then(r => r.json())
+    .then(list => {
+      grid.innerHTML = '';
+
+      list.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'fund-card';
+
+        // STEJNĂ STRUKTURA JAKO PENZE
+        card.innerHTML = `
+          <h3>${c.name}</h3>
+          <small>${c.code}</small>
+        `;
+
+        card.onclick = () => {
+          history.pushState(
+            { page: `meny/${c.code}` },
+            '',
+            `/meny/${c.code}`
+          );
+          loadCurrencyDetail(c.code);
+        };
+
+        grid.appendChild(card);
+      });
+    });
+}
+
+// ===================================================
+// DETAIL MeNY
+// ===================================================
+function loadCurrencyDetail(code) {
+  main.innerHTML = `
+    <h3>Detail mÄ›ny</h3>
+    <p><strong>${code}</strong></p>
+
     <div class="kpi-row">
-      <div class="kpi"><span>Cena</span><strong id="stock-last">–</strong></div>
-      <div class="kpi"><span>Změna</span><strong id="stock-change">–</strong></div>
+      <div class="kpi"><span>AktuĂˇlnĂ­ kurz</span><strong id="cur-kpi-last">â€“</strong></div>
+      <div class="kpi"><span>ZmÄ›na</span><strong id="cur-kpi-change">â€“</strong></div>
+      <div class="kpi"><span>ZĂˇznamĹŻ</span><strong id="cur-kpi-count">â€“</strong></div>
     </div>
+
     <div class="period-switch">
       <button data-period="1M">1M</button>
       <button data-period="6M">6M</button>
@@ -243,120 +564,57 @@ function loadStockDetail(ticker) {
       <button data-period="3Y" class="active">3Y</button>
       <button data-period="MAX">MAX</button>
     </div>
-    <div id="chart-stock"></div>
-    <button class="back-btn">← Zpět</button>
+
+    <div id="chart-currency"></div>
+    <button class="back-btn">â† ZpÄ›t</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
-  document.querySelectorAll('.period-switch button').forEach(b => {
-    b.onclick = () => {
+
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
       document.querySelectorAll('.period-switch button')
-        .forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      loadStockData(ticker, b.dataset.period);
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadCurrencyData(code, btn.dataset.period);
     };
   });
 
-  loadStockData(ticker, '3Y');
+  loadCurrencyData(code, '3Y');
 }
 
-async function loadStockData(ticker, period) {
-  const r = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
-  let data = await r.json();
-  if (!Array.isArray(data)) return;
+async function loadCurrencyData(code, period) {
+  const res = await fetch(`${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`);
+  let data = await res.json();
+  if (!Array.isArray(data)) data = [];
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  data = filterPeriod(data, period);
+  const filtered = filterPeriod(data, period);
+  const finalData = filtered.length ? filtered : data;
 
-  document.getElementById('stock-last').textContent =
-    `${data.at(-1).close.toFixed(2)} ${data.at(-1).currency}`;
-
-  renderChart(data.map(d => ({ value: d.close })), 'chart-stock');
+  renderCurrencyKPI(finalData);
+  renderPortfolioChart(
+    finalData.map(d => ({ date: d.date, value: d.value })),
+    'chart-currency'
+  );
 }
 
-// ===================================================
-// MĚNY – PŘEHLED & DETAIL
-// ===================================================
-function loadCurrencies() {
-  const grid = document.getElementById('currencyGrid');
-  if (!grid) return;
+function renderCurrencyKPI(data) {
+  if (!data.length) return;
 
-  grid.innerHTML = 'Načítám…';
+  const last = data.at(-1);
+  const prev = data.at(-2);
 
-  fetch(CURRENCY_LIST_API)
-    .then(r => r.json())
-    .then(list => {
-      grid.innerHTML = '';
-      list.forEach(c => {
-        const card = document.createElement('div');
-        card.className = 'fund-card';
-        card.innerHTML = `<h3>${c.name}</h3><small>${c.code}</small>`;
-        card.onclick = () => {
-          history.pushState({ page: `meny/${c.code}` }, '', `/meny/${c.code}`);
-          loadCurrencyDetail(c.code);
-        };
-        grid.appendChild(card);
-      });
-    });
-}
+  document.getElementById('cur-kpi-last').textContent =
+    `${last.value.toFixed(4)} CZK`;
 
-function loadCurrencyDetail(code) {
-  main.innerHTML = `
-    <h3>Měna ${code}</h3>
-    <div id="chart-currency"></div>
-    <button class="back-btn">← Zpět</button>
-  `;
-  document.querySelector('.back-btn').onclick = () => history.back();
-  loadCurrencyData(code);
-}
+  document.getElementById('cur-kpi-count').textContent = data.length;
 
-async function loadCurrencyData(code) {
-  const r = await fetch(`${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`);
-  let data = await r.json();
-  if (!Array.isArray(data)) return;
-  renderChart(data.map(d => ({ value: d.value })), 'chart-currency');
-}
-
-// ===================================================
-// GRAF – SPOLEČNÝ
-// ===================================================
-function renderChart(points, id) {
-  const div = document.getElementById(id);
-  if (!div || points.length < 2) return;
-
-  div.innerHTML = '';
-  const c = document.createElement('canvas');
-  c.width = div.clientWidth;
-  c.height = 260;
-  div.appendChild(c);
-
-  const ctx = c.getContext('2d');
-  const values = points.map(p => p.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-
-  ctx.strokeStyle = '#C9A646';
-  ctx.beginPath();
-
-  points.forEach((p, i) => {
-    const x = i / (points.length - 1) * c.width;
-    const y = c.height - ((p.value - min) / range * c.height);
-    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-  });
-
-  ctx.stroke();
-}
-
-// ===================================================
-// FILTRACE OBDOBÍ
-// ===================================================
-function filterPeriod(data, period) {
-  if (period === 'MAX') return data;
-  const from = new Date();
-  if (period === '1M') from.setMonth(from.getMonth() - 1);
-  if (period === '6M') from.setMonth(from.getMonth() - 6);
-  if (period === '1Y') from.setFullYear(from.getFullYear() - 1);
-  if (period === '3Y') from.setFullYear(from.getFullYear() - 3);
-  return data.filter(d => new Date(d.date) >= from);
+  if (prev) {
+    const diff = last.value - prev.value;
+    const pct = (diff / prev.value) * 100;
+    const el = document.getElementById('cur-kpi-change');
+    el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
+    el.className = diff >= 0 ? 'pos' : 'neg';
+  }
 }
