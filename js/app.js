@@ -98,6 +98,15 @@ document.addEventListener('click', e => {
 // ===================================================
 function loadPage(page, pushState = true) {
 
+  
+  if (!page || typeof page !== 'string') {
+    console.warn('loadPage called with invalid page:', page);
+    return;
+  }
+
+  page = page.replace(/^\/+/, '').replace(/\/+$/, '');
+
+
   // ✅ DETAILY – MUSÍ BÝT JAKO PRVNÍ
   if (page.startsWith('penze/')) {
     loadFundDetail(page.split('/')[1]);
