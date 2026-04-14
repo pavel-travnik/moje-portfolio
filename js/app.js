@@ -187,10 +187,18 @@ function loadFundDetail(isin) {
 
 
     <div id="chart-portfolio"></div>
-    <button class="back-btn">Zpět</button>
+    <button class="back-btn">← Zpět</button>
   `;
 
-  document.querySelector('.back-btn').onclick = () => history.back();
+  
+document.querySelector('.back-btn').onclick = () => {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    loadPage('penze', true); // nebo 'akcie' / 'meny'
+  }
+};
+
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
@@ -347,7 +355,15 @@ function loadStockDetail(ticker) {
     <button class="back-btn">← Zpět</button>
   `;
 
-  document.querySelector('.back-btn').onclick = () => history.back();
+  
+document.querySelector('.back-btn').onclick = () => {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    loadPage('akcie', true); // nebo 'akcie' / 'meny'
+  }
+};
+
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
@@ -575,10 +591,18 @@ function loadCurrencyDetail(code) {
     </div>
 
     <div id="chart-currency"></div>
-    <button class="back-btn">-- zpět</button>
+    <button class="back-btn">← Zpět</button>
   `;
 
-  document.querySelector('.back-btn').onclick = () => history.back();
+  
+document.querySelector('.back-btn').onclick = () => {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    loadPage('meny', true); // nebo 'akcie' / 'meny'
+  }
+};
+
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
