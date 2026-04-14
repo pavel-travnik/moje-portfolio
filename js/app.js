@@ -151,9 +151,7 @@ function loadFundDetail(isin) {
 
   
 
-document.querySelector('.back-btn').onclick = () => {
-  loadPage('penze', true);
-};
+document.querySelector('.back-btn').onclick = () => history.back();
 
 
 
@@ -314,9 +312,7 @@ function loadStockDetail(ticker) {
 
   
 
-document.querySelector('.back-btn').onclick = () => {
-  loadPage('akcie', true);
-};
+document.querySelector('.back-btn').onclick = () => history.back();
 
 
 
@@ -551,9 +547,7 @@ function loadCurrencyDetail(code) {
 
   
 
-document.querySelector('.back-btn').onclick = () => {
-  loadPage('meny', true);
-};
+document.querySelector('.back-btn').onclick = () => history.back();
 
 
 
