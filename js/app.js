@@ -84,7 +84,7 @@ document.addEventListener('click', e => {
 (function init() {
   const path = location.pathname.replace(/^\/+/, '');
 
-  // pokud je root (/), zobraz ĂşvodnĂ­ strĂˇnku
+  // pokud je root (/), zobraz uvondi­ stranku
   if (!path || path === 'index.html') {
     loadPage('uvod', false);
     return;
@@ -98,12 +98,7 @@ document.addEventListener('click', e => {
 // ===================================================
 function loadPage(page, pushState = true) {
 
-
-  // đź‘‰ kdyĹľ jsme v detailu a klikneme na menu
-  if (page.includes('/')) {
-    page = page.split('/')[0];
-  }
-
+  // ✅ DETAILY – MUSÍ BÝT JAKO PRVNÍ
   if (page.startsWith('penze/')) {
     loadFundDetail(page.split('/')[1]);
     return;
@@ -114,40 +109,29 @@ function loadPage(page, pushState = true) {
     return;
   }
 
+  if (page.startsWith('meny/')) {
+    loadCurrencyDetail(page.split('/')[1]);
+    return;
+  }
 
- if (page.startsWith('penze/')) {
-  loadFundDetail(page.split('/')[1]);
-  return;
- }
+  // ✅ AŽ TADY sjednotíš na overview
+  page = page.split('/')[0];
 
- if (page.startsWith('akcie/')) {
-  loadStockDetail(page.split('/')[1]);
-  return;
- }
+  fetch(`pages/${page}.html`)
+    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(html => {
+      main.innerHTML = html;
 
- if (page.startsWith('meny/')) {
-  loadCurrencyDetail(page.split('/')[1]);
-  return;
- }
+      if (page === 'penze') loadPensionFunds();
+      if (page === 'akcie') loadStocks();
+      if (page === 'meny') loadCurrencies();
+      if (page === 'etf') loadEtfs();
 
- if (page.startsWith('etf/')) {
-  loadStockDetail(page.split('/')[1]);
-  return;
- }
-
- fetch(`pages/${page}.html`)
-  .then(r => r.ok ? r.text() : Promise.reject())
-  .then(html => {
-   main.innerHTML = html;
-   if (page === 'penze') loadPensionFunds();
-   if (page === 'akcie') loadStocks();
-   if (page === 'meny') loadCurrencies();
-   if (page === 'etf') loadEtfs();
-   if (pushState) history.pushState({ page }, '', `/${page}`);
-  })
-  .catch(() => {
-   main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
-  });
+      if (pushState) history.pushState({ page }, '', `/${page}`);
+    })
+    .catch(() => {
+      main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
+    });
 }
 
 // ===================================================
@@ -300,7 +284,7 @@ function loadEtfs() {
           const card = document.createElement('div');
           card.className = 'fund-card';
 
-          // STEJNĂ STRUKTURA JAKO PENZE
+          // STEJNa STRUKTURA JAKO PENZE
           card.innerHTML = `
             <h3>${s.name}</h3>
             <small>${s.ticker}</small>
@@ -573,7 +557,7 @@ function loadCurrencies() {
 // ===================================================
 function loadCurrencyDetail(code) {
   main.innerHTML = `
-    <h3>Detail mÄ›ny</h3>
+    <h3>Detail měny</h3>
     <p><strong>${code}</strong></p>
 
     <div class="kpi-row">
