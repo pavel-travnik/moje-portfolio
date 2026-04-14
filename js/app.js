@@ -22,36 +22,61 @@ const STOCK_LIST_API =
 // DROPDOWN MOBILE SAFE
 // ===================================================
 
-document.addEventListener('click', e => {
-  const link = e.target.closest('a[data-page]');
-  if (!link) return;
-
-  e.preventDefault();
-  e.stopImmediatePropagation();
-
-  const page = link.dataset.page;
-
-  // zavĹ™Ă­t dropdown (jinak zĹŻstane otevĹ™enĂ˝)
-  document.querySelector('.dropdown-menu')?.classList.remove('open');
-
-  loadPage(page);
-});
-
 
 // ===================================================
 // SPA NAVIGATION
 // ===================================================
+
 document.addEventListener('click', e => {
+
+  /* =========================
+     1) DROPDOWN TOGGLE
+  ========================= */
+  const toggle = e.target.closest('.dropdown-toggle');
+  if (toggle) {
+    e.preventDefault();
+
+    const menu = toggle.nextElementSibling;
+    if (!menu) return;
+
+    // zavři ostatní otevřené dropdowny
+    document
+      .querySelectorAll('.dropdown-menu.open')
+      .forEach(m => {
+        if (m !== menu) m.classList.remove('open');
+      });
+
+    menu.classList.toggle('open');
+    return; // 👈 důležité: dál už nic řešit nechceme
+  }
+
+  /* =========================
+     2) SPA NAVIGACE (a[data-page])
+  ========================= */
   const link = e.target.closest('a[data-page]');
-  if (!link) return;
-  e.preventDefault();
-  e.stopPropagation();
-  loadPage(link.dataset.page);
+  if (link) {
+    e.preventDefault();
+
+    loadPage(link.dataset.page);
+
+    // po kliknutí na položku zavři dropdown
+    document
+      .querySelectorAll('.dropdown-menu.open')
+      .forEach(m => m.classList.remove('open'));
+
+    return;
+  }
+
+  /* =========================
+     3) KLIK MIMO → zavři dropdown
+  ========================= */
+  if (!e.target.closest('.dropdown')) {
+    document
+      .querySelectorAll('.dropdown-menu.open')
+      .forEach(m => m.classList.remove('open'));
+  }
 });
 
-window.addEventListener('popstate', e => {
-  if (e.state?.page) loadPage(e.state.page, false);
-});
 
 // ===================================================
 // INIT
