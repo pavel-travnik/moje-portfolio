@@ -85,6 +85,7 @@ function loadPage(page, pushState = true) {
       if (page === 'penze') loadPensionFunds();
       if (page === 'akcie') loadStocks();
       if (page === 'etf') loadEtfs();
+      if (page === 'meny') loadCurrencies();
 
       if (pushState) history.pushState({ page }, '', `/${page}`);
     })
@@ -187,8 +188,10 @@ function renderFundKPI(data) {
   const last = data.at(-1);
   const prev = data.at(-2);
 
-  document.getElementById('kpi-last').textContent =
-    `${last.value.toFixed(4)} ${last.currency}`;
+  
+   document.getElementById('kpi-last').textContent =
+    `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
+
   document.getElementById('kpi-count').textContent = data.length;
 
   if (prev) {
@@ -393,16 +396,33 @@ let lastChartData = null;
 
 function renderPortfolioChart(history, containerId) {
   lastChartData = { history, containerId };
+
   const div = document.getElementById(containerId);
   if (!div || history.length < 2) return;
 
   div.innerHTML = '';
+  div.style.position = 'relative';
+
   const canvas = document.createElement('canvas');
   canvas.width = div.clientWidth;
   canvas.height = Math.min(div.clientWidth * 0.65, 320);
   div.appendChild(canvas);
 
+  // Tooltip
+  const tooltip = document.createElement('div');
+  tooltip.style.position = 'absolute';
+  tooltip.style.pointerEvents = 'none';
+  tooltip.style.background = '#111';
+  tooltip.style.color = '#C9A646';
+  tooltip.style.padding = '6px 8px';
+  tooltip.style.fontSize = '12px';
+  tooltip.style.borderRadius = '6px';
+  tooltip.style.display = 'none';
+  tooltip.style.whiteSpace = 'nowrap';
+  div.appendChild(tooltip);
+
   const ctx = canvas.getContext('2d');
+
   const padding = { top: 20, right: 60, bottom: 30, left: 20 };
   const w = canvas.width;
   const h = canvas.height;
@@ -412,6 +432,7 @@ function renderPortfolioChart(history, containerId) {
   const max = Math.max(...values);
   const range = max - min || 1;
 
+  // Grid
   ctx.strokeStyle = '#e6e6e6';
   ctx.fillStyle = '#666';
   ctx.font = '12px Arial';
@@ -423,16 +444,23 @@ function renderPortfolioChart(history, containerId) {
     ctx.moveTo(padding.left, y);
     ctx.lineTo(w - padding.right, y);
     ctx.stroke();
-    ctx.fillText((max - (i / 5) * range).toFixed(2), w - 8, y + 4);
+    ctx.fillText(
+      (max - (i / 5) * range).toFixed(2),
+      w - 8,
+      y + 4
+    );
   }
 
+  // Body (area)
   const points = history.map((p, i) => ({
-    x: padding.left +
+    x:
+      padding.left +
       (i / (history.length - 1)) *
-      (w - padding.left - padding.right),
-    y: padding.top +
+        (w - padding.left - padding.right),
+    y:
+      padding.top +
       ((max - p.value) / range) *
-      (h - padding.top - padding.bottom)
+        (h - padding.top - padding.bottom)
   }));
 
   ctx.beginPath();
@@ -442,6 +470,7 @@ function renderPortfolioChart(history, containerId) {
   ctx.fillStyle = 'rgba(201,162,70,0.15)';
   ctx.fill();
 
+  // Line
   ctx.beginPath();
   ctx.strokeStyle = '#C9A646';
   ctx.lineWidth = 2;
@@ -449,6 +478,40 @@ function renderPortfolioChart(history, containerId) {
     i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
   );
   ctx.stroke();
+
+  // 🔍 Tooltip logic
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+
+    const index = Math.round(
+      (x - padding.left) /
+        (w - padding.left - padding.right) *
+        (history.length - 1)
+    );
+
+    if (index < 0 || index >= history.length) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const p = points[index];
+    const d = history[index];
+
+    ctx.clearRect(0, 0, w, h);
+    renderPortfolioChart(history, containerId); // redraw background only once
+    tooltip.style.display = 'block';
+
+    const dateStr = new Date(d.date).toLocaleDateString('cs-CZ');
+    tooltip.innerHTML = `${dateStr}<br><strong>${d.value.toFixed(4)}</strong>`;
+
+    tooltip.style.left = `${p.x + 10}px`;
+    tooltip.style.top = `${p.y}px`;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+  });
 }
 
 // ===================================================
@@ -585,8 +648,10 @@ function renderCurrencyKPI(data) {
   const last = data.at(-1);
   const prev = data.at(-2);
 
+
   document.getElementById('cur-kpi-last').textContent =
-    `${last.value.toFixed(4)} CZK`;
+    `${last.value.toFixed(4)} CZK (${dateStr})`;
+
 
   document.getElementById('cur-kpi-count').textContent = data.length;
 
