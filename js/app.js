@@ -19,121 +19,71 @@ const STOCK_LIST_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
 
 // ===================================================
-// DROPDOWN MOBILE SAFE
+// DROPDOWN – MOBILE SAFE
 // ===================================================
+document.addEventListener('click', e => {
+  const toggle = e.target.closest('.dropdown-toggle');
+  const menu = document.querySelector('.dropdown-menu');
 
+  if (toggle) {
+    e.preventDefault();
+    e.stopPropagation();
+    menu.classList.toggle('open');
+    return;
+  }
+
+  if (menu && menu.classList.contains('open')) {
+    menu.classList.remove('open');
+  }
+});
 
 // ===================================================
 // SPA NAVIGATION
 // ===================================================
-
 document.addEventListener('click', e => {
-
-  /* =========================
-     1) DROPDOWN TOGGLE
-  ========================= */
-  const toggle = e.target.closest('.dropdown-toggle');
-  if (toggle) {
-    e.preventDefault();
-
-    const menu = toggle.nextElementSibling;
-    if (!menu) return;
-
-    // zavři ostatní otevřené dropdowny
-    document
-      .querySelectorAll('.dropdown-menu.open')
-      .forEach(m => {
-        if (m !== menu) m.classList.remove('open');
-      });
-
-    menu.classList.toggle('open');
-    return; // 👈 důležité: dál už nic řešit nechceme
-  }
-
-  /* =========================
-     2) SPA NAVIGACE (a[data-page])
-  ========================= */
   const link = e.target.closest('a[data-page]');
-  if (link) {
-    e.preventDefault();
-
-    loadPage(link.dataset.page);
-
-    // po kliknutí na položku zavři dropdown
-    document
-      .querySelectorAll('.dropdown-menu.open')
-      .forEach(m => m.classList.remove('open'));
-
-    return;
-  }
-
-  /* =========================
-     3) KLIK MIMO → zavři dropdown
-  ========================= */
-  if (!e.target.closest('.dropdown')) {
-    document
-      .querySelectorAll('.dropdown-menu.open')
-      .forEach(m => m.classList.remove('open'));
-  }
+  if (!link) return;
+  e.preventDefault();
+  e.stopPropagation();
+  loadPage(link.dataset.page);
 });
 
+window.addEventListener('popstate', e => {
+  if (e.state?.page) loadPage(e.state.page, false);
+});
 
 // ===================================================
 // INIT
 // ===================================================
 (function init() {
   const path = location.pathname.replace(/^\/+/, '');
-
-  // pokud je root (/), zobraz uvondi­ stranku
-  if (!path || path === 'index.html') {
-    loadPage('uvod', false);
-    return;
-  }
-
-  loadPage(path, false);
+  loadPage(path || 'penze', false);
 })();
 
 // ===================================================
 // ROUTER
 // ===================================================
 function loadPage(page, pushState = true) {
-
-  
-  if (!page || typeof page !== 'string') {
-    console.warn('loadPage called with invalid page:', page);
-    return;
-  }
-
-  page = page.replace(/^\/+/, '').replace(/\/+$/, '');
-
-
-  // ✅ DETAILY – MUSÍ BÝT JAKO PRVNÍ
   if (page.startsWith('penze/')) {
     loadFundDetail(page.split('/')[1]);
     return;
   }
 
-  if (page.startsWith('akcie/') || page.startsWith('etf/')) {
+  if (page.startsWith('akcie/')) {
     loadStockDetail(page.split('/')[1]);
     return;
   }
 
-  if (page.startsWith('meny/')) {
-    loadCurrencyDetail(page.split('/')[1]);
-    return;
-  }
-
-  // ✅ AŽ TADY sjednotíš na overview
-  page = page.split('/')[0];
-
   fetch(`pages/${page}.html`)
-    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.text();
+    })
     .then(html => {
       main.innerHTML = html;
 
       if (page === 'penze') loadPensionFunds();
       if (page === 'akcie') loadStocks();
-      if (page === 'meny') loadCurrencies();
       if (page === 'etf') loadEtfs();
 
       if (pushState) history.pushState({ page }, '', `/${page}`);
