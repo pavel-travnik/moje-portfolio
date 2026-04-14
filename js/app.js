@@ -20,43 +20,49 @@ const CURRENCY_DATA_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_currency_data';
 
 // ===================================================
-// DROPDOWN + SPA MENU (JEDINÝ LISTENER)
+// MENU SPA NAVIGACE – POZOR: JEN MENU
 // ===================================================
-document.addEventListener('click', e => {
+function initMenuNavigation() {
+  document.querySelectorAll('a[data-page]').forEach(link => {
+    link.onclick = e => {
+      e.preventDefault();
+      const page = link.dataset.page;
+      closeDropdown();
+      loadPage(page);
+    };
+  });
+}
 
-  const toggle = e.target.closest('.dropdown-toggle');
-  if (toggle) {
-    e.preventDefault();
-    e.stopPropagation();
-    document.querySelector('.dropdown-menu')?.classList.toggle('open');
-    return;
-  }
+// ===================================================
+// DROPDOWN
+// ===================================================
+const dropdownToggle = document.querySelector('.dropdown-toggle');
+const dropdownMenu = document.querySelector('.dropdown-menu');
 
-  const link = e.target.closest('a[data-page]');
-  if (!link) return;
+function closeDropdown() {
+  dropdownMenu?.classList.remove('open');
+}
 
+dropdownToggle?.addEventListener('click', e => {
   e.preventDefault();
   e.stopPropagation();
-
-  document.querySelector('.dropdown-menu')?.classList.remove('open');
-  loadPage(link.dataset.page);
+  dropdownMenu.classList.toggle('open');
 });
 
-document.addEventListener('click', () => {
-  document.querySelector('.dropdown-menu')?.classList.remove('open');
-});
+document.addEventListener('click', () => closeDropdown());
 
 // ===================================================
 // HISTORY
 // ===================================================
-window.addEventListener('popstate', e => {
+window.onpopstate = e => {
   if (e.state?.page) loadPage(e.state.page, false);
-});
+};
 
 // ===================================================
 // INIT
 // ===================================================
 (() => {
+  initMenuNavigation();
   const path = location.pathname.replace(/^\/+/, '');
   loadPage(path || 'uvod', false);
 })();
@@ -66,7 +72,6 @@ window.addEventListener('popstate', e => {
 // ===================================================
 function loadPage(page, pushState = true) {
 
-  // ---- DETAIL PAGES ----
   if (page.startsWith('penze/')) {
     loadFundDetail(page.split('/')[1]);
     return;
@@ -82,9 +87,8 @@ function loadPage(page, pushState = true) {
     return;
   }
 
-  // ---- OVERVIEW PAGES ----
   fetch(`pages/${page}.html`)
-    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(r => r.text())
     .then(html => {
       main.innerHTML = html;
 
@@ -93,12 +97,7 @@ function loadPage(page, pushState = true) {
       if (page === 'etf') loadEtfs();
       if (page === 'meny') loadCurrencies();
 
-      if (pushState) {
-        history.pushState({ page }, '', `/${page}`);
-      }
-    })
-    .catch(() => {
-      main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
+      if (pushState) history.pushState({ page }, '', `/${page}`);
     });
 }
 
@@ -134,14 +133,11 @@ function loadPensionFunds() {
 function loadFundDetail(isin) {
   main.innerHTML = `
     <h3>Detail fondu</h3>
-    <p><strong>ISIN:</strong> ${isin}</p>
-
     <div class="kpi-row">
       <div class="kpi"><span>Hodnota</span><strong id="kpi-last">–</strong></div>
       <div class="kpi"><span>Změna</span><strong id="kpi-change">–</strong></div>
       <div class="kpi"><span>Záznamů</span><strong id="kpi-count">–</strong></div>
     </div>
-
     <div class="period-switch">
       <button data-period="1M">1M</button>
       <button data-period="6M">6M</button>
@@ -149,38 +145,37 @@ function loadFundDetail(isin) {
       <button data-period="3Y" class="active">3Y</button>
       <button data-period="MAX">MAX</button>
     </div>
-
     <div id="chart-portfolio"></div>
     <button class="back-btn">← Zpět</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
 
-  document.querySelectorAll('.period-switch button').forEach(btn => {
-    btn.onclick = () => {
+  document.querySelectorAll('.period-switch button').forEach(b => {
+    b.onclick = () => {
       document.querySelectorAll('.period-switch button')
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadDPS(isin, btn.dataset.period);
+        .forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      loadDPS(isin, b.dataset.period);
     };
   });
 
   loadDPS(isin, '3Y');
 }
 
+// ===================================================
+// PENZE DATA
+// ===================================================
 async function loadDPS(isin, period) {
-  const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
-  let data = await res.json();
+  const r = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
+  let data = await r.json();
   if (!Array.isArray(data)) return;
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
   data = filterPeriod(data, period);
 
   renderFundKPI(data);
-  renderPortfolioChart(
-    data.map(d => ({ date: d.date, value: d.value })),
-    'chart-portfolio'
-  );
+  renderChart(data.map(d => ({ value: d.value })), 'chart-portfolio');
 }
 
 function renderFundKPI(data) {
@@ -202,15 +197,10 @@ function renderFundKPI(data) {
 }
 
 // ===================================================
-// AKCIE & ETF – PŘEHLEDY
+// AKCIE / ETF – PŘEHLEDY
 // ===================================================
-function loadStocks() {
-  loadStockGrid(false);
-}
-
-function loadEtfs() {
-  loadStockGrid(true);
-}
+function loadStocks() { loadStockGrid(false); }
+function loadEtfs() { loadStockGrid(true); }
 
 function loadStockGrid(isETF) {
   const grid = document.getElementById(isETF ? 'etfGrid' : 'stockGrid');
@@ -222,8 +212,7 @@ function loadStockGrid(isETF) {
     .then(r => r.json())
     .then(list => {
       grid.innerHTML = '';
-      list
-        .filter(s => (s.sector === 'ETF') === isETF)
+      list.filter(s => (s.sector === 'ETF') === isETF)
         .forEach(s => {
           const card = document.createElement('div');
           card.className = 'fund-card';
@@ -242,14 +231,11 @@ function loadStockGrid(isETF) {
 // ===================================================
 function loadStockDetail(ticker) {
   main.innerHTML = `
-    <h3 id="stock-title">Detail</h3>
-
+    <h3>Detail ${ticker}</h3>
     <div class="kpi-row">
-      <div class="kpi"><span>Cena</span><strong id="stock-kpi-last">–</strong></div>
-      <div class="kpi"><span>Změna</span><strong id="stock-kpi-change">–</strong></div>
-      <div class="kpi"><span>Objem</span><strong id="stock-kpi-volume">–</strong></div>
+      <div class="kpi"><span>Cena</span><strong id="stock-last">–</strong></div>
+      <div class="kpi"><span>Změna</span><strong id="stock-change">–</strong></div>
     </div>
-
     <div class="period-switch">
       <button data-period="1M">1M</button>
       <button data-period="6M">6M</button>
@@ -257,19 +243,17 @@ function loadStockDetail(ticker) {
       <button data-period="3Y" class="active">3Y</button>
       <button data-period="MAX">MAX</button>
     </div>
-
     <div id="chart-stock"></div>
     <button class="back-btn">← Zpět</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
-
-  document.querySelectorAll('.period-switch button').forEach(btn => {
-    btn.onclick = () => {
+  document.querySelectorAll('.period-switch button').forEach(b => {
+    b.onclick = () => {
       document.querySelectorAll('.period-switch button')
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadStockData(ticker, btn.dataset.period);
+        .forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      loadStockData(ticker, b.dataset.period);
     };
   });
 
@@ -277,38 +261,17 @@ function loadStockDetail(ticker) {
 }
 
 async function loadStockData(ticker, period) {
-  const res = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
-  let data = await res.json();
+  const r = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
+  let data = await r.json();
   if (!Array.isArray(data)) return;
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
   data = filterPeriod(data, period);
 
-  renderStockKPI(data);
-  renderPortfolioChart(
-    data.map(d => ({ date: d.date, value: d.close })),
-    'chart-stock'
-  );
-}
+  document.getElementById('stock-last').textContent =
+    `${data.at(-1).close.toFixed(2)} ${data.at(-1).currency}`;
 
-function renderStockKPI(data) {
-  if (!data.length) return;
-  const last = data.at(-1);
-  const prev = data.at(-2);
-
-  document.getElementById('stock-kpi-last').textContent =
-    `${last.close.toFixed(2)} ${last.currency ?? ''}`;
-
-  document.getElementById('stock-kpi-volume').textContent =
-    last.volume?.toLocaleString('cs-CZ') ?? '–';
-
-  if (prev) {
-    const diff = last.close - prev.close;
-    const pct = diff / prev.close * 100;
-    const el = document.getElementById('stock-kpi-change');
-    el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
-    el.className = diff >= 0 ? 'pos' : 'neg';
-  }
+  renderChart(data.map(d => ({ value: d.close })), 'chart-stock');
 }
 
 // ===================================================
@@ -339,139 +302,51 @@ function loadCurrencies() {
 
 function loadCurrencyDetail(code) {
   main.innerHTML = `
-    <h3>Detail měny</h3>
-
-    <div class="kpi-row">
-      <div class="kpi"><span>Kurz</span><strong id="cur-kpi-last">–</strong></div>
-      <div class="kpi"><span>Změna</span><strong id="cur-kpi-change">–</strong></div>
-      <div class="kpi"><span>Záznamů</span><strong id="cur-kpi-count">–</strong></div>
-    </div>
-
-    <div class="period-switch">
-      <button data-period="1M">1M</button>
-      <button data-period="6M">6M</button>
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
-    </div>
-
+    <h3>Měna ${code}</h3>
     <div id="chart-currency"></div>
     <button class="back-btn">← Zpět</button>
   `;
-
   document.querySelector('.back-btn').onclick = () => history.back();
-
-  document.querySelectorAll('.period-switch button').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.period-switch button')
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadCurrencyData(code, btn.dataset.period);
-    };
-  });
-
-  loadCurrencyData(code, '3Y');
+  loadCurrencyData(code);
 }
 
-async function loadCurrencyData(code, period) {
-  const res = await fetch(`${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`);
-  let data = await res.json();
+async function loadCurrencyData(code) {
+  const r = await fetch(`${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`);
+  let data = await r.json();
   if (!Array.isArray(data)) return;
-
-  data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  data = filterPeriod(data, period);
-
-  renderCurrencyKPI(data);
-  renderPortfolioChart(
-    data.map(d => ({ date: d.date, value: d.value })),
-    'chart-currency'
-  );
-}
-
-function renderCurrencyKPI(data) {
-  if (!data.length) return;
-  const last = data.at(-1);
-  const prev = data.at(-2);
-
-  document.getElementById('cur-kpi-last').textContent =
-    `${last.value.toFixed(4)} CZK`;
-  document.getElementById('cur-kpi-count').textContent = data.length;
-
-  if (prev) {
-    const diff = last.value - prev.value;
-    const pct = diff / prev.value * 100;
-    const el = document.getElementById('cur-kpi-change');
-    el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
-    el.className = diff >= 0 ? 'pos' : 'neg';
-  }
+  renderChart(data.map(d => ({ value: d.value })), 'chart-currency');
 }
 
 // ===================================================
-// GRAF (SPOLEČNÝ CANVAS)
+// GRAF – SPOLEČNÝ
 // ===================================================
-let lastChart = null;
-
-function renderPortfolioChart(history, containerId) {
-  lastChart = { history, containerId };
-
-  const div = document.getElementById(containerId);
-  if (!div || history.length < 2) return;
+function renderChart(points, id) {
+  const div = document.getElementById(id);
+  if (!div || points.length < 2) return;
 
   div.innerHTML = '';
-  const canvas = document.createElement('canvas');
-  canvas.width = div.clientWidth;
-  canvas.height = Math.min(div.clientWidth * 0.65, 320);
-  div.appendChild(canvas);
+  const c = document.createElement('canvas');
+  c.width = div.clientWidth;
+  c.height = 260;
+  div.appendChild(c);
 
-  const ctx = canvas.getContext('2d');
-  const padding = { top: 20, right: 60, bottom: 30, left: 20 };
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const values = history.map(p => p.value);
+  const ctx = c.getContext('2d');
+  const values = points.map(p => p.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
 
-  ctx.strokeStyle = '#e6e6e6';
-  ctx.fillStyle = '#666';
-  ctx.font = '12px Arial';
-
-  for (let i = 0; i <= 5; i++) {
-    const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(w - padding.right, y);
-    ctx.stroke();
-    ctx.fillText((max - i / 5 * range).toFixed(2), w - 8, y + 4);
-  }
-
-  const pts = history.map((p, i) => ({
-    x: padding.left + i / (history.length - 1) * (w - padding.left - padding.right),
-    y: padding.top + (max - p.value) / range * (h - padding.top - padding.bottom)
-  }));
-
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, h - padding.bottom);
-  pts.forEach(pt => ctx.lineTo(pt.x, pt.y));
-  ctx.lineTo(pts.at(-1).x, h - padding.bottom);
-  ctx.fillStyle = 'rgba(201,162,70,0.15)';
-  ctx.fill();
-
-  ctx.beginPath();
   ctx.strokeStyle = '#C9A646';
-  ctx.lineWidth = 2;
-  pts.forEach((pt, i) =>
-    i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
-  );
+  ctx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = i / (points.length - 1) * c.width;
+    const y = c.height - ((p.value - min) / range * c.height);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
+
   ctx.stroke();
 }
-
-window.addEventListener('resize', () => {
-  if (lastChart) {
-    renderPortfolioChart(lastChart.history, lastChart.containerId);
-  }
-});
 
 // ===================================================
 // FILTRACE OBDOBÍ
