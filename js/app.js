@@ -146,7 +146,7 @@ function loadPage(page, pushState = true) {
    if (pushState) history.pushState({ page }, '', `/${page}`);
   })
   .catch(() => {
-   main.innerHTML = '<h3>404</h3><p>StrĂˇnka nenalezena</p>';
+   main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
   });
 }
 
@@ -157,7 +157,7 @@ function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   if (!grid) return;
 
-  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm fondyâ€¦</p>';
+  grid.innerHTML = '<p>Načítám fondy</p>';
 
   fetch(
     'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds'
@@ -187,9 +187,9 @@ function loadFundDetail(isin) {
     <p><strong>ISIN:</strong> ${isin}</p>
 
     <div class="kpi-row">
-      <div class="kpi"><span>PoslednĂ­ hodnota</span><strong id="kpi-last">â€“</strong></div>
-      <div class="kpi"><span>ZmÄ›na</span><strong id="kpi-change">â€“</strong></div>
-      <div class="kpi"><span>PoÄŤet zĂˇznamĹŻ</span><strong id="kpi-count">â€“</strong></div>
+      <div class="kpi"><span>Poslední hodnota</span><strong id="kpi-last"> - </strong></div>
+      <div class="kpi"><span>Změna</span><strong id="kpi-change"> - </strong></div>
+      <div class="kpi"><span>Počet záznamů</span><strong id="kpi-count"> - </strong></div>
     </div>
 
 
@@ -203,7 +203,7 @@ function loadFundDetail(isin) {
 
 
     <div id="chart-portfolio"></div>
-    <button class="back-btn">â† ZpÄ›t</button>
+    <button class="back-btn">Zpět</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
@@ -260,7 +260,7 @@ function loadStocks() {
   const grid = document.getElementById('stockGrid');
   if (!grid) return;
 
-  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm akcieâ€¦</p>';
+  grid.innerHTML = '<p>Načítám akcie ...</p>';
 
   fetch(STOCK_LIST_API)
     .then(r => r.json())
@@ -287,7 +287,7 @@ function loadEtfs() {
   const grid = document.getElementById('etfGrid');
   if (!grid) return;
 
-  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm ETFâ€¦</p>';
+  grid.innerHTML = '<p>Načítám ETF…</p>';
 
   fetch(STOCK_LIST_API)
     .then(r => r.json())
@@ -327,27 +327,27 @@ function loadStockDetail(ticker) {
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
     <p>
-      <strong id="stock-name">â€“</strong><br>
+      <strong id="stock-name"> - </strong><br>
       <small>ID: ${ticker}</small>
     </p>
 
 <div class="kpi-row">
   <div class="kpi">
-    <span>PoslednĂ­ cena</span>
-    <strong id="stock-kpi-last">â€“</strong>
+    <span>Poslední cena</span>
+    <strong id="stock-kpi-last"> - </strong>
   </div>
   <div class="kpi">
-    <span>DennĂ­ zmÄ›na</span>
-    <strong id="stock-kpi-change">â€“</strong>
+    <span>Denní­ změna</span>
+    <strong id="stock-kpi-change"> - </strong>
   </div>
   <div class="kpi">
     <span>Objem</span>
-    <strong id="stock-kpi-volume">â€“</strong>
+    <strong id="stock-kpi-volume"> - </strong>
   </div>
 </div>
 
 
-    <p id="stock-meta" class="meta">â€“</p>
+    <p id="stock-meta" class="meta"> - </p>
 
 
 <div class="period-switch">
@@ -360,7 +360,7 @@ function loadStockDetail(ticker) {
 
 
     <div id="chart-stock"></div>
-    <button class="back-btn">â† ZpÄ›t</button>
+    <button class="back-btn">← Zpět</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
@@ -414,15 +414,15 @@ function renderStockKPI(data) {
 
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
-  // PoslednĂ­ cena + datum v zĂˇvorce
+  // Poslední cena + datum v závorce
   document.getElementById('stock-kpi-last').textContent =
     `${last.close.toFixed(2)} ${last.currency} (${dateStr})`;
 
   // Objem
   document.getElementById('stock-kpi-volume').textContent =
-    last.volume?.toLocaleString('cs-CZ') || 'â€“';
+    last.volume?.toLocaleString('cs-CZ') || ' - ';
 
-  // DennĂ­ zmÄ›na
+  // Denní­ změna
   if (prev) {
     const diff = last.close - prev.close;
     const pct = (diff / prev.close) * 100;
@@ -431,7 +431,7 @@ function renderStockKPI(data) {
     el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
   } else {
-    document.getElementById('stock-kpi-change').textContent = 'â€“';
+    document.getElementById('stock-kpi-change').textContent = ' - ';
   }
 }
 
@@ -537,7 +537,7 @@ function loadCurrencies() {
   const grid = document.getElementById('currencyGrid');
   if (!grid) return;
 
-  grid.innerHTML = '<p>NaÄŤĂ­tĂˇm mÄ›nyâ€¦</p>';
+  grid.innerHTML = '<p>Načítám měny ...</p>';
 
   fetch(CURRENCY_LIST_API)
     .then(r => r.json())
@@ -577,9 +577,9 @@ function loadCurrencyDetail(code) {
     <p><strong>${code}</strong></p>
 
     <div class="kpi-row">
-      <div class="kpi"><span>AktuĂˇlnĂ­ kurz</span><strong id="cur-kpi-last">â€“</strong></div>
-      <div class="kpi"><span>ZmÄ›na</span><strong id="cur-kpi-change">â€“</strong></div>
-      <div class="kpi"><span>ZĂˇznamĹŻ</span><strong id="cur-kpi-count">â€“</strong></div>
+      <div class="kpi"><span>Aktuální kurz</span><strong id="cur-kpi-last"> - </strong></div>
+      <div class="kpi"><span>Změna</span><strong id="cur-kpi-change"> - </strong></div>
+      <div class="kpi"><span>Záznamů</span><strong id="cur-kpi-count"> - </strong></div>
     </div>
 
     <div class="period-switch">
@@ -591,7 +591,7 @@ function loadCurrencyDetail(code) {
     </div>
 
     <div id="chart-currency"></div>
-    <button class="back-btn">â† ZpÄ›t</button>
+    <button class="back-btn">-- zpět</button>
   `;
 
   document.querySelector('.back-btn').onclick = () => history.back();
