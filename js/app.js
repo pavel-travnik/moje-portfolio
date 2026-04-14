@@ -21,20 +21,22 @@ const STOCK_LIST_API =
 // ===================================================
 // DROPDOWN – MOBILE SAFE
 // ===================================================
-document.addEventListener('click', e => {
-  const toggle = e.target.closest('.dropdown-toggle');
-  const menu = document.querySelector('.dropdown-menu');
 
-  if (toggle) {
-    e.preventDefault();
-    e.stopPropagation();
-    menu.classList.toggle('open');
-    return;
-  }
-  if (menu && menu.classList.contains('open')) {
-    menu.classList.remove('open');
-  }
+document.addEventListener('click', e => {
+  const link = e.target.closest('a[data-page]');
+  if (!link) return;
+
+  e.preventDefault();
+  e.stopImmediatePropagation();
+
+  const page = link.dataset.page;
+
+  // zavřít dropdown (jinak zůstane otevřený)
+  document.querySelector('.dropdown-menu')?.classList.remove('open');
+
+  loadPage(page);
 });
+
 
 // ===================================================
 // SPA NAVIGATION
@@ -70,6 +72,23 @@ window.addEventListener('popstate', e => {
 // ROUTER
 // ===================================================
 function loadPage(page, pushState = true) {
+
+
+  // 👉 když jsme v detailu a klikneme na menu
+  if (page.includes('/')) {
+    page = page.split('/')[0];
+  }
+
+  if (page.startsWith('penze/')) {
+    loadFundDetail(page.split('/')[1]);
+    return;
+  }
+
+  if (page.startsWith('akcie/') || page.startsWith('etf/')) {
+    loadStockDetail(page.split('/')[1]);
+    return;
+  }
+
 
  if (page.startsWith('penze/')) {
   loadFundDetail(page.split('/')[1]);
