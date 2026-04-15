@@ -6,7 +6,8 @@ const main = document.getElementById('mainContent');
 const apiCache = {
   dps: {},
   stocks: {},
-  currencies: {}
+  currencies: {},
+  podiloveFondy: {}
 };
 
 
