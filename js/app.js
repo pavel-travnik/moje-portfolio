@@ -74,6 +74,16 @@ function loadPage(page, pushState = true) {
     return;
   }
 
+  if (page.startsWith('etf/')) {
+    loadStockDetail(page.split('/')[1]);
+    return;
+  }
+
+  if (page.startsWith('meny/')) {
+    loadStockDetail(page.split('/')[1]);
+    return;
+  }
+
   fetch(`pages/${page}.html`)
     .then(res => {
       if (!res.ok) throw new Error();
@@ -187,6 +197,7 @@ function renderFundKPI(data) {
   if (!data.length) return;
   const last = data.at(-1);
   const prev = data.at(-2);
+  const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
   
    document.getElementById('kpi-last').textContent =
@@ -647,6 +658,7 @@ function renderCurrencyKPI(data) {
 
   const last = data.at(-1);
   const prev = data.at(-2);
+  const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
 
   document.getElementById('cur-kpi-last').textContent =
