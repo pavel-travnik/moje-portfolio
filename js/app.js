@@ -13,17 +13,17 @@ const apiCache = {
 // ===================================================
 // API URL
 // ===================================================
-const DPS_API_URL =
-  'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+const DPS_API_URL = 'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
 
-const STOCK_API_URL =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
+const STOCK_API_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
 
 const CURRENCY_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_currencies';
 const CURRENCY_DATA_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_currency_data';
 
-const STOCK_LIST_API =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
+const STOCK_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
+
+const PODILOVE_FONDY_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_podilove_fondy';
+const PODILOVY_FOND_DATA_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_podilovy_fond_data';
 
 // ===================================================
 // DROPDOWN – MOBILE SAFE
@@ -76,6 +76,11 @@ function loadPage(page, pushState = true) {
     return;
   }
 
+  if (page.startsWith('podilove-fondy/')) {
+    loadPodilovyFondDetail(page.split('/')[1]);
+    return;
+  }
+
   if (page.startsWith('akcie/')) {
     loadStockDetail(page.split('/')[1]);
     return;
@@ -100,6 +105,7 @@ function loadPage(page, pushState = true) {
       main.innerHTML = html;
 
       if (page === 'penze') loadPensionFunds();
+      if (page === 'podilove-fondy') loadPodiloveFondy();
       if (page === 'akcie') loadStocks();
       if (page === 'etf') loadEtfs();
       if (page === 'meny') loadCurrencies();
@@ -220,6 +226,129 @@ function renderFundKPI(data) {
     const diff = last.value - prev.value;
     const pct = (diff / prev.value) * 100;
     const el = document.getElementById('kpi-change');
+    el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
+    el.className = diff >= 0 ? 'pos' : 'neg';
+  }
+}
+
+// ===================================================
+// PODILOVE FONDY
+// ===================================================
+
+function loadPodiloveFondy() {
+  const grid = document.getElementById('podilovyFondGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '<p>Načítám fondy…</p>';
+
+  fetch(PODILOVE_FONDY_API)
+    .then(r => r.json())
+    .then(funds => {
+      grid.innerHTML = '';
+      funds.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'fund-card';
+        card.innerHTML = `
+          <h3>${f.name}</h3>
+          <small>${f.manager} · ${f.currency}</small>
+        `;
+        card.onclick = () => {
+          history.pushState(
+            { page: `podilove-fondy/${f.isin}` },
+            '',
+            `/podilove-fondy/${f.isin}`
+          );
+          loadPodilovyFondDetail(f.isin);
+        };
+        grid.appendChild(card);
+      });
+    });
+}
+
+function loadPodilovyFondDetail(isin) {
+  main.innerHTML = `
+    <h3>Detail podílového fondu</h3>
+    <p><strong>ISIN:</strong> ${isin}</p>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <span>Poslední kurz</span>
+        <strong id="pf-kpi-last">-</strong>
+      </div>
+      <div class="kpi">
+        <span>Změna</span>
+        <strong id="pf-kpi-change">-</strong>
+      </div>
+      <div class="kpi">
+        <span>Záznamů</span>
+        <strong id="pf-kpi-count">-</strong>
+      </div>
+    </div>
+
+    <div class="period-switch">
+      <button data-period="1M">1M</button>
+      <button data-period="6M">6M</button>
+      <button data-period="1Y">1Y</button>
+      <button data-period="3Y" class="active">3Y</button>
+      <button data-period="MAX">MAX</button>
+    </div>
+
+    <div id="chart-podilovy-fond"></div>
+    <button class="back-btn">← Zpět</button>
+  `;
+
+  document.querySelector('.back-btn').onclick = () => history.back();
+
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.period-switch button')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadPodilovyFondData(isin, btn.dataset.period);
+    };
+  });
+
+  loadPodilovyFondData(isin, '3Y');
+}
+
+async function loadPodilovyFondData(isin, period) {
+  if (!apiCache.podiloveFondy[isin]) {
+    const res = await fetch(
+      `${PODILOVY_FOND_DATA_API}?isin=${encodeURIComponent(isin)}`
+    );
+    let data = await res.json();
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    apiCache.podiloveFondy[isin] = data;
+  }
+
+  const filtered = filterPeriod(
+    apiCache.podiloveFondy[isin],
+    period
+  );
+
+  renderPodilovyFondKPI(filtered);
+  renderPortfolioChart(
+    filtered.map(d => ({ date: d.date, value: d.value })),
+    'chart-podilovy-fond'
+  );
+}
+
+function renderPodilovyFondKPI(data) {
+  if (!data.length) return;
+
+  const last = data.at(-1);
+  const prev = data.at(-2);
+  const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
+
+  document.getElementById('pf-kpi-last').textContent =
+    `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
+
+  document.getElementById('pf-kpi-count').textContent = data.length;
+
+  if (prev) {
+    const diff = last.value - prev.value;
+    const pct = (diff / prev.value) * 100;
+    const el = document.getElementById('pf-kpi-change');
     el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
   }
