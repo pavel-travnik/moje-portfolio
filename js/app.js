@@ -3,6 +3,13 @@
 // ===================================================
 const main = document.getElementById('mainContent');
 
+const apiCache = {
+  dps: {},
+  stocks: {},
+  currencies: {}
+};
+
+
 // ===================================================
 // API URL
 // ===================================================
@@ -179,16 +186,20 @@ document.querySelector('.back-btn').onclick = () => history.back();
 }
 
 async function loadDPS(isin, period) {
-  const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
-  let data = await res.json();
-  if (!Array.isArray(data)) data = [];
+  if (!apiCache.dps[isin]) {
+    const res = await fetch(
+      `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
+    );
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [];
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    apiCache.dps[isin] = data;
+  }
 
-  data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  data = filterPeriod(data, period);
-
-  renderFundKPI(data);
+  const filtered = filterPeriod(apiCache.dps[isin], period);
+  renderFundKPI(filtered);
   renderPortfolioChart(
-    data.map(d => ({ date: d.date, value: d.value })),
+    filtered.map(d => ({ date: d.date, value: d.value })),
     'chart-portfolio'
   );
 }
@@ -638,17 +649,20 @@ document.querySelector('.back-btn').onclick = () => history.back();
 }
 
 async function loadCurrencyData(code, period) {
-  const res = await fetch(`${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`);
-  let data = await res.json();
-  if (!Array.isArray(data)) data = [];
+  if (!apiCache.currencies[code]) {
+    const res = await fetch(
+      `${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`
+    );
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [];
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    apiCache.currencies[code] = data;
+  }
 
-  data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  const filtered = filterPeriod(data, period);
-  const finalData = filtered.length ? filtered : data;
-
-  renderCurrencyKPI(finalData);
+  const filtered = filterPeriod(apiCache.currencies[code], period);
+  renderCurrencyKPI(filtered);
   renderPortfolioChart(
-    finalData.map(d => ({ date: d.date, value: d.value })),
+    filtered.map(d => ({ date: d.date, value: d.value })),
     'chart-currency'
   );
 }
