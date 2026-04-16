@@ -161,13 +161,21 @@ function loadFundDetail(isin) {
     </div>
 
 
-<div class="period-switch">
-  <button data-period="1M">1M</button>
-  <button data-period="6M">6M</button>
-  <button data-period="1Y">1Y</button>
-  <button data-period="3Y" class="active">3Y</button>
-  <button data-period="MAX">MAX</button>
+
+<div class="period-row">
+  <div class="period-switch">
+    <button data-period="1M">1M</button>
+    <button data-period="6M">6M</button>
+    <button data-period="1Y">1Y</button>
+    <button data-period="3Y" class="active">3Y</button>
+    <button data-period="MAX">MAX</button>
+  </div>
+
+  <div id="period-diff" class="period-diff">
+    —
+  </div>
 </div>
+
 
 
     <div id="chart-portfolio"></div>
@@ -203,12 +211,17 @@ async function loadDPS(isin, period) {
     apiCache.dps[isin] = data;
   }
 
-  const filtered = filterPeriod(apiCache.dps[isin], period);
-  renderFundKPI(filtered);
-  renderPortfolioChart(
-    filtered.map(d => ({ date: d.date, value: d.value })),
-    'chart-portfolio'
-  );
+  
+const filtered = filterPeriod(apiCache.dps[isin], period);
+
+renderFundKPI(filtered);
+renderPeriodDifference(filtered);
+
+renderPortfolioChart(
+  filtered.map(d => ({ date: d.date, value: d.value })),
+  'chart-portfolio'
+);
+
 }
 
 function renderFundKPI(data) {
@@ -664,6 +677,24 @@ function renderPortfolioChart(history, containerId) {
   canvas.addEventListener('mouseleave', () => {
     tooltip.style.display = 'none';
   });
+}
+
+function renderPeriodDifference(data) {
+  const box = document.getElementById('period-diff');
+  if (!box || data.length < 2) {
+    if (box) box.textContent = '—';
+    return;
+  }
+
+  const first = data[0];
+  const last = data.at(-1);
+
+  const diff = last.value - first.value;
+  const pct = (diff / first.value) * 100;
+
+  box.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)} %)`;
+  box.className =
+    'period-diff ' + (diff >= 0 ? 'pos' : 'neg');
 }
 
 // ===================================================
