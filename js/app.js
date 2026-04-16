@@ -535,7 +535,7 @@ async function loadStockData(ticker, period) {
   const finalData = filtered.length ? filtered : data;
 
   renderStockKPI(finalData);
-  renderPeriodDifference(filtered);
+  renderPeriodDifference(finalData);
 
   renderPortfolioChart(
     finalData.map(d => ({ date: d.date, value: d.close })),
