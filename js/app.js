@@ -535,7 +535,11 @@ async function loadStockData(ticker, period) {
   const finalData = filtered.length ? filtered : data;
 
   renderStockKPI(finalData);
-  renderPeriodDifference(finalData);
+  
+  renderPeriodDifference(
+  finalData.map(d => ({ value: d.close }))
+  );
+
 
   renderPortfolioChart(
     finalData.map(d => ({ date: d.date, value: d.close })),
@@ -550,6 +554,7 @@ function renderStockKPI(data) {
   const prev = data.at(-2);
 
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
+  const currency = last.currency ?? '';
 
   // Poslední cena + datum v závorce
   document.getElementById('stock-kpi-last').textContent =
