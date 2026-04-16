@@ -299,13 +299,20 @@ function loadPodilovyFondDetail(isin) {
       </div>
     </div>
 
-    <div class="period-switch">
-      <button data-period="1M">1M</button>
-      <button data-period="6M">6M</button>
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
-    </div>
+<div class="period-row">
+  <div class="period-switch">
+    <button data-period="1M">1M</button>
+    <button data-period="6M">6M</button>
+    <button data-period="1Y">1Y</button>
+    <button data-period="3Y" class="active">3Y</button>
+    <button data-period="MAX">MAX</button>
+  </div>
+
+  <div id="period-diff" class="period-diff">
+    —
+  </div>
+</div>
+
 
     <div id="chart-podilovy-fond"></div>
     <button class="back-btn">← Zpět</button>
@@ -341,6 +348,8 @@ async function loadPodilovyFondData(isin, period) {
   );
 
   renderPodilovyFondKPI(filtered);
+  renderPeriodDifference(filtered);
+
   renderPortfolioChart(
     filtered.map(d => ({ date: d.date, value: d.value })),
     'chart-podilovy-fond'
@@ -465,13 +474,20 @@ function loadStockDetail(ticker) {
     <p id="stock-meta" class="meta"> - </p>
 
 
-<div class="period-switch">
-  <button data-period="1M">1M</button>
-  <button data-period="6M">6M</button>
-  <button data-period="1Y">1Y</button>
-  <button data-period="3Y" class="active">3Y</button>
-  <button data-period="MAX">MAX</button>
+<div class="period-row">
+  <div class="period-switch">
+    <button data-period="1M">1M</button>
+    <button data-period="6M">6M</button>
+    <button data-period="1Y">1Y</button>
+    <button data-period="3Y" class="active">3Y</button>
+    <button data-period="MAX">MAX</button>
+  </div>
+
+  <div id="period-diff" class="period-diff">
+    —
+  </div>
 </div>
+
 
 
     <div id="chart-stock"></div>
@@ -519,6 +535,8 @@ async function loadStockData(ticker, period) {
   const finalData = filtered.length ? filtered : data;
 
   renderStockKPI(finalData);
+  renderPeriodDifference(filtered);
+
   renderPortfolioChart(
     finalData.map(d => ({ date: d.date, value: d.close })),
     'chart-stock'
@@ -682,7 +700,7 @@ function renderPortfolioChart(history, containerId) {
 function renderPeriodDifference(data) {
   const box = document.getElementById('period-diff');
   if (!box || data.length < 2) {
-    if (box) box.textContent = '—';
+    if (box) box.innerHTML = '<span>Změna</span> —';
     return;
   }
 
@@ -692,7 +710,12 @@ function renderPeriodDifference(data) {
   const diff = last.value - first.value;
   const pct = (diff / first.value) * 100;
 
-  box.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)} %)`;
+  box.innerHTML = `
+    <span>Změna</span>
+    ${diff.toFixed(4)}
+    (<strong>${pct.toFixed(2)} %</strong>)
+  `;
+
   box.className =
     'period-diff ' + (diff >= 0 ? 'pos' : 'neg');
 }
@@ -779,13 +802,20 @@ function loadCurrencyDetail(code) {
       <div class="kpi"><span>Záznamů</span><strong id="cur-kpi-count"> - </strong></div>
     </div>
 
-    <div class="period-switch">
-      <button data-period="1M">1M</button>
-      <button data-period="6M">6M</button>
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
-    </div>
+<div class="period-row">
+  <div class="period-switch">
+    <button data-period="1M">1M</button>
+    <button data-period="6M">6M</button>
+    <button data-period="1Y">1Y</button>
+    <button data-period="3Y" class="active">3Y</button>
+    <button data-period="MAX">MAX</button>
+  </div>
+
+  <div id="period-diff" class="period-diff">
+    —
+  </div>
+</div>
+
 
     <div id="chart-currency"></div>
     <button class="back-btn">← Zpět</button>
@@ -822,6 +852,8 @@ async function loadCurrencyData(code, period) {
 
   const filtered = filterPeriod(apiCache.currencies[code], period);
   renderCurrencyKPI(filtered);
+  renderPeriodDifference(filtered);
+
   renderPortfolioChart(
     filtered.map(d => ({ date: d.date, value: d.value })),
     'chart-currency'
