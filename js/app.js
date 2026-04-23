@@ -201,29 +201,20 @@ document.querySelector('.back-btn').onclick = () => history.back();
 }
 
 async function loadDPS(isin, period) {
-  const from = getFromDate(period);   // viz níže
+  const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
+  let data = await res.json();
+  if (!Array.isArray(data)) data = [];
 
-  const res = await fetch(
-    `${DPS_API_URL}?isin=${encodeURIComponent(isin)}&from=${from}`
-  );
-  const data = await res.json();
+  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+  data = filterPeriod(data, period);
 
   renderFundKPI(data);
-  renderPeriodDifference(data);
   renderPortfolioChart(
     data.map(d => ({ date: d.date, value: d.value })),
     'chart-portfolio'
   );
 }
 
-function getFromDate(period) {
-  const d = new Date();
-  if (period === '1M') d.setMonth(d.getMonth() - 1);
-  if (period === '6M') d.setMonth(d.getMonth() - 6);
-  if (period === '1Y') d.setFullYear(d.getFullYear() - 1);
-  if (period === '3Y') d.setFullYear(d.getFullYear() - 3);
-  return d.toISOString().slice(0, 10);
-}
 
 function renderFundKPI(data) {
   if (!data.length) return;
