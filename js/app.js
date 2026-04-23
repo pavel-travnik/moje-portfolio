@@ -149,48 +149,101 @@ function loadPensionFunds() {
 // ===================================================
 // DETAIL FONDU
 // ===================================================
-function loadPensionFunds() {
-  const grid = document.getElementById('fundGrid');
-  if (!grid) return;
-  grid.innerHTML = '<p>Načítám fondy…</p>';
-
-  fetch(DPS_LIST_API)
-    .then(r => r.json())
-    .then(funds => {
-      grid.innerHTML = '';
-      funds.forEach(f => {
-        const card = document.createElement('div');
-        card.className = 'fund-card';
-        card.innerHTML = `<h3>${f.name}</h3><small>${f.provider}</small>`;
-        card.onclick = () => {
-          history.pushState({ page: `penze/${f.isin}` }, '', `/penze/${f.isin}`);
-          loadFundDetail(f.isin);
-        };
-        grid.appendChild(card);
-      });
-    });
-}
-
 function loadFundDetail(isin) {
-  main.innerHTML = fundDetailTemplate('Detail fondu', isin, 'chart-portfolio');
+  main.innerHTML = `
+    <h3>Detail fondu</h3>
+    <p><strong>ISIN:</strong> ${isin}</p>
 
-  document.querySelector('.back-btn').onclick = () => history.back();
-  bindPeriodButtons(p => loadDPS(isin, p));
+    <div class="kpi-row">
+      <div class="kpi"><span>Poslední hodnota</span><strong id="kpi-last"> - </strong></div>
+      <div class="kpi"><span>Změna</span><strong id="kpi-change"> - </strong></div>
+      <div class="kpi"><span>Počet záznamů</span><strong id="kpi-count"> - </strong></div>
+    </div>
+
+
+
+<div class="period-row">
+  <div class="period-switch">
+    <button data-period="1M">1M</button>
+    <button data-period="6M">6M</button>
+    <button data-period="1Y">1Y</button>
+    <button data-period="3Y" class="active">3Y</button>
+    <button data-period="MAX">MAX</button>
+  </div>
+
+  <div id="period-diff" class="period-diff">
+    —
+  </div>
+</div>
+
+
+
+    <div id="chart-portfolio"></div>
+    <button class="back-btn">← Zpět</button>
+  `;
+
+  
+
+document.querySelector('.back-btn').onclick = () => history.back();
+
+
+
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.period-switch button')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadDPS(isin, btn.dataset.period);
+    };
+  });
+
   loadDPS(isin, '3Y');
 }
 
 async function loadDPS(isin, period) {
-  if (!apiCache.dps[isin]) {
-    const res = await fetch(`${DPS_API_URL}?isin=${isin}`);
-    const data = await res.json();
-    apiCache.dps[isin] = data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  }
-  renderAsset(
-    filterPeriod(apiCache.dps[isin], period),
-    'chart-portfolio',
-    d => d.value,
-    'kpi'
+  const from = getFromDate(period);   // viz níže
+
+  const res = await fetch(
+    `${DPS_API_URL}?isin=${encodeURIComponent(isin)}&from=${from}`
   );
+  const data = await res.json();
+
+  renderFundKPI(data);
+  renderPeriodDifference(data);
+  renderPortfolioChart(
+    data.map(d => ({ date: d.date, value: d.value })),
+    'chart-portfolio'
+  );
+}
+
+function getFromDate(period) {
+  const d = new Date();
+  if (period === '1M') d.setMonth(d.getMonth() - 1);
+  if (period === '6M') d.setMonth(d.getMonth() - 6);
+  if (period === '1Y') d.setFullYear(d.getFullYear() - 1);
+  if (period === '3Y') d.setFullYear(d.getFullYear() - 3);
+  return d.toISOString().slice(0, 10);
+}
+
+function renderFundKPI(data) {
+  if (!data.length) return;
+  const last = data.at(-1);
+  const prev = data.at(-2);
+  const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
+
+  
+   document.getElementById('kpi-last').textContent =
+    `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
+
+  document.getElementById('kpi-count').textContent = data.length;
+
+  if (prev) {
+    const diff = last.value - prev.value;
+    const pct = (diff / prev.value) * 100;
+    const el = document.getElementById('kpi-change');
+    el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
+    el.className = diff >= 0 ? 'pos' : 'neg';
+  }
 }
 
 // ===================================================
