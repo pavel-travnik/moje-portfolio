@@ -201,27 +201,28 @@ document.querySelector('.back-btn').onclick = () => history.back();
 }
 
 async function loadDPS(isin, period) {
-  if (!apiCache.dps[isin]) {
-    const res = await fetch(
-      `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
-    );
-    let data = await res.json();
-    if (!Array.isArray(data)) data = [];
-    data.sort((a, b) => new Date(a.date) - new Date(b.date));
-    apiCache.dps[isin] = data;
-  }
+  const from = getFromDate(period);   // viz níže
 
-  
-const filtered = filterPeriod(apiCache.dps[isin], period);
+  const res = await fetch(
+    `${DPS_API_URL}?isin=${encodeURIComponent(isin)}&from=${from}`
+  );
+  const data = await res.json();
 
-renderFundKPI(filtered);
-renderPeriodDifference(filtered);
+  renderFundKPI(data);
+  renderPeriodDifference(data);
+  renderPortfolioChart(
+    data.map(d => ({ date: d.date, value: d.value })),
+    'chart-portfolio'
+  );
+}
 
-renderPortfolioChart(
-  filtered.map(d => ({ date: d.date, value: d.value })),
-  'chart-portfolio'
-);
-
+function getFromDate(period) {
+  const d = new Date();
+  if (period === '1M') d.setMonth(d.getMonth() - 1);
+  if (period === '6M') d.setMonth(d.getMonth() - 6);
+  if (period === '1Y') d.setFullYear(d.getFullYear() - 1);
+  if (period === '3Y') d.setFullYear(d.getFullYear() - 3);
+  return d.toISOString().slice(0, 10);
 }
 
 function renderFundKPI(data) {
@@ -686,8 +687,8 @@ function renderPortfolioChart(history, containerId) {
     const p = points[index];
     const d = history[index];
 
-    ctx.clearRect(0, 0, w, h);
-    renderPortfolioChart(history, containerId); // redraw background only once
+    // ctx.clearRect(0, 0, w, h);
+    // renderPortfolioChart(history, containerId); // redraw background only once
     tooltip.style.display = 'block';
 
     const dateStr = new Date(d.date).toLocaleDateString('cs-CZ');
