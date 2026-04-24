@@ -14,14 +14,16 @@ const apiCache = {
 // ===================================================
 // API URL
 // ===================================================
-const DPS_API_URL = 'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+// const DPS_API_URL = 'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+
+const DPS_API_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data';
+const DPS_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds';
 
 const STOCK_API_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
+const STOCK_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
 
 const CURRENCY_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_currencies';
 const CURRENCY_DATA_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_currency_data';
-
-const STOCK_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
 
 const PODILOVE_FONDY_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_podilove_fondy';
 const PODILOVY_FOND_DATA_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_podilovy_fond_data';
@@ -127,9 +129,7 @@ function loadPensionFunds() {
 
   grid.innerHTML = '<p>Načítám fondy</p>';
 
-  fetch(
-    'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds'
-  )
+  fetch(DPS_API)
     .then(r => r.json())
     .then(funds => {
       grid.innerHTML = '';
@@ -149,72 +149,87 @@ function loadPensionFunds() {
 // ===================================================
 // DETAIL FONDU
 // ===================================================
+
 function loadFundDetail(isin) {
-  main.innerHTML = `
-    <h3>Detail fondu</h3>
-    <p><strong>ISIN:</strong> ${isin}</p>
+ main.innerHTML = `
+  <h3>Detail fondu</h3>
+  <p><strong>ISIN:</strong> ${isin}</p>
 
-    <div class="kpi-row">
-      <div class="kpi"><span>Poslední hodnota</span><strong id="kpi-last"> - </strong></div>
-      <div class="kpi"><span>Změna</span><strong id="kpi-change"> - </strong></div>
-      <div class="kpi"><span>Počet záznamů</span><strong id="kpi-count"> - </strong></div>
-    </div>
+  <div class="kpi-row">
+   <div class="kpi">
+    <span>Poslední hodnota</span>
+    <strong id="kpi-last"> - </strong>
+   </div>
+   <div class="kpi">
+    <span>Změna</span>
+    <strong id="kpi-change"> - </strong>
+   </div>
+   <div class="kpi">
+    <span>Počet záznamů</span>
+    <strong id="kpi-count"> - </strong>
+   </div>
+  </div>
 
-
-
-<div class="period-row">
-  <div class="period-switch">
+  <div class="period-row">
+   <div class="period-switch">
     <button data-period="1M">1M</button>
     <button data-period="6M">6M</button>
     <button data-period="1Y">1Y</button>
     <button data-period="3Y" class="active">3Y</button>
     <button data-period="MAX">MAX</button>
+   </div>
+   <div id="period-diff" class="period-diff">—</div>
   </div>
 
-  <div id="period-diff" class="period-diff">
-    —
-  </div>
-</div>
+  <div id="chart-portfolio"></div>
+  <button class="back-btn">← Zpět</button>
+ `;
 
+ document.querySelector('.back-btn').onclick = () => history.back();
 
+ document.querySelectorAll('.period-switch button').forEach(btn => {
+  btn.onclick = () => {
+   document
+    .querySelectorAll('.period-switch button')
+    .forEach(b => b.classList.remove('active'));
+   btn.classList.add('active');
+   loadDPSData(isin, btn.dataset.period);
+  };
+ });
 
-    <div id="chart-portfolio"></div>
-    <button class="back-btn">← Zpět</button>
-  `;
-
-  
-
-document.querySelector('.back-btn').onclick = () => history.back();
-
-
-
-  document.querySelectorAll('.period-switch button').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.period-switch button')
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadDPS(isin, btn.dataset.period);
-    };
-  });
-
-  loadDPS(isin, '3Y');
+ // stejně jako akcie → default 3Y
+ loadDPSData(isin, '3Y');
 }
 
-async function loadDPS(isin, period) {
-  const res = await fetch(`${DPS_API_URL}?isin=${encodeURIComponent(isin)}`);
+async function loadDPSData(isin, period) {
+ // ✅ 1️⃣ fetch jen jednou
+ if (!apiCache.dps[isin]) {
+  const res = await fetch(
+   `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
+  );
+
   let data = await res.json();
   if (!Array.isArray(data)) data = [];
 
   data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  data = filterPeriod(data, period);
 
-  renderFundKPI(data);
-  renderPortfolioChart(
-    data.map(d => ({ date: d.date, value: d.value })),
-    'chart-portfolio'
-  );
+  apiCache.dps[isin] = data;
+ }
+
+ // ✅ 2️⃣ period = frontend filtr (stejné jako akcie)
+ const filtered = filterPeriod(apiCache.dps[isin], period);
+ const finalData = filtered.length ? filtered : apiCache.dps[isin];
+
+ // ✅ 3️⃣ render (stejná logika)
+ renderFundKPI(finalData);
+ renderPeriodDifference(
+  finalData.map(d => ({ value: d.value }))
+ );
+ renderPortfolioChart(
+  finalData.map(d => ({ date: d.date, value: d.value })),
+  'chart-portfolio'
+ );
 }
-
 
 function renderFundKPI(data) {
   if (!data.length) return;
