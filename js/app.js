@@ -609,7 +609,7 @@ function renderStockKPI(data) {
 
   // Objem
   document.getElementById('stock-kpi-volume').textContent =
-    last.volume?.toLocaleString('cs-CZ') || ' - ';
+    last.volume?.toLocaleString('cs-CZ') ?? ' - ';
 
   // Denní­ změna
   if (prev) {
