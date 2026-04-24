@@ -195,14 +195,15 @@ function loadFundDetail(isin) {
     <span>Rizikovost</span>
     <strong id="kpi-risk"> - </strong>
    </div>
+ </div>
 
    <p class="meta">
      <a id="fund-url" href="#" target="_blank" rel="noopener">
-    🌐 Web fondu
+    Detail fondu
      </a>
    </p>
 	
-  </div>
+ 
 
   <div class="period-row">
    <div class="period-switch">
@@ -218,7 +219,6 @@ function loadFundDetail(isin) {
   <div id="chart-portfolio"></div>
   <button class="back-btn">← Zpět</button>
 
-  renderFundMeta(isin);
  `;
 
  document.querySelector('.back-btn').onclick = () => history.back();
@@ -232,6 +232,8 @@ function loadFundDetail(isin) {
    loadDPSData(isin, btn.dataset.period);
   };
  });
+
+ renderFundMeta(isin); 
 
  // stejně jako akcie → default 3Y
  loadDPSData(isin, '3Y');
@@ -277,7 +279,6 @@ function renderFundKPI(data) {
    document.getElementById('kpi-last').textContent =
     `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
 
-  document.getElementById('kpi-count').textContent = data.length;
 
   if (prev) {
     const diff = last.value - prev.value;
@@ -362,6 +363,8 @@ function loadPodilovyFondDetail(isin) {
     <button class="back-btn">← Zpět</button>
   `;
 
+  renderFundMeta(isin);
+  
   document.querySelector('.back-btn').onclick = () => history.back();
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
