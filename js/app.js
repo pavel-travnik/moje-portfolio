@@ -623,18 +623,6 @@ function renderPortfolioChart(history, containerId) {
   const h = canvas.height;
 
 
-// ==== nejdrive se nahraje obrazek ===========================
-  const img = new Image();
-  img.src = '/img/graf.png'; // ← uprav cestu podle sebe
-
-  img.onload = () => {
-    // pozadí
-    ctx.globalAlpha = 0.15;
-    ctx.drawImage(img, 0, 0, w, h);
-    ctx.globalAlpha = 1;
-
-  };
-
 
   const values = history.map(p => p.value);
   const min = Math.min(...values);
@@ -687,6 +675,33 @@ function renderPortfolioChart(history, containerId) {
     i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
   );
   ctx.stroke();
+
+// ===== OSA X – DATUM =====
+ctx.textAlign = 'center';
+ctx.textBaseline = 'top';
+ctx.fillStyle = '#666';
+
+const maxXTicks = 5;
+const step = Math.max(1, Math.floor(history.length / maxXTicks));
+
+for (let i = 0; i < history.length; i += step) {
+  const x =
+    padding.left +
+    (i / (history.length - 1)) *
+      (w - padding.left - padding.right);
+
+  const dateStr = new Date(history[i].date).toLocaleDateString('cs-CZ');
+
+  // malá značka
+  ctx.strokeStyle = '#ccc';
+  ctx.beginPath();
+  ctx.moveTo(x, h - padding.bottom);
+  ctx.lineTo(x, h - padding.bottom + 4);
+  ctx.stroke();
+
+  // datum
+  ctx.fillText(dateStr, x, h - padding.bottom + 6);
+}
 
   // 🔍 Tooltip logic
   canvas.addEventListener('mousemove', e => {
