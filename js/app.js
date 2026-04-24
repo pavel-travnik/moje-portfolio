@@ -14,7 +14,7 @@ const apiCache = {
 // ===================================================
 // API URL
 // ===================================================
-// const DPS_API_URL = 'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
+// nepoužívaný odkaz const DPS_API_URL = 'https://moje-portfolio-a5gkdcgbasg4areg.westeurope-01.azurewebsites.net/api/get_dps_data';
 
 const DPS_API_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data';
 const DPS_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds';
@@ -621,6 +621,20 @@ function renderPortfolioChart(history, containerId) {
   const padding = { top: 20, right: 60, bottom: 30, left: 20 };
   const w = canvas.width;
   const h = canvas.height;
+
+
+// ==== nejdrive se nahraje obrazek ===========================
+  const img = new Image();
+  img.src = '/img/graf.png'; // ← uprav cestu podle sebe
+
+  img.onload = () => {
+    // pozadí
+    ctx.globalAlpha = 0.15;
+    ctx.drawImage(img, 0, 0, w, h);
+    ctx.globalAlpha = 1;
+
+  };
+
 
   const values = history.map(p => p.value);
   const min = Math.min(...values);
