@@ -10,6 +10,7 @@ const apiCache = {
   podiloveFondy: {}
 };
 
+apiCache.dpsFundsMeta = null;
 
 // ===================================================
 // API URL
@@ -132,6 +133,7 @@ function loadPensionFunds() {
   fetch(DPS_API)
     .then(r => r.json())
     .then(funds => {
+      apiCache.dpsFundsMeta = funds;
       grid.innerHTML = '';
       funds.forEach(f => {
         const card = document.createElement('div');
@@ -141,9 +143,29 @@ function loadPensionFunds() {
           history.pushState({ page: `penze/${f.isin}` }, '', `/penze/${f.isin}`);
           loadFundDetail(f.isin);
         };
+	
         grid.appendChild(card);
       });
     });
+}
+
+function renderFundMeta(isin) {
+  if (!apiCache.dpsFundsMeta) return;
+
+  const fund = apiCache.dpsFundsMeta.find(f => f.isin === isin);
+  if (!fund) return;
+
+  document.getElementById('fund-name').textContent = fund.name;
+  document.getElementById('fund-provider').textContent = fund.provider;
+
+  // Rizikovost (1–7)
+  const riskEl = document.getElementById('kpi-risk');
+  riskEl.textContent = ` ${fund.riskCategory} / 7`;
+  riskEl.className = 'risk risk-' + fund.riskCategory;
+
+  // URL fondu
+  const link = document.getElementById('fund-url');
+  link.href = fund.url;
 }
 
 // ===================================================
@@ -152,7 +174,12 @@ function loadPensionFunds() {
 
 function loadFundDetail(isin) {
  main.innerHTML = `
-  <h3>Detail fondu</h3>
+  
+  <h3 id="fund-name">Detail fondu</h3>
+  <p class="meta">
+  <span id="fund-provider"></span>
+  </p>
+
   <p><strong>ISIN:</strong> ${isin}</p>
 
   <div class="kpi-row">
@@ -165,9 +192,16 @@ function loadFundDetail(isin) {
     <strong id="kpi-change"> - </strong>
    </div>
    <div class="kpi">
-    <span>Počet záznamů</span>
-    <strong id="kpi-count"> - </strong>
+    <span>Rizikovost</span>
+    <strong id="kpi-risk"> - </strong>
    </div>
+
+   <p class="meta">
+     <a id="fund-url" href="#" target="_blank" rel="noopener">
+    🌐 Web fondu
+     </a>
+   </p>
+	
   </div>
 
   <div class="period-row">
@@ -183,6 +217,8 @@ function loadFundDetail(isin) {
 
   <div id="chart-portfolio"></div>
   <button class="back-btn">← Zpět</button>
+
+  renderFundMeta(isin);
  `;
 
  document.querySelector('.back-btn').onclick = () => history.back();
@@ -251,6 +287,7 @@ function renderFundKPI(data) {
     el.className = diff >= 0 ? 'pos' : 'neg';
   }
 }
+
 
 // ===================================================
 // PODILOVE FONDY
