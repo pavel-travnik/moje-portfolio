@@ -37,10 +37,6 @@ window.loadPortfolioPage = async function (page) {
   if (page.startsWith('portfolio/')) {
     const portfolioId = page.split('/')[1];
 
-    main.innerHTML = `
-      <h1 class="h1">Portfolio ${portfolioId}</h1>
-      <p class="muted">Správa a přehled portfolia</p>
-
       <!-- TABS -->
       <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
@@ -48,6 +44,10 @@ window.loadPortfolioPage = async function (page) {
         <button class="button tab" data-tab="transactions">Transakce</button>
         <button class="button tab" data-tab="settings">Nastavení</button>
       </div>
+
+    main.innerHTML = `
+      <h1 class="h1">Portfolio ${portfolioId}</h1>
+      <p class="muted">Správa a přehled portfolia</p>
 
       <!-- ================= OVERVIEW ================= -->
       <section id="tab-overview" class="portfolio-tab active">
@@ -157,10 +157,19 @@ window.loadPortfolioPage = async function (page) {
     const detail = await fetchPortfolioDetail(portfolioId);
     const chart = await fetchPortfolioChart(portfolioId);
 
-    renderPortfolioOverview(detail);
-    renderPortfolioChartData(chart);
-    renderPortfolioInstruments(detail.positions);
-    initPortfolioTabs();
+    if (detail && detail.valuation) {
+      renderPortfolioOverview(detail);
+    }
+
+    if (Array.isArray(detail?.positions)) {
+      renderPortfolioInstruments(detail.positions);
+    }
+
+    if (Array.isArray(chart)) {
+      renderPortfolioChartData(chart);
+    }
+
+initPortfolioTabs();
 
     document.getElementById('btn-add-trade').onclick = () =>
       openTradeModal(portfolioId);
