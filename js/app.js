@@ -75,6 +75,20 @@ window.addEventListener('popstate', e => {
 // ROUTER
 // ===================================================
 function loadPage(page, pushState = true) {
+
+  
+ // ===============================
+  // OSOBNÍ PORTFOLIO (delegace)
+  // ===============================
+  if (page.startsWith('portfolio')) {
+    if (window.loadPortfolioPage) {
+      window.loadPortfolioPage(page);
+      if (pushState) history.pushState({ page }, '', `/${page}`);
+      return;
+    }
+  }
+
+
   if (page.startsWith('penze/')) {
     loadFundDetail(page.split('/')[1]);
     return;
@@ -100,6 +114,7 @@ function loadPage(page, pushState = true) {
     return;
   }
 
+  
   fetch(`pages/${page}.html`)
     .then(res => {
       if (!res.ok) throw new Error();
