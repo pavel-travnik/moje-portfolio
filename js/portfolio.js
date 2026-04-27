@@ -1,5 +1,5 @@
 // ===================================================
-// PORTFOLIO.JS – osobní portfolio (finální verze)
+// PORTFOLIO.JS – osobní portfolio (OPRAVENÁ VERZE)
 // ===================================================
 
 const PORTFOLIO_API =
@@ -13,6 +13,9 @@ const CURRENT_USER_ID = 1;
 // ===================================================
 window.loadPortfolioPage = async function (page) {
   const main = document.getElementById('mainContent');
+
+  // ✅ KLÍČOVÁ OPRAVA – normalizace routy
+  page = page.replace(/^\/+/, '').replace(/\/$/, '');
 
   // ===============================
   // /portfolio – seznam portfolií
@@ -157,7 +160,6 @@ window.loadPortfolioPage = async function (page) {
     renderPortfolioOverview(detail);
     renderPortfolioChartData(chart);
     renderPortfolioInstruments(detail.positions);
-
     initPortfolioTabs();
 
     document.getElementById('btn-add-trade').onclick = () =>
@@ -192,6 +194,38 @@ async function fetchPortfolioChart(id) {
     `${PORTFOLIO_API}/get_portfolio_chart?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
   );
   return await r.json();
+}
+
+// ===================================================
+// RENDER – SEZNAM PORTFOLIÍ
+// ===================================================
+
+function renderPortfolioList(portfolios) {
+  const grid = document.getElementById('portfolioList');
+  grid.innerHTML = '';
+
+  if (!Array.isArray(portfolios) || portfolios.length === 0) {
+    grid.innerHTML = '<p class="muted">Žádné portfolio</p>';
+    return;
+  }
+
+  portfolios.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'fund-card';
+    card.innerHTML = `
+      <h3>Portfolio ${p.portfolio_id}</h3>
+      <small>Základní měna: ${p.base_ccy}</small>
+    `;
+    card.onclick = () => {
+      history.pushState(
+        { page: `portfolio/${p.portfolio_id}` },
+        '',
+        `/portfolio/${p.portfolio_id}`
+      );
+      window.loadPortfolioPage(`portfolio/${p.portfolio_id}`);
+    };
+    grid.appendChild(card);
+  });
 }
 
 // ===================================================
@@ -238,7 +272,7 @@ function renderPortfolioInstruments(positions) {
 }
 
 // ===================================================
-// GRAF – STEJNÝ RENDERER JAKO app.js
+// GRAF – stejný renderer jako app.js
 // ===================================================
 
 function renderPortfolioChartData(chart) {
