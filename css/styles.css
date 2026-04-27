@@ -190,16 +190,20 @@ a:hover {
 }
 
 
-.portfolio-tab { 
-    display:none; 
-}
-.portfolio-tab.active { 
-    display:block; animation: fade .2s ease; 
-}
-.tab.active { 
-    border-color: var(--gold); color: var(--gold); 
+/* Portfolio tabs */
+.portfolio-tab {
+  display: none;
 }
 
+.portfolio-tab.active {
+  display: block;
+  animation: fade .2s ease;
+}
+
+.tab.active {
+  border-color: var(--gold);
+  color: var(--gold);
+}
 
 /* =====================================
    KPI
