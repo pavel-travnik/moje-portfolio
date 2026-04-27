@@ -189,6 +189,18 @@ a:hover {
     color: var(--text-muted);
 }
 
+
+.portfolio-tab { 
+    display:none; 
+}
+.portfolio-tab.active { 
+    display:block; animation: fade .2s ease; 
+}
+.tab.active { 
+    border-color: var(--gold); color: var(--gold); 
+}
+
+
 /* =====================================
    KPI
 ===================================== */
