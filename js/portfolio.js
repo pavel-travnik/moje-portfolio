@@ -129,9 +129,7 @@ window.loadPortfolioPage = async function (page) {
       renderPortfolioInstruments(detail.positions);
     }
 
-    if (Array.isArray(chart) && chart.length > 1) {
-      renderPortfolioChartData(chart);
-    }
+    renderPortfolioChartData(chart);
 
     initPortfolioTabs();
     return;
@@ -243,6 +241,10 @@ function renderPortfolioInstruments(positions) {
 // GRAF – používá renderPortfolioChart z app.js
 // ===================================================
 function renderPortfolioChartData(chart) {
+  if (!Array.isArray(chart) || chart.length < 2) {
+    return;
+  }
+
   renderPortfolioChart(
     chart.map(d => ({ date: d.date, value: d.value })),
     'chart-portfolio'
