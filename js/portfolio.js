@@ -1,11 +1,11 @@
 // ===================================================
-// PORTFOLIO.JS – finální opravená verze
+// PORTFOLIO.JS – FINÁLNÍ FUNKČNÍ VERZE
 // ===================================================
 
 const PORTFOLIO_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
 
-// ⛔ zatím natvrdo – později z JWT
+// DOČASNĚ – později z JWT
 const CURRENT_USER_ID = 1;
 
 // ===================================================
@@ -14,7 +14,7 @@ const CURRENT_USER_ID = 1;
 window.loadPortfolioPage = async function (page) {
   const main = document.getElementById('mainContent');
 
-  // ✅ normalizace routy
+  // normalizace routy
   page = page.replace(/^\/+/, '').replace(/\/$/, '');
 
   // ===================================================
@@ -38,7 +38,7 @@ window.loadPortfolioPage = async function (page) {
     const portfolioId = page.split('/')[1];
 
     main.innerHTML = `
-      <!-- TABS (nahoře stránky) -->
+      <!-- TABS -->
       <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
         <button class="button tab" data-tab="instruments">Instrumenty</button>
@@ -49,87 +49,62 @@ window.loadPortfolioPage = async function (page) {
       <h1 class="h1">Portfolio ${portfolioId}</h1>
       <p class="muted">Správa a přehled portfolia</p>
 
-      <!-- ================= OVERVIEW ================= -->
+      <!-- OVERVIEW -->
       <section id="tab-overview" class="portfolio-tab active">
-        <div class="grid-3">
-          <div class="card">
-            <div class="muted">Hodnota</div>
-            <div class="kpi" id="pf-kpi-value">–</div>
+        <div class="kpi-row">
+          <div class="kpi">
+            <span>Hodnota</span>
+            <strong id="pf-kpi-value">—</strong>
           </div>
-          <div class="card">
-            <div class="muted">Denní změna</div>
-            <span id="pf-kpi-daily" class="chip">–</span>
-          </div>
-          <div class="card">
-            <div class="muted">YTD</div>
-            <span class="chip">—</span>
+          <div class="kpi">
+            <span>Denní změna</span>
+            <strong id="pf-kpi-daily">—</strong>
           </div>
         </div>
 
-        <div class="card" style="margin-top:1rem">
-          <div class="muted">Graf vývoje hodnoty</div>
-          <div id="chart-portfolio"></div>
-        </div>
+        <div id="chart-portfolio"></div>
       </section>
 
-      <!-- ================= INSTRUMENTS ================= -->
+      <!-- INSTRUMENTS -->
       <section id="tab-instruments" class="portfolio-tab">
-        <div class="card">
-          <div class="muted">Instrumenty v portfoliu</div>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Název</th>
-                <th>Měna</th>
-                <th>Aktuální hodnota</th>
-                <th>1M</th>
-                <th>6M</th>
-                <th>1Y</th>
-              </tr>
-            </thead>
-            <tbody id="portfolio-instruments"></tbody>
-          </table>
-        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Název</th>
+              <th>Měna</th>
+              <th>Hodnota</th>
+              <th>1M</th>
+              <th>6M</th>
+              <th>1Y</th>
+            </tr>
+          </thead>
+          <tbody id="portfolio-instruments"></tbody>
+        </table>
       </section>
 
-      <!-- ================= TRANSACTIONS ================= -->
+      <!-- TRANSACTIONS -->
       <section id="tab-transactions" class="portfolio-tab">
-        <div class="card">
-          <div class="muted">Transakce</div>
-          <table class="table">
-            <tbody>
-              <tr>
-                <td class="muted">Načtení transakcí (API)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p class="muted">Načtení transakcí (API)</p>
       </section>
 
-      <!-- ================= SETTINGS ================= -->
+      <!-- SETTINGS -->
       <section id="tab-settings" class="portfolio-tab">
-        <div class="card" style="max-width:600px">
-          <h3>Nastavení</h3>
-          <p class="muted">Změna hesla a e‑mailové reporty (API)</p>
-        </div>
+        <p class="muted">Nastavení účtu (API)</p>
       </section>
 
-      <button class="back-btn" style="margin-top:1.5rem">← Zpět</button>
+      <button class="back-btn">← Zpět</button>
     `;
 
     document.querySelector('.back-btn').onclick = () => history.back();
 
-    // ✅ API volání
+    // === API ===
     const detail = await fetchPortfolioDetail(portfolioId);
-    const chart = await fetchPortfolioChart(portfolioId);
 
     renderPortfolioOverview(detail);
 
     if (Array.isArray(detail?.positions)) {
       renderPortfolioInstruments(detail.positions);
     }
-
-    renderPortfolioChartData(chart);
 
     initPortfolioTabs();
     return;
@@ -149,13 +124,6 @@ async function fetchUserPortfolios() {
 async function fetchPortfolioDetail(id) {
   const r = await fetch(
     `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
-  );
-  return await r.json();
-}
-
-async function fetchPortfolioChart(id) {
-  const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolio_chart?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
   );
   return await r.json();
 }
@@ -192,7 +160,7 @@ function renderPortfolioList(portfolios) {
 }
 
 // ===================================================
-// RENDER – overview
+// RENDER – overview (ODOLNÉ PRO NULL)
 // ===================================================
 function renderPortfolioOverview(data) {
   const valueEl = document.getElementById('pf-kpi-value');
@@ -216,6 +184,7 @@ function renderPortfolioOverview(data) {
     dailyEl.textContent = '—';
   }
 }
+
 // ===================================================
 // RENDER – instruments
 // ===================================================
@@ -235,20 +204,6 @@ function renderPortfolioInstruments(positions) {
     `;
     tbody.appendChild(tr);
   });
-}
-
-// ===================================================
-// GRAF – používá renderPortfolioChart z app.js
-// ===================================================
-function renderPortfolioChartData(chart) {
-  if (!Array.isArray(chart) || chart.length < 2) {
-    return;
-  }
-
-  renderPortfolioChart(
-    chart.map(d => ({ date: d.date, value: d.value })),
-    'chart-portfolio'
-  );
 }
 
 // ===================================================
