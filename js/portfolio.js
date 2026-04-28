@@ -45,95 +45,92 @@ window.loadPortfolioPage = async function (page) {
     const portfolioId = page.split('/')[1];
 
     main.innerHTML = `
-      <!-- TABS -->
-      <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
-        <button class="button tab active" data-tab="overview">Přehled</button>
-        <button class="button tab" data-tab="instruments">Instrumenty</button>
-        <button class="button tab" data-tab="transactions">Transakce</button>
-        <button class="button tab" data-tab="settings">Nastavení</button>
+  <!-- TABS – VŽDY VIDITELNÉ -->
+  <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
+    <button class="button tab active" data-tab="overview">Přehled</button>
+    <button class="button tab" data-tab="instruments">Instrumenty</button>
+    <button class="button tab" data-tab="transactions">Transakce</button>
+    <button class="button tab" data-tab="settings">Nastavení</button>
+  </div>
+
+  <h1 class="h1">Portfolio ${portfolioId}</h1>
+
+  <!-- ================= PŘEHLED ================= -->
+  <section id="tab-overview" class="portfolio-tab active">
+    <div class="kpi-row">
+      <div class="kpi">
+        <span>Hodnota</span>
+        <strong id="pf-kpi-value">—</strong>
       </div>
-
-      <h1 class="h1">Portfolio ${portfolioId}</h1>
-      <p class="muted">Správa a přehled portfolia</p>
-
-      <!-- OVERVIEW -->
-      <section id="tab-overview" class="portfolio-tab active">
-        <div class="kpi-row">
-          <div class="kpi">
-            <span>Hodnota</span>
-            <strong id="pf-kpi-value">—</strong>
-          </div>
-          <div class="kpi">
-            <span>Denní změna</span>
-            <strong id="pf-kpi-daily">—</strong>
-          </div>
-        </div>
-
-        <div id="chart-portfolio"></div>
-      </section>
-
-      <!-- INSTRUMENTS -->
-      
-     <table class="portfolio-table">
-     <thead>
-       <tr>
-         <th>Název</th>
-         <th>Měna</th>
-         <th>Aktuální hodnota</th>
-         <th>1M</th>
-         <th>6M</th>
-         <th>1Y</th>
-       </tr>
-     </thead>
-      <tbody id="portfolio-instruments"></tbody>
-     </table>
-
-      <!-- TRANSACTIONS -->
-      <table class="portfolio-table">
-      <thead>
-       <tr>
-         <th>Datum</th>
-         <th>Instrument</th>
-         <th>Směr</th>
-         <th>Množství</th>
-         <th>Cena</th>
-      </tr>
-     </thead>
-      <tbody id="portfolio-transactions">
-    <tr>
-      <td colspan="5" class="muted">Načtení transakcí (API)</td>
-    </tr>
-    </tbody>
-    </table>
-
-      <!-- SETTINGS -->
-    <section id="tab-settings" class="portfolio-tab">
-     <div class="card" style="max-width:420px">
-      <h3>Nastavení notifikací</h3>
-
-    <label class="stack">
-      <span class="muted">E-mail</span>
-      <input class="input" id="settings-email" type="email"
-             placeholder="uzivatel@email.cz">
-    </label>
-
-    <label class="stack">
-      <span class="muted">Zasílání přehledu</span>
-      <select class="select" id="settings-frequency">
-        <option value="off">Vypnuto</option>
-        <option value="daily">Denně</option>
-        <option value="weekly">Týdně</option>
-      </select>
-    </label>
-
-    <button class="button" id="save-settings">
-      Uložit nastavení
-    </button>
+      <div class="kpi">
+        <span>Denní změna</span>
+        <strong id="pf-kpi-daily">—</strong>
+      </div>
     </div>
-    </section>
 
-      <button class="back-btn">← Zpět</button>
-    `;
+    <div id="chart-portfolio"></div>
+  </section>
+
+  <!-- ================= INSTRUMENTY ================= -->
+  <section id="tab-instruments" class="portfolio-tab">
+    <table class="portfolio-table">
+      <thead>
+        <tr>
+          <th>Název</th>
+          <th>Měna</th>
+          <th>Aktuální hodnota</th>
+          <th>1M</th>
+          <th>6M</th>
+          <th>1Y</th>
+        </tr>
+      </thead>
+      <tbody id="portfolio-instruments"></tbody>
+    </table>
+  </section>
+
+  <!-- ================= TRANSAKCE ================= -->
+  <section id="tab-transactions" class="portfolio-tab">
+    <table class="portfolio-table">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Instrument</th>
+          <th>Směr</th>
+          <th>Množství</th>
+          <th>Cena</th>
+        </tr>
+      </thead>
+      <tbody id="portfolio-transactions">
+        <tr>
+          <td colspan="5" class="muted">Načtení transakcí (API)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================= NASTAVENÍ ================= -->
+  <section id="tab-settings" class="portfolio-tab">
+    <div class="card" style="max-width:420px">
+      <label class="stack">
+        <span class="muted">E‑mail</span>
+        <input class="input" type="email" placeholder="uzivatel@email.cz">
+      </label>
+
+      <label class="stack">
+        <span class="muted">Zasílání přehledu</span>
+        <select class="select">
+          <option value="off">Vypnuto</option>
+          <option value="daily">Denně</option>
+          <option value="weekly">Týdně</option>
+        </select>
+      </label>
+
+      <button class="button">Uložit nastavení</button>
+    </div>
+  </section>
+
+  <button class="back-btn">← Zpět</button>
+`;
 
     document.querySelector('.back-btn').onclick = () => history.back();
 
