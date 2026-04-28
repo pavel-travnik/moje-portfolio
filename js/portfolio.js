@@ -123,9 +123,7 @@ window.loadPortfolioPage = async function (page) {
     const detail = await fetchPortfolioDetail(portfolioId);
     const chart = await fetchPortfolioChart(portfolioId);
 
-    if (detail && detail.valuation) {
-      renderPortfolioOverview(detail);
-    }
+    renderPortfolioOverview(detail);
 
     if (Array.isArray(detail?.positions)) {
       renderPortfolioInstruments(detail.positions);
@@ -199,20 +197,27 @@ function renderPortfolioList(portfolios) {
 // RENDER – overview
 // ===================================================
 function renderPortfolioOverview(data) {
-  document.getElementById('pf-kpi-value').textContent =
+  const valueEl = document.getElementById('pf-kpi-value');
+  const dailyEl = document.getElementById('pf-kpi-daily');
+
+  if (!data || !data.valuation) {
+    valueEl.textContent = '—';
+    dailyEl.textContent = '—';
+    return;
+  }
+
+  valueEl.textContent =
     `${data.valuation.gross_value_base.toFixed(2)} CZK`;
 
-  const daily = document.getElementById('pf-kpi-daily');
   if (data.valuation.pnl_day_czk !== null) {
     const diff = data.valuation.pnl_day_czk;
     const pct = data.valuation.pnl_day_pct * 100;
-    daily.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
-    daily.className = 'chip ' + (diff >= 0 ? 'pos' : 'neg');
+    dailyEl.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
+    dailyEl.className = diff >= 0 ? 'pos' : 'neg';
   } else {
-    daily.textContent = '—';
+    dailyEl.textContent = '—';
   }
 }
-
 // ===================================================
 // RENDER – instruments
 // ===================================================
