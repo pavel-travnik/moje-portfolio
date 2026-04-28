@@ -8,6 +8,13 @@ const PORTFOLIO_API =
 // DOČASNĚ – později z JWT
 const CURRENT_USER_ID = 1;
 
+// ===== FORMÁTOVÁNÍ ČÍSEL (CZ) =====
+const fmtNumber = (value, decimals = 2) =>
+  new Intl.NumberFormat('cs-CZ', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(value);
+
 // ===================================================
 // ROUTER ENTRY – volá app.js
 // ===================================================
@@ -66,31 +73,64 @@ window.loadPortfolioPage = async function (page) {
       </section>
 
       <!-- INSTRUMENTS -->
-      <section id="tab-instruments" class="portfolio-tab">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Název</th>
-              <th>Měna</th>
-              <th>Hodnota</th>
-              <th>1M</th>
-              <th>6M</th>
-              <th>1Y</th>
-            </tr>
-          </thead>
-          <tbody id="portfolio-instruments"></tbody>
-        </table>
-      </section>
+      
+     <table class="portfolio-table">
+     <thead>
+       <tr>
+         <th>Název</th>
+         <th>Měna</th>
+         <th>Aktuální hodnota</th>
+         <th>1M</th>
+         <th>6M</th>
+         <th>1Y</th>
+       </tr>
+     </thead>
+      <tbody id="portfolio-instruments"></tbody>
+     </table>
 
       <!-- TRANSACTIONS -->
-      <section id="tab-transactions" class="portfolio-tab">
-        <p class="muted">Načtení transakcí (API)</p>
-      </section>
+      <table class="portfolio-table">
+      <thead>
+       <tr>
+         <th>Datum</th>
+         <th>Instrument</th>
+         <th>Směr</th>
+         <th>Množství</th>
+         <th>Cena</th>
+      </tr>
+     </thead>
+      <tbody id="portfolio-transactions">
+    <tr>
+      <td colspan="5" class="muted">Načtení transakcí (API)</td>
+    </tr>
+    </tbody>
+    </table>
 
       <!-- SETTINGS -->
-      <section id="tab-settings" class="portfolio-tab">
-        <p class="muted">Nastavení účtu (API)</p>
-      </section>
+    <section id="tab-settings" class="portfolio-tab">
+     <div class="card" style="max-width:420px">
+      <h3>Nastavení notifikací</h3>
+
+    <label class="stack">
+      <span class="muted">E-mail</span>
+      <input class="input" id="settings-email" type="email"
+             placeholder="uzivatel@email.cz">
+    </label>
+
+    <label class="stack">
+      <span class="muted">Zasílání přehledu</span>
+      <select class="select" id="settings-frequency">
+        <option value="off">Vypnuto</option>
+        <option value="daily">Denně</option>
+        <option value="weekly">Týdně</option>
+      </select>
+    </label>
+
+    <button class="button" id="save-settings">
+      Uložit nastavení
+    </button>
+    </div>
+    </section>
 
       <button class="back-btn">← Zpět</button>
     `;
@@ -162,6 +202,7 @@ function renderPortfolioList(portfolios) {
 // ===================================================
 // RENDER – overview (ODOLNÉ PRO NULL)
 // ===================================================
+
 function renderPortfolioOverview(data) {
   const valueEl = document.getElementById('pf-kpi-value');
   const dailyEl = document.getElementById('pf-kpi-daily');
@@ -173,12 +214,14 @@ function renderPortfolioOverview(data) {
   }
 
   valueEl.textContent =
-    `${data.valuation.gross_value_base.toFixed(2)} CZK`;
+    `${fmtNumber(data.valuation.gross_value_base)} CZK`;
 
   if (data.valuation.pnl_day_czk !== null) {
     const diff = data.valuation.pnl_day_czk;
     const pct = data.valuation.pnl_day_pct * 100;
-    dailyEl.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
+
+    dailyEl.textContent =
+      `${fmtNumber(diff)} (${fmtNumber(pct, 2)} %)`;
     dailyEl.className = diff >= 0 ? 'pos' : 'neg';
   } else {
     dailyEl.textContent = '—';
@@ -197,7 +240,7 @@ function renderPortfolioInstruments(positions) {
     tr.innerHTML = `
       <td>${p.asset_type} · ${p.asset_id}</td>
       <td>${p.cost_currency}</td>
-      <td>${p.book_value.toFixed(2)} ${p.cost_currency}</td>
+      <td>${fmtNumber(p.book_value)} ${p.cost_currency}</td>
       <td>—</td>
       <td>—</td>
       <td>—</td>
