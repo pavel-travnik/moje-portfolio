@@ -168,14 +168,20 @@ async function fetchPortfolioDetail(id) {
 }
 
 // ✅ ROBUSTNÍ – endpoint může chybět
-async function fetchPortfolioTransactions(id) {
+async function fetchPortfolioTransactions(portfolioId) {
   try {
-    const r = await fetch(
-      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
+    const res = await fetch(
+      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${CURRENT_USER_ID}`
     );
-    if (!r.ok) return [];
-    return await r.json();
-  } catch {
+
+    if (!res.ok) {
+      // endpoint zatím neexistuje → žádné transakce
+      return [];
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.warn('Transakce se nepodařilo načíst:', err);
     return [];
   }
 }
@@ -265,6 +271,71 @@ function renderPortfolioTransactions(trades) {
     `;
     tbody.appendChild(tr);
   });
+}
+
+function openTransactionModal(portfolioId) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `
+    <div class="modal">
+      <h3>Přidat transakci</h3>
+
+      <label class="stack">
+        <span>Typ aktiva</span>
+        <select id="tx-asset-type" class="select">
+          <option value="ETF">ETF</option>
+          <option value="STOCK">Akcie</option>
+          <option value="FUND">Fond</option>
+          <option value="DPS">DPS</option>
+        </select>
+      </label>
+
+      <label class="stack">
+        <span>Ticker / ISIN</span>
+        <input id="tx-asset-id" class="input">
+      </label>
+
+      <label class="stack">
+        <span>Směr</span>
+        <select id="tx-type" class="select">
+          <option value="BUY">BUY</option>
+          <option value="SELL">SELL</option>
+        </select>
+      </label>
+
+      <label class="stack">
+        <span>Množství</span>
+        <input id="tx-qty" type="number" step="0.0001" class="input">
+      </label>
+
+      <label class="stack">
+        <span>Cena</span>
+        <input id="tx-price" type="number" step="0.0001" class="input">
+      </label>
+
+      <label class="stack">
+        <span>Měna</span>
+        <select id="tx-currency" class="select">
+          <option value="CZK">CZK</option>
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+        </select>
+      </label>
+
+      <div class="toolbar" style="justify-content:flex-end">
+        <button class="button" id="tx-save">Uložit</button>
+        <button class="button" id="tx-cancel">Zrušit</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelector('#tx-cancel').onclick = () => modal.remove();
+  modal.querySelector('#tx-save').onclick = () => {
+    alert('Zatím jen UI – backend přijde později');
+    modal.remove();
+  };
 }
 
 // ===================================================
