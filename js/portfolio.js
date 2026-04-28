@@ -1,11 +1,11 @@
 // ===================================================
-// PORTFOLIO.JS – finální funkční verze
+// PORTFOLIO.JS – finální opravená verze
 // ===================================================
 
 const PORTFOLIO_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
 
-// ⛔ zatím natvrdo, později JWT
+// ⛔ zatím natvrdo – později z JWT
 const CURRENT_USER_ID = 1;
 
 // ===================================================
@@ -38,7 +38,7 @@ window.loadPortfolioPage = async function (page) {
     const portfolioId = page.split('/')[1];
 
     main.innerHTML = `
-      <!-- TABS -->
+      <!-- TABS (nahoře stránky) -->
       <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
         <button class="button tab" data-tab="instruments">Instrumenty</button>
@@ -75,10 +75,7 @@ window.loadPortfolioPage = async function (page) {
       <!-- ================= INSTRUMENTS ================= -->
       <section id="tab-instruments" class="portfolio-tab">
         <div class="card">
-          <div class="toolbar" style="justify-content:space-between">
-            <div class="muted">Instrumenty v portfoliu</div>
-          </div>
-
+          <div class="muted">Instrumenty v portfoliu</div>
           <table class="table">
             <thead>
               <tr>
@@ -113,7 +110,7 @@ window.loadPortfolioPage = async function (page) {
       <section id="tab-settings" class="portfolio-tab">
         <div class="card" style="max-width:600px">
           <h3>Nastavení</h3>
-          <p class="muted">Změna hesla, e-mailové reporty (API)</p>
+          <p class="muted">Změna hesla a e‑mailové reporty (API)</p>
         </div>
       </section>
 
@@ -122,14 +119,21 @@ window.loadPortfolioPage = async function (page) {
 
     document.querySelector('.back-btn').onclick = () => history.back();
 
-    // ✅ API
+    // ✅ API volání
     const detail = await fetchPortfolioDetail(portfolioId);
     const chart = await fetchPortfolioChart(portfolioId);
 
-    if (detail?.valuation) renderPortfolioOverview(detail);
-    if (Array.isArray(detail?.positions))
+    if (detail && detail.valuation) {
+      renderPortfolioOverview(detail);
+    }
+
+    if (Array.isArray(detail?.positions)) {
       renderPortfolioInstruments(detail.positions);
-    if (Array.isArray(chart)) renderPortfolioChartData(chart);
+    }
+
+    if (Array.isArray(chart) && chart.length > 1) {
+      renderPortfolioChartData(chart);
+    }
 
     initPortfolioTabs();
     return;
@@ -231,11 +235,9 @@ function renderPortfolioInstruments(positions) {
 }
 
 // ===================================================
-// GRAF – stejný renderer jako v app.js
+// GRAF – používá renderPortfolioChart z app.js
 // ===================================================
 function renderPortfolioChartData(chart) {
-  if (chart.length < 2) return;
-
   renderPortfolioChart(
     chart.map(d => ({ date: d.date, value: d.value })),
     'chart-portfolio'
