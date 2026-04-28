@@ -155,6 +155,34 @@ a:hover {
     color: var(--green);
 }
 
+/* ===== PORTFOLIO TABULKY ===== */
+.portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.portfolio-table thead th {
+  text-align: left;
+  padding: 12px;
+  color: var(--gold);
+  border-bottom: 2px solid var(--gold);
+  font-weight: 600;
+}
+
+.portfolio-table tbody td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(201,162,70,0.35);
+}
+
+.portfolio-table tbody tr:nth-child(even) {
+  background: #f6f6f6;
+}
+
+.portfolio-table tbody tr:hover {
+  background: var(--gold-light);
+}
+
 /* =====================================
    GRID & KARTY (FONDY / AKCIE)
 ===================================== */
