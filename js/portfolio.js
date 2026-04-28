@@ -1,10 +1,11 @@
 // ===================================================
-// PORTFOLIO.JS – FINÁLNÍ SPRÁVNÁ VERZE
+// PORTFOLIO.JS – FINÁLNÍ STABILNÍ VERZE
 // ===================================================
 
 const PORTFOLIO_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
 
+// DOČASNĚ – později z JWT
 const CURRENT_USER_ID = 1;
 
 // ===== FORMÁTOVÁNÍ ČÍSEL (CZ) =====
@@ -15,13 +16,17 @@ const fmtNumber = (value, decimals = 2) =>
   }).format(value);
 
 // ===================================================
-// ROUTER ENTRY
+// ROUTER ENTRY – volá app.js
 // ===================================================
 window.loadPortfolioPage = async function (page) {
   const main = document.getElementById('mainContent');
+
+  // normalizace routy
   page = page.replace(/^\/+/, '').replace(/\/$/, '');
 
-  // ========= SEZNAM PORTFOLIÍ =========
+  // ===================================================
+  // /portfolio – seznam portfolií
+  // ===================================================
   if (page === 'portfolio') {
     main.innerHTML = `
       <h1 class="h1">Moje portfolia</h1>
@@ -33,11 +38,14 @@ window.loadPortfolioPage = async function (page) {
     return;
   }
 
-  // ========= DETAIL PORTFOLIA =========
+  // ===================================================
+  // /portfolio/{id} – detail portfolia
+  // ===================================================
   if (page.startsWith('portfolio/')) {
     const portfolioId = page.split('/')[1];
 
     main.innerHTML = `
+      <!-- TABS -->
       <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
         <button class="button tab" data-tab="instruments">Instrumenty</button>
@@ -47,6 +55,7 @@ window.loadPortfolioPage = async function (page) {
 
       <h1 class="h1">Portfolio ${portfolioId}</h1>
 
+      <!-- ================= PŘEHLED ================= -->
       <section id="tab-overview" class="portfolio-tab active">
         <div class="kpi-row">
           <div class="kpi">
@@ -60,6 +69,7 @@ window.loadPortfolioPage = async function (page) {
         </div>
       </section>
 
+      <!-- ================= INSTRUMENTY ================= -->
       <section id="tab-instruments" class="portfolio-tab">
         <table class="portfolio-table">
           <thead>
@@ -76,6 +86,7 @@ window.loadPortfolioPage = async function (page) {
         </table>
       </section>
 
+      <!-- ================= TRANSAKCE ================= -->
       <section id="tab-transactions" class="portfolio-tab">
         <div class="toolbar" style="justify-content:space-between">
           <span class="muted">Transakce</span>
@@ -95,12 +106,14 @@ window.loadPortfolioPage = async function (page) {
         </table>
       </section>
 
+      <!-- ================= NASTAVENÍ ================= -->
       <section id="tab-settings" class="portfolio-tab">
         <div class="card" style="max-width:420px">
           <label class="stack">
             <span class="muted">E‑mail</span>
             <input class="input" type="email">
           </label>
+
           <label class="stack">
             <span class="muted">Zasílání přehledu</span>
             <select class="select">
@@ -109,6 +122,7 @@ window.loadPortfolioPage = async function (page) {
               <option value="weekly">Týdně</option>
             </select>
           </label>
+
           <button class="button">Uložit</button>
         </div>
       </section>
@@ -118,6 +132,7 @@ window.loadPortfolioPage = async function (page) {
 
     document.querySelector('.back-btn').onclick = () => history.back();
 
+    // ===== API =====
     const detail = await fetchPortfolioDetail(portfolioId);
     renderPortfolioOverview(detail);
 
@@ -152,11 +167,17 @@ async function fetchPortfolioDetail(id) {
   return await r.json();
 }
 
+// ✅ ROBUSTNÍ – endpoint může chybět
 async function fetchPortfolioTransactions(id) {
-  const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
-  );
-  return await r.json();
+  try {
+    const r = await fetch(
+      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
+    );
+    if (!r.ok) return [];
+    return await r.json();
+  } catch {
+    return [];
+  }
 }
 
 // ===================================================
@@ -191,12 +212,14 @@ function renderPortfolioOverview(data) {
     return;
   }
 
-  valueEl.textContent = `${fmtNumber(data.valuation.gross_value_base)} CZK`;
+  valueEl.textContent =
+    `${fmtNumber(data.valuation.gross_value_base)} CZK`;
 
   if (data.valuation.pnl_day_czk !== null) {
     const diff = data.valuation.pnl_day_czk;
     const pct = data.valuation.pnl_day_pct * 100;
-    dailyEl.textContent = `${fmtNumber(diff)} (${fmtNumber(pct, 2)} %)`;
+    dailyEl.textContent =
+      `${fmtNumber(diff)} (${fmtNumber(pct, 2)} %)`;
     dailyEl.className = diff >= 0 ? 'pos' : 'neg';
   } else {
     dailyEl.textContent = '—';
@@ -227,7 +250,7 @@ function renderPortfolioTransactions(trades) {
 
   if (!Array.isArray(trades) || trades.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="5" class="muted">Žádné transakce</td></tr>';
+      '<tr><td colspan="5" class="muted">Zatím žádné transakce</td></tr>';
     return;
   }
 
