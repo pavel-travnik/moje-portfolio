@@ -173,13 +173,11 @@ async function fetchPortfolioTransactions(portfolioId) {
     const res = await fetch(
       `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${CURRENT_USER_ID}`
     );
+    if (!res.ok) return [];
 
-    if (!res.ok) {
-      // endpoint zatím neexistuje → žádné transakce
-      return [];
-    }
+    const data = await res.json();
+    return data.trades || [];
 
-    return await res.json();
   } catch (err) {
     console.warn('Transakce se nepodařilo načíst:', err);
     return [];
@@ -331,11 +329,46 @@ function openTransactionModal(portfolioId) {
 
   document.body.appendChild(modal);
 
-  modal.querySelector('#tx-cancel').onclick = () => modal.remove();
-  modal.querySelector('#tx-save').onclick = () => {
-    alert('Zatím jen UI – backend přijde později');
-    modal.remove();
+  modal.querySelector('#tx-save').onclick = async () => {
+  const payload = {
+    portfolio_id: portfolioId,
+    user_id: CURRENT_USER_ID,async function fetchPortfol
+    trades: [
+      {
+        asset_type: document.getElementById('tx-asset-type').value,
+        asset_id: document.getElementById('tx-asset-id').value,
+        trade_type: document.querySelector('input[name="tx-direction"]:checked').value,
+        quantity: Number(document.getElementById('tx-quantity').value),
+        price: Number(document.getElementById('tx-price').value),
+        currency: document.getElementById('tx-currency').value,
+        trade_date: document.getElementById('tx-date').value
+      }
+    ]
   };
+
+  try {
+    const res = await fetch(
+      `${PORTFOLIO_API}/save_portfolio_trades`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Save trade failed');
+    }
+
+    modal.remove();
+    await loadPortfolioPage(`portfolio/${portfolioId}`);
+
+  } catch (e) {
+    alert(e.message);
+  }
+};
 }
 
 // ===================================================
