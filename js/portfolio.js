@@ -327,10 +327,60 @@ function openTransactionModal(portfolioId) {
 
   modal.querySelector('#tx-cancel').onclick = () => modal.remove();
 
-  modal.querySelector('#tx-save').onclick = async () => {
-    // tady už máš POST logiku, tu teď neřešíme
+modal.querySelector('#tx-save').onclick = async () => {
+  try {
+    const trade = {
+      asset_type: document.getElementById('tx-asset-type').value,
+      asset_id: document.getElementById('tx-asset-id').value,
+      trade_type: document.querySelector('input[name="tx-direction"]:checked').value,
+      quantity: Number(document.getElementById('tx-quantity').value),
+      price: Number(document.getElementById('tx-price').value),
+      currency: document.getElementById('tx-currency').value,
+      trade_date: document.getElementById('tx-date').value
+    };
+
+    // základní validace
+    if (!trade.asset_id || !trade.trade_date || trade.quantity <= 0 || trade.price <= 0) {
+      alert('Vyplňte všechna pole správně');
+      return;
+    }
+
+    await savePortfolioTrade(portfolioId, trade);
+
     modal.remove();
+
+    // znovunačtení detailu portfolia (pozice + transakce)
+    await loadPortfolioPage(`portfolio/${portfolioId}`);
+
+  } catch (e) {
+    alert(e.message);
+  }
+};
+}
+
+async function savePortfolioTrade(portfolioId, trade) {
+  const payload = {
+    portfolio_id: portfolioId,
+    user_id: CURRENT_USER_ID,
+    trades: [trade]
   };
+
+  const res = await fetch(
+    `${PORTFOLIO_API}/save_portfolio_trades`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Uložení transakce selhalo');
+  }
+
+  return data;
 }
 
 // ===================================================
