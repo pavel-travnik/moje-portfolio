@@ -246,9 +246,25 @@ async function loadAssetsByType(assetType) {
       return [];
   }
 
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  return await res.json();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error('API error', res.status);
+      return [];
+    }
+
+    const data = await res.json();
+    if (!Array.isArray(data)) {
+      console.error('API nevrátilo pole', data);
+      return [];
+    }
+
+    return data;
+
+  } catch (e) {
+    console.error('Chyba při načítání CP', e);
+    return [];
+  }
 }
 
 function renderPortfolioOverview(data) {
@@ -400,16 +416,31 @@ function openTransactionModal(portfolioId) {
 
   /* ✅ Dynamické CP podle typu aktiva */
   document.getElementById('tx-asset-type').onchange = async e => {
+  const sel = document.getElementById('tx-asset-id');
+  sel.innerHTML = `<option value="">Načítám…</option>`;
+
+  try {
     const list = await loadAssetsByType(e.target.value);
-    const sel = document.getElementById('tx-asset-id');
 
     sel.innerHTML = `<option value="">— vyber —</option>`;
+
     list.forEach(a => {
-      sel.innerHTML += `<option value="${a.isin || a.ticker}">
-        ${a.name || a.ticker}
-      </option>`;
+      const id = a.isin || a.ticker;
+      const name = a.name || a.ticker || a.isin;
+
+      if (!id) return; // ⚠️ ochrana
+
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = name;
+      sel.appendChild(opt);
     });
-  };
+
+  } catch (err) {
+    console.error(err);
+    sel.innerHTML = `<option value="">Chyba načítání</option>`;
+  }
+};
 
   /* ✅ Zavření */
   document.getElementById('tx-cancel').onclick = () => {
