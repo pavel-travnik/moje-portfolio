@@ -251,8 +251,13 @@ function renderPortfolioTransactions(trades) {
   tbody.innerHTML = '';
 
   if (!Array.isArray(trades) || trades.length === 0) {
-    tbody.innerHTML =
-      '<tr><td colspan="5" class="muted">Zatím žádné transakce</td></tr>';
+    
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5">Zatím žádné transakce</td>
+    </tr>
+  `;
+
     return;
   }
 
