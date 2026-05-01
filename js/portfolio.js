@@ -216,14 +216,12 @@ function renderPortfolioOverview(data) {
     return;
   }
 
-  valueEl.textContent =
-    `${fmtNumber(data.valuation.gross_value_base)} CZK`;
+  valueEl.textContent = `${fmtNumber(data.valuation.gross_value_base)} CZK`;
 
   if (data.valuation.pnl_day_czk !== null) {
     const diff = data.valuation.pnl_day_czk;
     const pct = data.valuation.pnl_day_pct * 100;
-    dailyEl.textContent =
-      `${fmtNumber(diff)} (${fmtNumber(pct, 2)} %)`;
+    dailyEl.textContent = `${fmtNumber(diff)} (${fmtNumber(pct, 2)} %)`;
     dailyEl.className = diff >= 0 ? 'pos' : 'neg';
   } else {
     dailyEl.textContent = '—';
