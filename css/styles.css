@@ -263,6 +263,59 @@ a:hover {
   margin-top: 20px;
 }
 
+.gold-theme {
+  background: #f7f7f7;
+  color: #222;
+  border-radius: 14px;
+}
+
+.gold-theme h3 {
+  color: #C9A646;
+  margin-bottom: 14px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.form-row.single {
+  grid-template-columns: 1fr;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #555;
+}
+
+.form-group input,
+.form-group select {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #C9A646;
+  outline: none;
+}
+
+.button.primary {
+  background: #C9A646;
+  color: #111;
+  border: none;
+}
+
+.button.secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+
 /* =====================================
    KPI
 ===================================== */
