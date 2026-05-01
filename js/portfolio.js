@@ -38,6 +38,22 @@ window.loadPortfolioPage = async function (page) {
     return;
   }
 
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#btn-add-transaction');
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const portfolioId = btn.dataset.portfolioId;
+  if (!portfolioId) {
+    console.warn('Chybí portfolioId na tlačítku');
+    return;
+  }
+
+  openTransactionModal(portfolioId);
+});
+
   // ===================================================
   // /portfolio/{id} – detail portfolia
   // ===================================================
@@ -90,7 +106,13 @@ window.loadPortfolioPage = async function (page) {
       <section id="tab-transactions" class="portfolio-tab">
         <div class="toolbar" style="justify-content:space-between">
           <span class="muted">Transakce</span>
-          <button class="button" id="btn-add-transaction">Přidat transakci</button>
+          <button
+            class="button"
+            id="btn-add-transaction"
+            data-portfolio-id="${portfolioId}"
+            >
+            Přidat transakci
+          </button>
         </div>
         <table class="portfolio-table">
           <thead>
