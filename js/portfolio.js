@@ -299,6 +299,7 @@ function renderPortfolioTransactions(trades) {
 function openTransactionModal(portfolioId) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
+  document.body.style.overflow = 'hidden';
 
   modal.innerHTML = `
     <div class="modal">
@@ -370,6 +371,7 @@ modal.querySelector('#tx-save').onclick = async () => {
     await savePortfolioTrade(portfolioId, trade);
 
     modal.remove();
+    document.body.style.overflow = '';
 
     // znovunačtení detailu portfolia (pozice + transakce)
     await loadPortfolioPage(`portfolio/${portfolioId}`);
