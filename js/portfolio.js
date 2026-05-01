@@ -228,6 +228,29 @@ function renderPortfolioList(portfolios) {
   });
 }
 
+async function loadAssetsByType(assetType) {
+  let url;
+
+  switch (assetType) {
+    case 'DPS':
+      url = `${PORTFOLIO_API}/get_dps_funds`;
+      break;
+    case 'ETF':
+    case 'STOCK':
+      url = `${PORTFOLIO_API}/get_active_stocks`;
+      break;
+    case 'FUND':
+      url = `${PORTFOLIO_API}/get_active_podilove_fondy`;
+      break;
+    default:
+      return [];
+  }
+
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  return await res.json();
+}
+
 function renderPortfolioOverview(data) {
   const valueEl = document.getElementById('pf-kpi-value');
   const dailyEl = document.getElementById('pf-kpi-daily');
@@ -299,87 +322,118 @@ function renderPortfolioTransactions(trades) {
 function openTransactionModal(portfolioId) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
-  document.body.style.overflow = 'hidden';
 
   modal.innerHTML = `
-    <div class="modal">
-      <h3>Přidat transakci</h3>
+    <div class="modal gold-theme">
+      <h3>Nová transakce</h3>
 
-      <label>Typ aktiva</label>
-      <select id="tx-asset-type">
-        <option value="ETF">ETF</option>
-        <option value="STOCK">Akcie</option>
-        <option value="DPS">DPS</option>
-      </select>
+      <!-- ŘÁDEK 1 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Typ aktiva</label>
+          <select id="tx-asset-type">
+            <option value="DPS">DPS</option>
+            <option value="ETF">ETF</option>
+            <option value="STOCK">Akcie</option>
+            <option value="FUND">Podílový fond</option>
+          </select>
+        </div>
 
-      <label>Ticker / ISIN</label>
-      <input id="tx-asset-id" type="text" />
+        <div class="form-group">
+          <label>Cenný papír</label>
+          <select id="tx-asset-id">
+            <option value="">— vyber typ aktiva —</option>
+          </select>
+        </div>
+      </div>
 
-      <label>Směr</label>
-      <label>
-        <input type="radio" name="tx-direction" value="BUY" checked /> BUY
-      </label>
-      <label>
-        <input type="radio" name="tx-direction" value="SELL" /> SELL
-      </label>
+      <!-- ŘÁDEK 2 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Typ transakce</label>
+          <select id="tx-direction">
+            <option value="BUY">Nákup</option>
+            <option value="SELL">Odkup</option>
+          </select>
+        </div>
 
-      <label>Množství</label>
-      <input id="tx-quantity" type="number" step="0.0001" />
+        <div class="form-group">
+          <label>Množství</label>
+          <input id="tx-quantity" type="number" step="0.0001">
+        </div>
+      </div>
 
-      <label>Cena</label>
-      <input id="tx-price" type="number" step="0.0001" />
+      <!-- ŘÁDEK 3 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cena</label>
+          <input id="tx-price" type="number" step="0.0001">
+        </div>
 
-      <label>Měna</label>
-      <select id="tx-currency">
-        <option value="CZK">CZK</option>
-        <option value="EUR">EUR</option>
-        <option value="USD">USD</option>
-      </select>
+        <div class="form-group">
+          <label>Měna</label>
+          <select id="tx-currency">
+            <option value="CZK">CZK</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </div>
 
-      <label>Datum</label>
-      <input id="tx-date" type="date" />
+      <!-- ŘÁDEK 4 -->
+      <div class="form-row single">
+        <div class="form-group">
+          <label>Datum obchodu</label>
+          <input id="tx-date" type="date">
+        </div>
+      </div>
 
       <div class="modal-actions">
-        <button id="tx-save">Uložit</button>
-        <button id="tx-cancel">Zrušit</button>
+        <button class="button secondary" id="tx-cancel">Zrušit</button>
+        <button class="button primary" id="tx-save">Uložit</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
 
-  modal.querySelector('#tx-cancel').onclick = () => modal.remove();
+  /* ✅ Dynamické CP podle typu aktiva */
+  document.getElementById('tx-asset-type').onchange = async e => {
+    const list = await loadAssetsByType(e.target.value);
+    const sel = document.getElementById('tx-asset-id');
 
-modal.querySelector('#tx-save').onclick = async () => {
-  try {
+    sel.innerHTML = `<option value="">— vyber —</option>`;
+    list.forEach(a => {
+      sel.innerHTML += `<option value="${a.isin || a.ticker}">
+        ${a.name || a.ticker}
+      </option>`;
+    });
+  };
+
+  /* ✅ Zavření */
+  document.getElementById('tx-cancel').onclick = () => {
+    modal.remove();
+    document.body.style.overflow = '';
+  };
+
+  /* ✅ Uložení */
+  document.getElementById('tx-save').onclick = async () => {
     const trade = {
       asset_type: document.getElementById('tx-asset-type').value,
       asset_id: document.getElementById('tx-asset-id').value,
-      trade_type: document.querySelector('input[name="tx-direction"]:checked').value,
+      trade_type: document.getElementById('tx-direction').value,
       quantity: Number(document.getElementById('tx-quantity').value),
       price: Number(document.getElementById('tx-price').value),
       currency: document.getElementById('tx-currency').value,
       trade_date: document.getElementById('tx-date').value
     };
 
-    // základní validace
-    if (!trade.asset_id || !trade.trade_date || trade.quantity <= 0 || trade.price <= 0) {
-      alert('Vyplňte všechna pole správně');
-      return;
-    }
-
     await savePortfolioTrade(portfolioId, trade);
-
     modal.remove();
     document.body.style.overflow = '';
-
-    // znovunačtení detailu portfolia (pozice + transakce)
-    await loadPortfolioPage(`portfolio/${portfolioId}`);
-
-  } catch (e) {
-    alert(e.message);
-  }
-};
+    loadPortfolioPage(`portfolio/${portfolioId}`);
+  };
 }
 
 async function savePortfolioTrade(portfolioId, trade) {
