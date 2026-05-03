@@ -211,14 +211,21 @@ tableBtn.onclick = () => {
   function renderTable() {
   const data = [...apiCache.dpsFundsOverview];
 
+  // ---------- SORT ----------
   data.sort((a, b) => {
     let A = a[sort.key];
     let B = b[sort.key];
+
+    if (A == null) A = '';
+    if (B == null) B = '';
+
     if (typeof A === 'string') A = A.toLowerCase();
     if (typeof B === 'string') B = B.toLowerCase();
-    return sort.asc ? A > B ? 1 : -1 : A < B ? 1 : -1;
+
+    return sort.asc ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
   });
 
+  // ---------- RENDER ----------
   table.innerHTML = `
     <table class="fund-table">
       <thead>
@@ -226,29 +233,32 @@ tableBtn.onclick = () => {
           <th data-key="name">Název</th>
           <th data-key="provider">Společnost</th>
           <th data-key="lastValuationDate">Ocenění</th>
-          <th data-key="perf3Y">Výnos 3R</th>
+          <th data-key="perf3Y">3 roky</th>
           <th data-key="riskCategory">Riziko</th>
         </tr>
       </thead>
       <tbody>
         ${data.map(f => `
           <tr data-isin="${f.isin}">
-            <td>${f.name}</td>
-            <td>${f.provider}</td>
-            <td>${f.lastValuationDate
-              ? new Date(f.lastValuationDate).toLocaleDateString('cs-CZ')
-              : '—'}</td>
-            <td class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
+            <td data-label="Fond">${f.name}</td>
+            <td data-label="Společnost" class="hide-mobile">${f.provider}</td>
+            <td data-label="Ocenění">
+              ${f.lastValuationDate
+                ? new Date(f.lastValuationDate).toLocaleDateString('cs-CZ')
+                : '—'}
+            </td>
+            <td data-label="3 roky"
+                class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
               ${f.perf3Y != null ? f.perf3Y.toFixed(2) + ' %' : '—'}
             </td>
-            <td>${f.riskCategory} / 7</td>
+            <td data-label="Riziko">${f.riskCategory} / 7</td>
           </tr>
         `).join('')}
       </tbody>
     </table>
   `;
 
-  // řazení
+  // ---------- SORT HANDLERS ----------
   table.querySelectorAll('th').forEach(th => {
     th.onclick = e => {
       e.stopPropagation();
@@ -259,19 +269,23 @@ tableBtn.onclick = () => {
     };
   });
 
-  // klik řádku → detail
-  table.querySelectorAll('tbody tr').forEach(tr => {
-  tr.addEventListener('mouseenter', () => {
-    table.querySelectorAll('tbody tr')
-      .forEach(r => r.classList.remove('active'));
-    tr.classList.add('active');
-  });
+  // ---------- ROW INTERACTION ----------
+  const rows = table.querySelectorAll('tbody tr');
 
-  tr.addEventListener('click', () => {
-    tr.classList.add('active');
-    selectFund(tr.dataset.isin);
+  rows.forEach(tr => {
+    // hover = aktivace (desktop)
+    tr.addEventListener('mouseenter', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+    });
+
+    // klik = aktivace + detail
+    tr.addEventListener('click', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+      selectFund(tr.dataset.isin);
+    });
   });
-});
 }
 
   // ---------- INIT ----------
