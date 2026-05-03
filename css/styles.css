@@ -316,6 +316,58 @@ a:hover {
   color: #333;
 }
 
+/*  tabulka   */
+
+.view-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.view-switch button {
+  padding: 6px 12px;
+  border: 1px solid #C9A646;
+  background: none;
+  color: #C9A646;
+  cursor: pointer;
+}
+
+.view-switch button.active {
+  background: #C9A646;
+  color: #111;
+}
+
+/* TABULKA */
+.fund-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fund-table th {
+  text-align: left;
+  cursor: pointer;
+  padding: 10px;
+  border-bottom: 2px solid #C9A646;
+}
+
+.fund-table td {
+  padding: 10px;
+}
+
+.fund-table tr:nth-child(even) {
+  background: #f2f2f2;
+}
+
+.fund-table tr.active {
+  background: #C9A646 !important;
+  color: #111;
+}
+
+.hidden {
+  display: none;
+}
+
+
 /* =====================================
    KPI
 ===================================== */
