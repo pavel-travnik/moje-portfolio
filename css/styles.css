@@ -390,6 +390,16 @@ a:hover {
   color: #C9A646;
 }
 
+.fund-table td.pos {
+  color: #1e8f4d;
+  font-weight: 500;
+}
+
+.fund-table td.neg {
+  color: #c0392b;
+  font-weight: 500;
+}
+
 /* TABULKA */
 .fund-table {
   width: 100%;
