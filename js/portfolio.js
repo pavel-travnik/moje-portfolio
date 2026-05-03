@@ -54,6 +54,25 @@ document.addEventListener('click', e => {
   openTransactionModal(portfolioId);
 });
 
+function bindAppTableRows(table, onSelect) {
+  const rows = table.querySelectorAll('tbody tr');
+
+  rows.forEach(tr => {
+    tr.addEventListener('mouseenter', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+    });
+
+    tr.addEventListener('click', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+      if (onSelect) {
+        onSelect(tr.dataset.id);
+      }
+    });
+  });
+}
+
   // ===================================================
   // /portfolio/{id} – detail portfolia
   // ===================================================
@@ -87,7 +106,7 @@ document.addEventListener('click', e => {
 
       <!-- ================= INSTRUMENTY ================= -->
       <section id="tab-instruments" class="portfolio-tab">
-        <table class="portfolio-table">
+        <table class="app-table">
           <thead>
             <tr>
               <th>Název</th>
@@ -114,7 +133,7 @@ document.addEventListener('click', e => {
             Přidat transakci
           </button>
         </div>
-        <table class="portfolio-table">
+        <table class="app-table">
           <thead>
             <tr>
               <th>Datum</th>
@@ -293,18 +312,38 @@ function renderPortfolioInstruments(positions) {
   const tbody = document.getElementById('portfolio-instruments');
   tbody.innerHTML = '';
 
+  if (!Array.isArray(positions) || positions.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6">Žádné instrumenty v portfoliu</td>
+      </tr>
+    `;
+    return;
+  }
+
   positions.forEach(p => {
     const tr = document.createElement('tr');
+    tr.dataset.id = p.asset_id;
+
     tr.innerHTML = `
-      <td>${p.asset_type} · ${p.asset_id}</td>
-      <td>${p.cost_currency}</td>
-      <td>${fmtNumber(p.book_value)} ${p.cost_currency}</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
+      <td data-label="Instrument">
+        <strong>${p.asset_type}</strong><br>
+        <small>${p.asset_id}</small>
+      </td>
+      <td data-label="Měna">${p.cost_currency}</td>
+      <td data-label="Hodnota">
+        ${fmtNumber(p.book_value)} ${p.cost_currency}
+      </td>
+      <td data-label="1M">—</td>
+      <td data-label="6M">—</td>
+      <td data-label="1Y">—</td>
     `;
+
     tbody.appendChild(tr);
   });
+
+  // ✅ jednotné chování (hover / tap)
+  bindAppTableRows(tbody.closest('table'));
 }
 
 function renderPortfolioTransactions(trades) {
@@ -312,27 +351,39 @@ function renderPortfolioTransactions(trades) {
   tbody.innerHTML = '';
 
   if (!Array.isArray(trades) || trades.length === 0) {
-    
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="5">Zatím žádné transakce</td>
-    </tr>
-  `;
-
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5">Zatím žádné transakce</td>
+      </tr>
+    `;
     return;
   }
 
   trades.forEach(t => {
     const tr = document.createElement('tr');
+
     tr.innerHTML = `
-      <td>${t.trade_date}</td>
-      <td>${t.asset_type} · ${t.asset_id}</td>
-      <td>${t.trade_type}</td>
-      <td>${fmtNumber(t.quantity, 4)}</td>
-      <td>${fmtNumber(t.price, 4)} ${t.currency}</td>
+      <td data-label="Datum">
+        ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
+      </td>
+      <td data-label="Instrument">
+        <strong>${t.asset_type}</strong><br>
+        <small>${t.asset_id}</small>
+      </td>
+      <td data-label="Směr">${t.trade_type}</td>
+      <td data-label="Množství">
+        ${fmtNumber(t.quantity, 4)}
+      </td>
+      <td data-label="Cena">
+        ${fmtNumber(t.price, 4)} ${t.currency}
+      </td>
     `;
+
     tbody.appendChild(tr);
   });
+
+  // ✅ jednotné chování (hover / tap)
+  bindAppTableRows(tbody.closest('table'));
 }
 
 function openTransactionModal(portfolioId) {
