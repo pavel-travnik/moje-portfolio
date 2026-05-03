@@ -243,15 +243,25 @@ function loadPensionFunds() {
 
     // řazení
     table.querySelectorAll('th').forEach(th => {
-      th.onclick = () => {
-        const key = th.dataset.key;
-        pensionSort.asc = pensionSort.key === key
-          ? !pensionSort.asc
-          : true;
-        pensionSort.key = key;
-        renderTable();
-      };
+  th.onclick = () => {
+    const key = th.dataset.key;
+
+    pensionSort.asc =
+      pensionSort.key === key ? !pensionSort.asc : true;
+    pensionSort.key = key;
+
+    renderTable();
+     };
     });
+
+// ✅ označení sloupce + směru
+   table.querySelectorAll('th').forEach(th => {
+   th.classList.remove('sort-asc', 'sort-desc');
+   if (th.dataset.key === pensionSort.key) {
+     th.classList.add(pensionSort.asc ? 'sort-asc' : 'sort-desc');
+    }
+   });
+
   }
 
   // INIT
