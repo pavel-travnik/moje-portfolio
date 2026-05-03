@@ -318,23 +318,76 @@ a:hover {
 
 /*  tabulka   */
 
+
 .view-switch {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  justify-content: flex-end; /* ✅ doprava */
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .view-switch button {
-  padding: 6px 12px;
+  padding: 6px 14px;
+  border-radius: 999px;        /* ✅ pill shape */
   border: 1px solid #C9A646;
-  background: none;
+  background: transparent;
   color: #C9A646;
   cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.view-switch button:hover {
+  background: rgba(201,166,70,0.15);
 }
 
 .view-switch button.active {
   background: #C9A646;
   color: #111;
+}
+
+.fund-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.fund-table tbody tr:hover {
+  background: #f5f5f5;
+}
+
+/* ✅ AKTIVNÍ ŘÁDEK – MUSÍ BÝT SILNĚJŠÍ */
+.fund-table tbody tr.active,
+.fund-table tbody tr.active:hover {
+  background: #C9A646 !important;
+  color: #111;
+}
+
+.fund-table th {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  padding-right: 22px;
+}
+
+.fund-table th::after {
+  content: "▴▾";
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: #bbb;
+}
+
+/* aktivní sloupec */
+.fund-table th.sort-asc::after {
+  content: "▴";
+  color: #C9A646;
+}
+
+.fund-table th.sort-desc::after {
+  content: "▾";
+  color: #C9A646;
 }
 
 /* TABULKA */
