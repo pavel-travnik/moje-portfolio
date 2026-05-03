@@ -549,17 +549,17 @@ async function savePortfolioTrade(portfolioId, trade) {
 // TABS
 // ===================================================
 function initPortfolioTabs() {
-  document.querySelectorAll('.tab').forEach(btn => {
+  const tabs = document.querySelectorAll('.portfolio-tabs .tab');
+  const sections = document.querySelectorAll('.portfolio-tab');
+
+  tabs.forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      document
-        .querySelectorAll('.portfolio-tab')
-        .forEach(s => s.classList.remove('active'));
+      tabs.forEach(t => t.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
 
       btn.classList.add('active');
-      document
-        .getElementById(`tab-${btn.dataset.tab}`)
-        .classList.add('active');
+      const target = document.getElementById(`tab-${btn.dataset.tab}`);
+      if (target) target.classList.add('active');
     };
   });
 }
