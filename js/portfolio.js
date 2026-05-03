@@ -415,6 +415,7 @@ function openTransactionModal(portfolioId) {
   document.body.style.overflow = 'hidden';
 
   /* ✅ Dynamické CP podle typu aktiva */
+
   document.getElementById('tx-asset-type').onchange = async e => {
   const sel = document.getElementById('tx-asset-id');
   sel.innerHTML = `<option value="">Načítám…</option>`;
@@ -427,8 +428,7 @@ function openTransactionModal(portfolioId) {
     list.forEach(a => {
       const id = a.isin || a.ticker;
       const name = a.name || a.ticker || a.isin;
-
-      if (!id) return; // ⚠️ ochrana
+      if (!id) return;
 
       const opt = document.createElement('option');
       opt.value = id;
@@ -437,7 +437,7 @@ function openTransactionModal(portfolioId) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error('Chyba při plnění seznamu CP', err);
     sel.innerHTML = `<option value="">Chyba načítání</option>`;
   }
 };
