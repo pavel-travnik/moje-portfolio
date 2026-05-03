@@ -176,11 +176,17 @@ tableBtn.onclick = () => {
 };
 
   function updateView() {
-    grid.classList.toggle('hidden', viewMode !== 'grid');
-    table.classList.toggle('hidden', viewMode !== 'table');
-    if (viewMode === 'grid') renderGrid();
-    else renderTable();
+  grid.classList.toggle('hidden', viewMode !== 'grid');
+  table.classList.toggle('hidden', viewMode !== 'table');
+
+  const mobileSort = document.querySelector('.mobile-sort');
+  if (mobileSort) {
+    mobileSort.classList.toggle('hidden', viewMode !== 'table');
   }
+
+  if (viewMode === 'grid') renderGrid();
+  else renderTable();
+}
 
   // ---------- GRID ----------
   function renderGrid() {
@@ -224,6 +230,26 @@ tableBtn.onclick = () => {
 
     return sort.asc ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
   });
+
+  const mobileSortSelect = document.getElementById('mobile-sort-select');
+  const mobileSortDir = document.getElementById('mobile-sort-dir');
+
+if (mobileSortSelect && mobileSortDir) {
+  mobileSortSelect.value = sort.key;
+
+  mobileSortSelect.onchange = () => {
+    sort.key = mobileSortSelect.value;
+    renderTable();
+  };
+
+  mobileSortDir.onclick = () => {
+    sort.asc = !sort.asc;
+    mobileSortDir.textContent = sort.asc ? '↑' : '↓';
+    mobileSortDir.classList.toggle('active', !sort.asc);
+    renderTable();
+  };
+}
+
 
   // ---------- RENDER ----------
   table.innerHTML = `
