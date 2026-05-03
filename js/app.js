@@ -12,6 +12,7 @@ const apiCache = {
 
 apiCache.dpsFundsMeta = null;
 apiCache.dpsTableMetrics = {};
+apiCache.dpsFundsOverview = null;
 
 // ===================================================
 // API URL
@@ -20,6 +21,8 @@ apiCache.dpsTableMetrics = {};
 
 const DPS_API_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_data';
 const DPS_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds';
+const DPS_FUNDS_OVERVIEW_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_dps_funds_overview';
+
 
 const STOCK_API_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_stock_data';
 const STOCK_LIST_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_active_stocks';
@@ -146,165 +149,116 @@ function loadPensionFunds() {
   const table = document.getElementById('fundTable');
   if (!grid || !table) return;
 
-  let pensionView = 'grid';
-  let pensionSort = { key: 'name', asc: true };
+  let viewMode = 'grid';
+  let sort = { key: 'Name', asc: true };
 
-  function bindPensionViewSwitch() {
-    const gridBtn = document.getElementById('view-grid');
-    const tableBtn = document.getElementById('view-table');
-    if (!gridBtn || !tableBtn) return;
+  const selectFund = isin => {
+    history.pushState({ page: `penze/${isin}` }, '', `/penze/${isin}`);
+    loadFundDetail(isin);
+  };
 
-    gridBtn.onclick = () => {
-      pensionView = 'grid';
-      gridBtn.classList.add('active');
-      tableBtn.classList.remove('active');
-      renderView();
-    };
+  // ---------- VIEW SWITCH ----------
+  document.getElementById('view-grid').onclick = () => {
+    viewMode = 'grid';
+    updateView();
+  };
 
-    tableBtn.onclick = () => {
-      pensionView = 'table';
-      tableBtn.classList.add('active');
-      gridBtn.classList.remove('active');
-      renderView();
-    };
+  document.getElementById('view-table').onclick = () => {
+    viewMode = 'table';
+    updateView();
+  };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
   }
 
-  function renderView() {
-    grid.classList.toggle('hidden', pensionView !== 'grid');
-    table.classList.toggle('hidden', pensionView !== 'table');
-
-    if (pensionView === 'grid') {
-      renderGrid();
-    } else {
-      renderTable();
-    }
-  }
-
+  // ---------- GRID ----------
   function renderGrid() {
     grid.innerHTML = '';
-    apiCache.dpsFundsMeta.forEach(f => {
+    apiCache.dpsFundsOverview.forEach(f => {
       const card = document.createElement('div');
       card.className = 'fund-card';
       card.innerHTML = `
-        <h3>${f.name}</h3>
-        <small>${f.provider}</small>
+        <h3>${f.Name}</h3>
+        <small>${f.Provider}</small>
       `;
-      card.onclick = () => {
-        history.pushState({ page: `penze/${f.isin}` }, '', `/penze/${f.isin}`);
-        loadFundDetail(f.isin);
-      };
+      card.onclick = () => selectFund(f.ISIN);
       grid.appendChild(card);
     });
   }
 
- async function renderTable() {
-  const data = [...apiCache.dpsFundsMeta];
+  // ---------- TABLE ----------
+  function renderTable() {
+    const data = [...apiCache.dpsFundsOverview];
 
-  for (const f of data) {
-    const m = await getDpsTableMetrics(f.isin);
-    if (m) {
-      f._lastDate = m.lastDate;
-      f._perf3Y = m.perf3Y;
-    } else {
-      f._lastDate = null;
-      f._perf3Y = null;
-    }
-  }
-
-  data.sort((a, b) => {
-    let A, B;
-
-    switch (pensionSort.key) {
-      case 'lastDate':
-        A = a._lastDate?.getTime() || 0;
-        B = b._lastDate?.getTime() || 0;
-        break;
-      case 'perf3Y':
-        A = a._perf3Y ?? -Infinity;
-        B = b._perf3Y ?? -Infinity;
-        break;
-      default:
-        A = a[pensionSort.key];
-        B = b[pensionSort.key];
-        if (typeof A === 'string') A = A.toLowerCase();
-        if (typeof B === 'string') B = B.toLowerCase();
-    }
-
-    return pensionSort.asc ? A - B : B - A;
-  });
-
-  table.innerHTML = `
-    <table class="fund-table">
-      <thead>...</thead>
-      <tbody>
-        ${data.map(f => `
-          <tr data-isin="${f.isin}">
-            <td>${f.name}</td>
-            <td>${f.provider}</td>
-            <td>
-              ${f._lastDate
-                ? f._lastDate.toLocaleDateString('cs-CZ')
-                : '—'}
-            </td>
-            <td class="${f._perf3Y >= 0 ? 'pos' : 'neg'}">
-              ${f._perf3Y != null
-                ? f._perf3Y.toFixed(2) + ' %'
-                : '—'}
-            </td>
-            <td>${f.riskCategory} / 7</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // klik řádku + řazení (beze změny)
-}
-
-    // klik na řádek
-    table.querySelectorAll('tbody tr').forEach(tr => {
-      tr.onclick = () => {
-        table.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
-        tr.classList.add('active');
-        const isin = tr.dataset.isin;
-        history.pushState({ page: `penze/${isin}` }, '', `/penze/${isin}`);
-        loadFundDetail(isin);
-      };
+    data.sort((a, b) => {
+      let A = a[sort.key];
+      let B = b[sort.key];
+      if (typeof A === 'string') A = A.toLowerCase();
+      if (typeof B === 'string') B = B.toLowerCase();
+      return sort.asc ? A > B ? 1 : -1 : A < B ? 1 : -1;
     });
+
+    table.innerHTML = `
+      <table class="fund-table">
+        <thead>
+          <tr>
+            <th data-key="Name">Název</th>
+            <th data-key="Provider">Společnost</th>
+            <th data-key="LastValuationDate">Ocenění</th>
+            <th data-key="Perf3Y_Percent">Výnos 3R</th>
+            <th data-key="RiskCategory">Riziko</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(f => `
+            <tr data-isin="${f.ISIN}">
+              <td>${f.Name}</td>
+              <td>${f.Provider}</td>
+              <td>${new Date(f.LastValuationDate).toLocaleDateString('cs-CZ')}</td>
+              <td class="${f.Perf3Y_Percent >= 0 ? 'pos' : 'neg'}">
+                ${f.Perf3Y_Percent != null ? f.Perf3Y_Percent.toFixed(2) + ' %' : '—'}
+              </td>
+              <td>${f.RiskCategory} / 7</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
 
     // řazení
     table.querySelectorAll('th').forEach(th => {
-  th.onclick = () => {
-    const key = th.dataset.key;
-
-    pensionSort.asc =
-      pensionSort.key === key ? !pensionSort.asc : true;
-    pensionSort.key = key;
-
-    renderTable();
-     };
+      th.onclick = e => {
+        e.stopPropagation();
+        const key = th.dataset.key;
+        sort.asc = sort.key === key ? !sort.asc : true;
+        sort.key = key;
+        renderTable();
+      };
     });
 
-// ✅ označení sloupce + směru
-   table.querySelectorAll('th').forEach(th => {
-   th.classList.remove('sort-asc', 'sort-desc');
-   if (th.dataset.key === pensionSort.key) {
-     th.classList.add(pensionSort.asc ? 'sort-asc' : 'sort-desc');
-    }
-   });
+    // klik řádku → jeden detail
+    table.querySelectorAll('tbody tr').forEach(tr => {
+      tr.onclick = () => selectFund(tr.dataset.isin);
+    });
+  }
 
-  
-
-  // INIT
+  // ---------- INIT ----------
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  fetch(DPS_API)
+  fetch(DPS_FUNDS_OVERVIEW_API)
     .then(r => r.json())
-    .then(funds => {
-      apiCache.dpsFundsMeta = funds;
-      bindPensionViewSwitch();
-      renderView();
+    .then(data => {
+      apiCache.dpsFundsOverview = data;
+      updateView();
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání fondů</p>';
     });
 }
 
