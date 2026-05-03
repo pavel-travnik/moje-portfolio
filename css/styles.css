@@ -880,3 +880,29 @@ MOBILE SORT PANEL
     background: var(--gold);
   }
 }
+
+/* =====================================
+PORTFOLIO TABS – override .button
+STEJNÝ VZHLED JAKO DLAŽDICE / ŘÁDKY
+===================================== */
+
+.portfolio-tabs .button.tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--gold);
+  background: white !important;
+  color: var(--gold) !important;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.portfolio-tabs .button.tab:hover {
+  background: var(--gold-light);
+}
+
+/* ✅ AKTIVNÍ TAB */
+.portfolio-tabs .button.tab.active {
+  background: var(--gold) !important;
+  color: #111 !important;
+}
