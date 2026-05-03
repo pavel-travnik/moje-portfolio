@@ -481,6 +481,93 @@ a:hover {
     color: red;
 }
 
+/* =====================================================
+APP TABLE – SHARED COMPONENT
+===================================================== */
+
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* hlavička */
+.app-table th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 2px solid var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* buňky */
+.app-table td {
+  padding: 10px;
+}
+
+/* zebra */
+.app-table tbody tr:nth-child(even) {
+  background: #f3f3f3;
+}
+
+/* hover */
+.app-table tbody tr:hover {
+  background: var(--gold-light);
+}
+
+/* aktivní řádek */
+.app-table tbody tr.active,
+.app-table tbody tr.active:hover {
+  background: var(--gold-active);
+  color: #111;
+}
+
+/* =====================================================
+MOBILE
+===================================================== */
+@media (max-width: 768px) {
+  .app-table thead {
+    display: none;
+  }
+
+  .app-table,
+  .app-table tbody,
+  .app-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .app-table tbody tr {
+    margin-bottom: 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .app-table tbody tr:nth-child(even) {
+    background: #f7f7f7;
+  }
+
+  .app-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+
+  .app-table td:last-child {
+    border-bottom: none;
+  }
+
+  .app-table td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #666;
+    margin-right: 12px;
+  }
+}
+
 /* =====================================
    PERIOD SWITCH
 ===================================== */
