@@ -158,15 +158,22 @@ function loadPensionFunds() {
   };
 
   // ---------- VIEW SWITCH ----------
-  document.getElementById('view-grid').onclick = () => {
-    viewMode = 'grid';
-    updateView();
-  };
+  const gridBtn = document.getElementById('view-grid');
+const tableBtn = document.getElementById('view-table');
 
-  document.getElementById('view-table').onclick = () => {
-    viewMode = 'table';
-    updateView();
-  };
+gridBtn.onclick = () => {
+  viewMode = 'grid';
+  gridBtn.classList.add('active');
+  tableBtn.classList.remove('active');
+  updateView();
+};
+
+tableBtn.onclick = () => {
+  viewMode = 'table';
+  tableBtn.classList.add('active');
+  gridBtn.classList.remove('active');
+  updateView();
+};
 
   function updateView() {
     grid.classList.toggle('hidden', viewMode !== 'grid');
@@ -254,8 +261,16 @@ function loadPensionFunds() {
 
   // klik řádku → detail
   table.querySelectorAll('tbody tr').forEach(tr => {
-    tr.onclick = () => selectFund(tr.dataset.isin);
-  });
+  tr.onmouseenter = () => {
+    table.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+    tr.classList.add('active');
+  };
+
+  tr.onclick = () => {
+    tr.classList.add('active');
+    selectFund(tr.dataset.isin);
+  };
+});
 }
 
   // ---------- INIT ----------
