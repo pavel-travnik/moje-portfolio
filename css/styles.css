@@ -906,3 +906,35 @@ STEJNÝ VZHLED JAKO DLAŽDICE / ŘÁDKY
   background: var(--gold) !important;
   color: #111 !important;
 }
+
+/* hover = vizuálně aktivní */
+.portfolio-tabs .button.tab:hover {
+  background: var(--gold);
+  color: #111;
+}
+
+/* aktivní zůstává stejné */
+.portfolio-tabs .button.tab.active {
+  background: var(--gold);
+  color: #111;
+}
+
+/* =====================================
+PILL BUTTON – app‑wide (Dlaždice / Řádky / Přidat)
+===================================== */
+
+.pill-button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--gold);
+  background: white;
+  color: var(--gold);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.pill-button:hover {
+  background: var(--gold);
+  color: #111;
+}
