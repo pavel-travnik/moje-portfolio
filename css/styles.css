@@ -7,6 +7,10 @@
     --green-dark: #123f1a;
     --gold: #C9A646;
     --gold-light: rgba(201,162,70,0.15);
+
+    --gold-active: rgba(201,162,70,0.6); /* ≈ o 40 % světlejší */
+    --row-alt: #f2f2f2;                 /* světle šedá zebra */
+
     --text-dark: #1f1f1f;
     --text-muted: #666;
     --border-light: #e5e5e5;
@@ -398,6 +402,7 @@ a:hover {
 }
 
 /* TABULKA */
+/* TABULKA ZÁKLAD */
 .fund-table {
   width: 100%;
   border-collapse: collapse;
@@ -405,24 +410,29 @@ a:hover {
 
 .fund-table th {
   text-align: left;
-  cursor: pointer;
   padding: 10px;
-  border-bottom: 2px solid #C9A646;
+  border-bottom: 2px solid var(--gold);
+  cursor: pointer;
 }
 
 .fund-table td {
   padding: 10px;
 }
 
-/* hover řádku */
+/* 🟦 ZEBRA – každý sudý řádek */
+.fund-table tbody tr:nth-child(even) {
+  background: var(--row-alt);
+}
+
+/* 🟨 HOVER – jemný zlatý nádech */
 .fund-table tbody tr:hover {
   background: var(--gold-light);
 }
 
-/* aktivní řádek (klik / výběr) */
+/* ⭐ AKTIVNÍ ŘÁDEK – světlejší zlatá */
 .fund-table tbody tr.active,
 .fund-table tbody tr.active:hover {
-  background: #C9A646 !important;
+  background: var(--gold-active) !important;
   color: #111;
 }
 
