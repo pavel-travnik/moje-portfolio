@@ -261,15 +261,16 @@ tableBtn.onclick = () => {
 
   // klik řádku → detail
   table.querySelectorAll('tbody tr').forEach(tr => {
-  tr.onmouseenter = () => {
-    table.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
+  tr.addEventListener('mouseenter', () => {
+    table.querySelectorAll('tbody tr')
+      .forEach(r => r.classList.remove('active'));
     tr.classList.add('active');
-  };
+  });
 
-  tr.onclick = () => {
+  tr.addEventListener('click', () => {
     tr.classList.add('active');
     selectFund(tr.dataset.isin);
-  };
+  });
 });
 }
 
