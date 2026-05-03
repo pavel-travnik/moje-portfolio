@@ -702,6 +702,50 @@ RESPONSIVE – TABULKA FONDŮ (MOBILE)
   }
 }
 
+/* =====================================
+MOBILE SORT PANEL
+===================================== */
+.mobile-sort {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-sort {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mobile-sort label {
+    font-size: 13px;
+    color: #555;
+  }
+
+  .mobile-sort select {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+  }
+
+  .mobile-sort button {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--gold);
+    background: white;
+    color: var(--gold);
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .mobile-sort button.active {
+    background: var(--gold);
+    color: #111;
+  }
+}
+
 @media (max-width: 768px) {
   .fund-table tbody tr.active {
     position: relative;
