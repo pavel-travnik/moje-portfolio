@@ -139,6 +139,7 @@ function loadPage(page, pushState = true) {
 // ===================================================
 // PENZE preHLED
 // ===================================================
+
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   const table = document.getElementById('fundTable');
@@ -267,95 +268,6 @@ function loadPensionFunds() {
 }
 
 
-  grid.innerHTML = '<p>Načítám fondy</p>';
-
-  fetch(DPS_API)
-    .then(r => r.json())
-    .then(funds => {
-      apiCache.dpsFundsMeta = funds;
-      grid.innerHTML = '';
-      funds.forEach(f => {
-        const card = document.createElement('div');
-        card.className = 'fund-card';
-        card.innerHTML = `<h3>${f.name}</h3><small>${f.provider}</small>`;
-        card.onclick = () => {
-          history.pushState({ page: `penze/${f.isin}` }, '', `/penze/${f.isin}`);
-          loadFundDetail(f.isin);
-        };
-	
-        grid.appendChild(card);
-      });
-    });
-}
-
-function renderPensionView() {
-  const grid = document.getElementById('fundGrid');
-  const table = document.getElementById('fundTable');
-
-  grid.classList.toggle('hidden', pensionView !== 'grid');
-  table.classList.toggle('hidden', pensionView !== 'table');
-
-  if (pensionView === 'grid') {
-    renderPensionGrid();
-  } else {
-    renderPensionTable();
-  }
-}
-
-function renderPensionTable() {
-  const table = document.getElementById('fundTable');
-  const data = [...apiCache.dpsFundsMeta];
-
-  data.sort((a, b) => {
-    let A = a[pensionSort.key];
-    let B = b[pensionSort.key];
-    if (typeof A === 'string') A = A.toLowerCase();
-    if (typeof B === 'string') B = B.toLowerCase();
-    return pensionSort.asc ? A > B ? 1 : -1 : A < B ? 1 : -1;
-  });
-
-  table.innerHTML = `
-    <table class="fund-table">
-      <thead>
-        <tr>
-          <th data-key="name">Název</th>
-          <th data-key="provider">Společnost</th>
-          <th data-key="riskCategory">Rizikovost</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.map(f => `
-          <tr data-isin="${f.isin}">
-            <td>${f.name}</td>
-            <td>${f.provider}</td>
-            <td>${f.riskCategory} / 7</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // klik na řádek
-  table.querySelectorAll('tbody tr').forEach(tr => {
-    tr.onclick = () => {
-      table.querySelectorAll('tr').forEach(r => r.classList.remove('active'));
-      tr.classList.add('active');
-      const isin = tr.dataset.isin;
-      history.pushState({ page: `penze/${isin}` }, '', `/penze/${isin}`);
-      loadFundDetail(isin);
-    };
-  });
-
-  // řazení
-  table.querySelectorAll('th').forEach(th => {
-    th.onclick = () => {
-      const key = th.dataset.key;
-      pensionSort.asc = pensionSort.key === key ? !pensionSort.asc : true;
-      pensionSort.key = key;
-      renderPensionTable();
-    };
-  });
-}
 
 function renderFundMeta(isin) {
   if (!apiCache.dpsFundsMeta) return;
