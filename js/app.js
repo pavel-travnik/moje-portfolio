@@ -150,7 +150,7 @@ function loadPensionFunds() {
   if (!grid || !table) return;
 
   let viewMode = 'grid';
-  let sort = { key: 'Name', asc: true };
+  let sort = { key: 'name', asc: true };
 
   const selectFund = isin => {
     history.pushState({ page: `penze/${isin}` }, '', `/penze/${isin}`);
@@ -192,59 +192,61 @@ function loadPensionFunds() {
 
   // ---------- TABLE ----------
   function renderTable() {
-    const data = [...apiCache.dpsFundsOverview];
+  const data = [...apiCache.dpsFundsOverview];
 
-    data.sort((a, b) => {
-      let A = a[sort.key];
-      let B = b[sort.key];
-      if (typeof A === 'string') A = A.toLowerCase();
-      if (typeof B === 'string') B = B.toLowerCase();
-      return sort.asc ? A > B ? 1 : -1 : A < B ? 1 : -1;
-    });
+  data.sort((a, b) => {
+    let A = a[sort.key];
+    let B = b[sort.key];
+    if (typeof A === 'string') A = A.toLowerCase();
+    if (typeof B === 'string') B = B.toLowerCase();
+    return sort.asc ? A > B ? 1 : -1 : A < B ? 1 : -1;
+  });
 
-    table.innerHTML = `
-      <table class="fund-table">
-        <thead>
-          <tr>
-            <th data-key="Name">Název</th>
-            <th data-key="Provider">Společnost</th>
-            <th data-key="LastValuationDate">Ocenění</th>
-            <th data-key="Perf3Y_Percent">Výnos 3R</th>
-            <th data-key="RiskCategory">Riziko</th>
+  table.innerHTML = `
+    <table class="fund-table">
+      <thead>
+        <tr>
+          <th data-key="name">Název</th>
+          <th data-key="provider">Společnost</th>
+          <th data-key="lastValuationDate">Ocenění</th>
+          <th data-key="perf3Y">Výnos 3R</th>
+          <th data-key="riskCategory">Riziko</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(f => `
+          <tr data-isin="${f.isin}">
+            <td>${f.name}</td>
+            <td>${f.provider}</td>
+            <td>${f.lastValuationDate
+              ? new Date(f.lastValuationDate).toLocaleDateString('cs-CZ')
+              : '—'}</td>
+            <td class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
+              ${f.perf3Y != null ? f.perf3Y.toFixed(2) + ' %' : '—'}
+            </td>
+            <td>${f.riskCategory} / 7</td>
           </tr>
-        </thead>
-        <tbody>
-          ${data.map(f => `
-            <tr data-isin="${f.ISIN}">
-              <td>${f.Name}</td>
-              <td>${f.Provider}</td>
-              <td>${new Date(f.LastValuationDate).toLocaleDateString('cs-CZ')}</td>
-              <td class="${f.Perf3Y_Percent >= 0 ? 'pos' : 'neg'}">
-                ${f.Perf3Y_Percent != null ? f.Perf3Y_Percent.toFixed(2) + ' %' : '—'}
-              </td>
-              <td>${f.RiskCategory} / 7</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 
-    // řazení
-    table.querySelectorAll('th').forEach(th => {
-      th.onclick = e => {
-        e.stopPropagation();
-        const key = th.dataset.key;
-        sort.asc = sort.key === key ? !sort.asc : true;
-        sort.key = key;
-        renderTable();
-      };
-    });
+  // řazení
+  table.querySelectorAll('th').forEach(th => {
+    th.onclick = e => {
+      e.stopPropagation();
+      const key = th.dataset.key;
+      sort.asc = sort.key === key ? !sort.asc : true;
+      sort.key = key;
+      renderTable();
+    };
+  });
 
-    // klik řádku → jeden detail
-    table.querySelectorAll('tbody tr').forEach(tr => {
-      tr.onclick = () => selectFund(tr.dataset.isin);
-    });
-  }
+  // klik řádku → detail
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    tr.onclick = () => selectFund(tr.dataset.isin);
+  });
+}
 
   // ---------- INIT ----------
   grid.innerHTML = '<p>Načítám fondy…</p>';
@@ -416,6 +418,20 @@ async function loadDPSData(isin, period) {
   finalData.map(d => ({ date: d.date, value: d.value })),
   'chart-portfolio'
  );
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  apiCache.dpsFundsOverview.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'fund-card';
+    card.innerHTML = `
+      <h3>${f.name}</h3>
+      <small>${f.provider}</small>
+    `;
+    card.onclick = () => selectFund(f.isin);
+    grid.appendChild(card);
+  });
 }
 
 function renderFundKPI(data) {
