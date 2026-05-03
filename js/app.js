@@ -293,7 +293,7 @@ function loadPensionFunds() {
     }
    });
 
-  }
+  
 
   // INIT
   grid.innerHTML = '<p>Načítám fondy…</p>';
