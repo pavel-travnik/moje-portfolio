@@ -11,6 +11,7 @@ const apiCache = {
 };
 
 apiCache.dpsFundsMeta = null;
+apiCache.dpsTableMetrics = {};
 
 // ===================================================
 // API URL
@@ -196,39 +197,69 @@ function loadPensionFunds() {
     });
   }
 
-  function renderTable() {
-    const data = [...apiCache.dpsFundsMeta];
+ async function renderTable() {
+  const data = [...apiCache.dpsFundsMeta];
 
-    data.sort((a, b) => {
-      let A = a[pensionSort.key];
-      let B = b[pensionSort.key];
-      if (typeof A === 'string') A = A.toLowerCase();
-      if (typeof B === 'string') B = B.toLowerCase();
-      return pensionSort.asc
-        ? A > B ? 1 : -1
-        : A < B ? 1 : -1;
-    });
+  for (const f of data) {
+    const m = await getDpsTableMetrics(f.isin);
+    if (m) {
+      f._lastDate = m.lastDate;
+      f._perf3Y = m.perf3Y;
+    } else {
+      f._lastDate = null;
+      f._perf3Y = null;
+    }
+  }
 
-    table.innerHTML = `
-      <table class="fund-table">
-        <thead>
-          <tr>
-            <th data-key="name">Název</th>
-            <th data-key="provider">Společnost</th>
-            <th data-key="riskCategory">Rizikovost</th>
+  data.sort((a, b) => {
+    let A, B;
+
+    switch (pensionSort.key) {
+      case 'lastDate':
+        A = a._lastDate?.getTime() || 0;
+        B = b._lastDate?.getTime() || 0;
+        break;
+      case 'perf3Y':
+        A = a._perf3Y ?? -Infinity;
+        B = b._perf3Y ?? -Infinity;
+        break;
+      default:
+        A = a[pensionSort.key];
+        B = b[pensionSort.key];
+        if (typeof A === 'string') A = A.toLowerCase();
+        if (typeof B === 'string') B = B.toLowerCase();
+    }
+
+    return pensionSort.asc ? A - B : B - A;
+  });
+
+  table.innerHTML = `
+    <table class="fund-table">
+      <thead>...</thead>
+      <tbody>
+        ${data.map(f => `
+          <tr data-isin="${f.isin}">
+            <td>${f.name}</td>
+            <td>${f.provider}</td>
+            <td>
+              ${f._lastDate
+                ? f._lastDate.toLocaleDateString('cs-CZ')
+                : '—'}
+            </td>
+            <td class="${f._perf3Y >= 0 ? 'pos' : 'neg'}">
+              ${f._perf3Y != null
+                ? f._perf3Y.toFixed(2) + ' %'
+                : '—'}
+            </td>
+            <td>${f.riskCategory} / 7</td>
           </tr>
-        </thead>
-        <tbody>
-          ${data.map(f => `
-            <tr data-isin="${f.isin}">
-              <td>${f.name}</td>
-              <td>${f.provider}</td>
-              <td>${f.riskCategory} / 7</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // klik řádku + řazení (beze změny)
+}
 
     // klik na řádek
     table.querySelectorAll('tbody tr').forEach(tr => {
@@ -296,6 +327,40 @@ function renderFundMeta(isin) {
   // URL fondu
   const link = document.getElementById('fund-url');
   link.href = fund.url;
+}
+
+async function getDpsTableMetrics(isin) {
+  if (apiCache.dpsTableMetrics[isin]) {
+    return apiCache.dpsTableMetrics[isin];
+  }
+
+  const res = await fetch(
+    `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
+  );
+  let data = await res.json();
+  if (!Array.isArray(data) || data.length < 2) {
+    return null;
+  }
+
+  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const last = data.at(-1);
+  const lastDate = new Date(last.date);
+
+  // 3Y zpět
+  const from = new Date(lastDate);
+  from.setFullYear(from.getFullYear() - 3);
+
+  const threeY = data.find(d => new Date(d.date) >= from) || data[0];
+  const perf3Y = ((last.value - threeY.value) / threeY.value) * 100;
+
+  const result = {
+    lastDate,
+    perf3Y
+  };
+
+  apiCache.dpsTableMetrics[isin] = result;
+  return result;
 }
 
 // ===================================================
