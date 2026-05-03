@@ -170,6 +170,8 @@ function bindAppTableRows(table, onSelect) {
 
       <button class="back-btn">← Zpět</button>
     `;
+ 
+    initPortfolioTabs();
 
     document.querySelector('.back-btn').onclick = () => history.back();
 
