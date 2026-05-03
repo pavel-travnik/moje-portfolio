@@ -73,6 +73,30 @@ function bindAppTableRows(table, onSelect) {
   });
 }
 
+// ===================================================
+// SHARED TABLE ROW BINDING
+// ===================================================
+function bindAppTableRows(tableEl, onSelect) {
+  if (!tableEl) return;
+
+  const rows = tableEl.querySelectorAll('tbody tr');
+
+  rows.forEach(tr => {
+    // hover = aktivace (desktop)
+    tr.addEventListener('mouseenter', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+    });
+
+    // klik = aktivace (+ případná akce)
+    tr.addEventListener('click', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+      if (onSelect) onSelect(tr.dataset.id);
+    });
+  });
+}
+
   // ===================================================
   // /portfolio/{id} – detail portfolia
   // ===================================================
@@ -128,7 +152,7 @@ function bindAppTableRows(table, onSelect) {
         <div class="toolbar" style="justify-content:space-between">
           <span class="muted">Transakce</span>
           <button
-            class="button"
+            class="button pill-button"
             id="btn-add-transaction"
             data-portfolio-id="${portfolioId}"
             >
