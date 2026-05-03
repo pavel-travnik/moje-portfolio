@@ -81,12 +81,14 @@ function bindAppTableRows(table, onSelect) {
 
     main.innerHTML = `
       <!-- TABS -->
-      <div class="toolbar" style="gap:.5rem;margin-bottom:1rem">
-        <button class="button tab active" data-tab="overview">Přehled</button>
-        <button class="button tab" data-tab="instruments">Instrumenty</button>
-        <button class="button tab" data-tab="transactions">Transakce</button>
-        <button class="button tab" data-tab="settings">Nastavení</button>
-      </div>
+      
+<div class="toolbar portfolio-tabs" style="gap:.5rem;margin-bottom:1rem">
+  <button class="button tab active" data-tab="overview">Přehled</button>
+  <button class="button tab" data-tab="instruments">Instrumenty</button>
+  <button class="button tab" data-tab="transactions">Transakce</button>
+  <button class="button tab" data-tab="settings">Nastavení</button>
+</div>
+
 
       <h1 class="h1">Portfolio ${portfolioId}</h1>
 
