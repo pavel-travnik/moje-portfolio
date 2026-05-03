@@ -177,18 +177,28 @@ function loadPensionFunds() {
 
   // ---------- GRID ----------
   function renderGrid() {
-    grid.innerHTML = '';
-    apiCache.dpsFundsOverview.forEach(f => {
-      const card = document.createElement('div');
-      card.className = 'fund-card';
-      card.innerHTML = `
-        <h3>${f.Name}</h3>
-        <small>${f.Provider}</small>
-      `;
-      card.onclick = () => selectFund(f.ISIN);
-      grid.appendChild(card);
-    });
-  }
+  grid.innerHTML = '';
+
+  apiCache.dpsFundsOverview.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'fund-card';
+
+    const perf = f.perf3Y != null
+      ? `${f.perf3Y.toFixed(2)} %`
+      : '—';
+
+    card.innerHTML = `
+      <h3>${f.name}</h3>
+      <small>${f.provider}</small>
+      <div class="fund-perf ${f.perf3Y >= 0 ? 'pos' : 'neg'}">
+        3 roky: <strong>${perf}</strong>
+      </div>
+    `;
+
+    card.onclick = () => selectFund(f.isin);
+    grid.appendChild(card);
+  });
+}
 
   // ---------- TABLE ----------
   function renderTable() {
