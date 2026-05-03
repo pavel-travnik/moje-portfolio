@@ -640,3 +640,80 @@ a:hover {
         width: 100%;
     }
 }
+
+/* =====================================
+RESPONSIVE – TABULKA FONDŮ (MOBILE)
+===================================== */
+@media (max-width: 768px) {
+
+  .fund-table thead {
+    display: none; /* ❌ hlavička pryč */
+  }
+
+  .fund-table,
+  .fund-table tbody,
+  .fund-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .fund-table tbody tr {
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #e5e5e5;
+  }
+
+  /* zebra jemně zachovaná */
+  .fund-table tbody tr:nth-child(even) {
+    background: #f7f7f7;
+  }
+
+  /* aktivní řádek – světle zlatá */
+  .fund-table tbody tr.active {
+    background: var(--gold-active) !important;
+    border-color: var(--gold);
+  }
+
+  .fund-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+
+  .fund-table td:last-child {
+    border-bottom: none;
+  }
+
+  /* label před hodnotou */
+  .fund-table td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #555;
+    margin-right: 12px;
+  }
+
+  /* skryjeme méně důležitý údaj */
+  .fund-table td.hide-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .fund-table tbody tr.active {
+    position: relative;
+  }
+
+  .fund-table tbody tr.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--gold);
+  }
+}
