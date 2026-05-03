@@ -440,6 +440,38 @@ a:hover {
   display: none;
 }
 
+/* =====================================
+PORTFOLIO TABS – stejné jako view-switch
+===================================== */
+
+.portfolio-tabs {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.portfolio-tabs .tab {
+  padding: 6px 14px;
+  border-radius: 999px;          /* pill */
+  border: 1px solid var(--gold);
+  background: white;
+  color: var(--gold);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.portfolio-tabs .tab:hover {
+  background: var(--gold-light);
+}
+
+/* ✅ AKTIVNÍ TAB */
+.portfolio-tabs .tab.active {
+  background: var(--gold);
+  color: #111;
+}
+
 
 /* =====================================
    KPI
