@@ -186,9 +186,18 @@ async function fetchPortfolioTransactions(portfolioId) {
       `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${CURRENT_USER_ID}`
     );
     if (!r.ok) return [];
+
     const data = await r.json();
-    return data.trades ?? [];
-  } catch {
+
+    // ✅ API vrací PŘÍMO POLE, ne objekt
+    if (Array.isArray(data)) return data;
+
+    // fallback pokud by se struktura změnila
+    if (Array.isArray(data.trades)) return data.trades;
+
+    return [];
+  } catch (err) {
+    console.warn('Chyba při načítání transakcí:', err);
     return [];
   }
 }
@@ -392,6 +401,12 @@ function openTransactionModal(portfolioId) {
       alert('Vyplň prosím všechna povinná pole.');
       return;
     }
+
+    if (!trade.asset_type || !trade.asset_id) {
+      alert('Vyber typ aktiva a konkrétní instrument.');
+      return;
+    }
+
 
     try {
       await savePortfolioTrade(portfolioId, trade);
