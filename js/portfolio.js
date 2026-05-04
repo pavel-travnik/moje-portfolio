@@ -203,6 +203,43 @@ async function fetchPortfolioTransactions(portfolioId) {
 }
 
 // ===================================================
+// LOAD ASSETS BY TYPE – PRO MODAL
+// ===================================================
+async function loadAssetsByType(assetType) {
+  let url;
+
+  switch (assetType) {
+    case 'DPS':
+      url = `${PORTFOLIO_API}/get_dps_funds`;
+      break;
+
+    case 'ETF':
+    case 'STOCK':
+      url = `${PORTFOLIO_API}/get_active_stocks`;
+      break;
+
+    case 'FUND':
+      url = `${PORTFOLIO_API}/get_active_podilove_fondy`;
+      break;
+
+    default:
+      return [];
+  }
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Asset list load failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    throw new Error('API nevrátilo pole instrumentů');
+  }
+
+  return data;
+}
+
+// ===================================================
 // RENDER
 // ===================================================
 function renderPortfolioList(portfolios) {
