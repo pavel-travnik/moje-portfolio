@@ -158,6 +158,10 @@ window.loadPortfolioPage = async function (page) {
       renderPortfolioInstruments(detail.positions);
     }
 
+    if (!portfolioId || isNaN(Number(portfolioId))) {
+  alert('Chyba: neplatné portfolio ID.');
+  return;
+}
     const trades = await fetchPortfolioTransactions(portfolioId);
     renderPortfolioTransactions(trades);
   }
@@ -459,22 +463,25 @@ function openTransactionModal(portfolioId) {
 
 async function savePortfolioTrade(portfolioId, trade) {
   const payload = {
-    portfolio_id: portfolioId,
+    portfolio_id: Number(portfolioId), // ← DŮLEŽITÉ
     user_id: CURRENT_USER_ID,
     trades: [trade]
   };
 
-  const res = await fetch(
-    `${PORTFOLIO_API}/save_portfolio_trades`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }
-  );
+  const res = await fetch(`${PORTFOLIO_API}/save_portfolio_trades`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Save failed');
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = { error: text }; }
+
+  if (!res.ok) {
+    console.error('API ERROR:', data);
+    throw new Error(data.error || 'Save failed');
+  }
   return data;
 }
 
