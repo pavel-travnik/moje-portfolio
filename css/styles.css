@@ -1,520 +1,265 @@
-/* =====================================
-   ZÁKLAD
-===================================== */
+/* =====================================================
+   GLOBAL THEME – GREY & GOLD (PREMIUM FINTECH)
+===================================================== */
 
 :root {
-    --green: #0D3512;
-    --green-dark: #123f1a;
-    --gold: #C9A646;
-    --gold-light: rgba(201,162,70,0.15);
+  /* Backgrounds */
+  --bg-main: #f4f4f5;
+  --bg-card: #ffffff;
+  --bg-soft: #fafafa;
 
-    --gold-active: rgba(201,162,70,0.6); /* ≈ o 40 % světlejší */
-    --row-alt: #f2f2f2;                 /* světle šedá zebra */
+  /* Greys */
+  --gray-900: #111111;
+  --gray-700: #2b2b2b;
+  --gray-500: #6b7280;
+  --gray-300: #d1d5db;
+  --gray-200: #e5e7eb;
 
-    --text-dark: #1f1f1f;
-    --text-muted: #666;
-    --border-light: #e5e5e5;
-    --bg-light: #ffffff;
+  /* Gold */
+  --gold: #c9a646;
+  --gold-light: rgba(201,166,70,.15);
+  --gold-active: rgba(201,166,70,.25);
+
+  /* Text */
+  --text-main: #111111;
+  --text-muted: #6b7280;
+
+  --border-light: #e5e7eb;
 }
 
+/* =====================================================
+   RESET & BASE
+===================================================== */
+
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    font-family: Inter, Arial, sans-serif;
-    background: var(--green);
-    color: var(--text-dark);
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
 }
 
 a {
-    text-decoration: none;
-    color: inherit;
+  color: inherit;
+  text-decoration: none;
 }
 
 a:hover {
-    color: var(--gold);
+  color: var(--gold);
 }
 
-/* =====================================
+/* =====================================================
    HEADER
-===================================== */
+===================================================== */
 
 .main-header {
-    background: var(--green);
-    color: white;
-    padding: 12px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(255,255,255,.15);
-}
-
-.logo {
-    height: 48px;
+  background: linear-gradient(180deg, #181818, #111);
+  color: #fff;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(201,166,70,.18);
 }
 
 .main-header h1 {
-    margin: 0;
-    font-size: 20px;
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: .04em;
 }
 
+.logo {
+  height: 44px;
+}
+
+/* Gold animated text */
 .gold-text {
-    background: linear-gradient(
-        120deg,
-        #D4AF37,
-        #FFF3B0,
-        #C9A227,
-        #D4AF37
-    );
-    background-size: 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 3s infinite linear;
+  background: linear-gradient(
+    120deg,
+    #c9a646,
+    #f5e7b8,
+    #c9a646
+  );
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 3s linear infinite;
 }
 
 @keyframes shine {
-    from { background-position: 0%; }
-    to { background-position: 200%; }
+  from { background-position: 0%; }
+  to   { background-position: 200%; }
 }
 
-/* =====================================
-   NAV + DROPDOWN
-===================================== */
-
-.main-nav {
-    position: relative;
-}
+/* =====================================================
+   NAV / DROPDOWN
+===================================================== */
 
 .dropdown {
-    position: relative;
+  position: relative;
 }
 
 .dropdown-toggle {
-    background: none;
-    border: none;
-    color: var(--gold);
-    font-size: 15px;
-    cursor: pointer;
-    padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 12px;
 }
 
 .dropdown-menu {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: var(--green-dark);
-    min-width: 220px;
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,.25);
-    z-index: 1000;
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #111;
+  min-width: 220px;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.4);
+  overflow: hidden;
 }
 
 .dropdown-menu.open {
-    display: block;
+  display: block;
 }
 
 .dropdown-menu a {
-    display: block;
-    padding: 12px 16px;
-    color: white;
-    font-size: 14px;
+  display: block;
+  padding: 14px 18px;
+  font-size: 14px;
+  color: #fff;
 }
 
 .dropdown-menu a:hover {
-    background: rgba(255,255,255,.08);
-    color: var(--gold);
+  background: rgba(255,255,255,.06);
+  color: var(--gold);
 }
 
-/* =====================================
+/* =====================================================
    LAYOUT
-===================================== */
+===================================================== */
 
 .layout {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    background: var(--bg-light);
-    min-height: 80vh;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  min-height: 80vh;
 }
 
 .content {
-    padding: 40px;
+  padding: 36px;
 }
 
 .sidebar {
-    border-left: 1px solid var(--border-light);
-    padding: 24px;
+  padding: 24px;
+  background: var(--bg-soft);
+  border-left: 1px solid var(--border-light);
 }
 
-.sidebar h3 {
-    margin-top: 0;
-}
-
-.side-links a {
-    display: block;
-    margin-bottom: 14px;
-    font-size: 14px;
-    color: var(--green);
-}
-
-/* ===== PORTFOLIO TABULKY ===== */
-.portfolio-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 12px;
-}
-
-.portfolio-table thead th {
-  text-align: left;
-  padding: 12px;
-  color: var(--gold);
-  border-bottom: 2px solid var(--gold);
-  font-weight: 600;
-}
-
-.portfolio-table tbody td {
-  padding: 12px;
-  border-bottom: 1px solid rgba(201,162,70,0.35);
-}
-
-.portfolio-table tbody tr:nth-child(even) {
-  background: #f6f6f6;
-}
-
-.portfolio-table tbody tr:hover {
-  background: var(--gold-light);
-}
-
-/* =====================================
-   GRID & KARTY (FONDY / AKCIE)
-===================================== */
+/* =====================================================
+   GRID & CARDS
+===================================================== */
 
 .fund-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
 }
 
 .fund-card {
-    border: 2px solid var(--gold);
-    border-radius: 14px;
-    padding: 24px;
-    background: var(--bg-light);
-    cursor: pointer;
-    transition: transform .2s, box-shadow .2s;
+  background: var(--bg-card);
+  border-radius: 18px;
+  padding: 24px;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all .25s ease;
 }
 
 .fund-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+  transform: translateY(-6px);
+  border-color: var(--gold);
+  box-shadow: 0 20px 45px rgba(0,0,0,.08);
 }
 
 .fund-card h3 {
-    margin: 0 0 8px;
-    font-size: 18px;
-    color: var(--green);
+  margin: 0 0 6px;
+  font-size: 17px;
+  color: var(--gray-900);
 }
 
 .fund-card small {
-    color: var(--text-muted);
+  color: var(--text-muted);
 }
 
-
-/* Portfolio tabs */
-.portfolio-tab {
-  display: none;
-}
-
-.portfolio-tab.active {
-  display: block;
-  animation: fade .2s ease;
-}
-
-.tab.active {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-/* Překryv přes celou obrazovku */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;                 /* top/right/bottom/left = 0 */
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-
-/* Samotné okno */
-.modal {
-  background: #fff;
-  color: #000;
-  width: 100%;
-  max-width: 520px;
-  border-radius: 12px;
-  padding: 20px 24px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-}
-
-/* Akce */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.gold-theme {
-  background: #f7f7f7;
-  color: #222;
-  border-radius: 14px;
-}
-
-.gold-theme h3 {
-  color: #C9A646;
-  margin-bottom: 14px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-
-.form-row.single {
-  grid-template-columns: 1fr;
-}
-
-.form-group label {
-  font-size: 13px;
-  color: #555;
-}
-
-.form-group input,
-.form-group select {
-  background: #fff;
-  border: 1px solid #ddd;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #C9A646;
-  outline: none;
-}
-
-.button.primary {
-  background: #C9A646;
-  color: #111;
-  border: none;
-}
-
-.button.secondary {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.fund-perf {
-  margin-top: 6px;
-  font-size: 13px;
-}
-
-.fund-perf.pos {
-  color: #1e8f4d;
-}
-
-.fund-perf.neg {
-  color: #c0392b;
-}
-
-/*  tabulka   */
-
-
-.view-switch {
-  display: flex;
-  justify-content: flex-end; /* ✅ doprava */
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.view-switch button {
-  padding: 6px 14px;
-  border-radius: 999px;        /* ✅ pill shape */
-  border: 1px solid #C9A646;
-  background: transparent;
-  color: #C9A646;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.view-switch button:hover {
-  background: rgba(201,166,70,0.15);
-}
-
-.view-switch button.active {
-  background: #C9A646;
-  color: #111;
-}
-
-.fund-table th {
-  position: relative;
-  cursor: pointer;
-  user-select: none;
-  padding-right: 22px;
-}
-
-.fund-table th::after {
-  content: "▴▾";
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  color: #bbb;
-}
-
-/* aktivní sloupec */
-.fund-table th.sort-asc::after {
-  content: "▴";
-  color: #C9A646;
-}
-
-.fund-table th.sort-desc::after {
-  content: "▾";
-  color: #C9A646;
-}
-
-.fund-table td.pos {
-  color: #1e8f4d;
-  font-weight: 500;
-}
-
-.fund-table td.neg {
-  color: #c0392b;
-  font-weight: 500;
-}
-
-/* TABULKA */
-/* TABULKA ZÁKLAD */
-.fund-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.fund-table th {
-  text-align: left;
-  padding: 10px;
-  border-bottom: 2px solid var(--gold);
-  cursor: pointer;
-}
-
-.fund-table td {
-  padding: 10px;
-}
-
-/* 🟦 ZEBRA – každý sudý řádek */
-.fund-table tbody tr:nth-child(even) {
-  background: var(--row-alt);
-}
-
-/* 🟨 HOVER – jemný zlatý nádech */
-.fund-table tbody tr:hover {
-  background: var(--gold-light);
-}
-
-/* ⭐ AKTIVNÍ ŘÁDEK – světlejší zlatá */
-.fund-table tbody tr.active,
-.fund-table tbody tr.active:hover {
-  background: var(--gold-active) !important;
-  color: #111;
-}
-
-.hidden {
-  display: none;
-}
-
-/* =====================================
-PORTFOLIO TABS – stejné jako view-switch
-===================================== */
+/* =====================================================
+   TABS & BUTTONS
+===================================================== */
 
 .portfolio-tabs {
   display: flex;
-  justify-content: flex-start;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.portfolio-tabs .tab {
-  padding: 6px 14px;
-  border-radius: 999px;          /* pill */
+.portfolio-tabs .tab,
+.pill-button {
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
   border: 1px solid var(--gold);
-  background: white;
+  background: #fff;
   color: var(--gold);
   cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
+  transition: all .2s ease;
 }
 
-.portfolio-tabs .tab:hover {
-  background: var(--gold-light);
+.portfolio-tabs .tab:hover,
+.pill-button:hover {
+  background: var(--gold);
+  color: #111;
 }
 
-/* ✅ AKTIVNÍ TAB */
 .portfolio-tabs .tab.active {
   background: var(--gold);
   color: #111;
 }
 
-
-/* =====================================
-   KPI
-===================================== */
+/* =====================================================
+   KPI – DASHBOARD STYLE
+===================================================== */
 
 .kpi-row {
-    display: flex;
-    gap: 24px;
-    margin: 16px 0;
+  display: flex;
+  gap: 20px;
+  margin: 16px 0;
 }
 
 .kpi {
-    padding: 12px 16px;
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    min-width: 140px;
-    background: #fafafa;
+  background: linear-gradient(180deg, #fff, #f8f8f8);
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  padding: 16px 18px;
+  min-width: 160px;
 }
 
 .kpi span {
-    display: block;
-    font-size: 12px;
-    color: var(--text-muted);
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
 }
-
 
 .kpi strong {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  letter-spacing: 0.2px;
-}
-
-
-.pos {
-    color: green;
-}
-
-.neg {
-    color: red;
 }
 
 /* =====================================================
-APP TABLE – SHARED COMPONENT
+   TABLES – APP TABLE
 ===================================================== */
 
 .app-table {
@@ -522,419 +267,139 @@ APP TABLE – SHARED COMPONENT
   border-collapse: collapse;
 }
 
-/* hlavička */
 .app-table th {
   text-align: left;
   padding: 10px;
   border-bottom: 2px solid var(--gold);
   color: var(--gold);
-  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
 }
 
-/* buňky */
 .app-table td {
-  padding: 10px;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--gray-200);
 }
 
-/* zebra */
-.app-table tbody tr:nth-child(even) {
-  background: #f3f3f3;
+.app-table tbody tr {
+  transition: background .15s ease;
 }
 
-/* hover */
 .app-table tbody tr:hover {
   background: var(--gold-light);
 }
 
-/* aktivní řádek */
-.app-table tbody tr.active,
-.app-table tbody tr.active:hover {
+.app-table tbody tr.active {
   background: var(--gold-active);
   color: #111;
 }
 
 /* =====================================================
-MOBILE
+   POS / NEG
 ===================================================== */
-@media (max-width: 768px) {
-  .app-table thead {
-    display: none;
-  }
 
-  .app-table,
-  .app-table tbody,
-  .app-table tr {
-    display: block;
-    width: 100%;
-  }
-
-  .app-table tbody tr {
-    margin-bottom: 12px;
-    border-radius: 10px;
-    border: 1px solid #e5e5e5;
-    background: #fff;
-    overflow: hidden;
-  }
-
-  .app-table tbody tr:nth-child(even) {
-    background: #f7f7f7;
-  }
-
-  .app-table td {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-  }
-
-  .app-table td:last-child {
-    border-bottom: none;
-  }
-
-  .app-table td::before {
-    content: attr(data-label);
-    font-weight: 500;
-    color: #666;
-    margin-right: 12px;
-  }
+.pos {
+  color: #1e8f4d;
+  font-weight: 500;
 }
 
-/* =====================================
+.neg {
+  color: #c0392b;
+  font-weight: 500;
+}
+
+/* =====================================================
    PERIOD SWITCH
-===================================== */
-
-.period-switch {
-    margin: 16px 0;
-}
+===================================================== */
 
 .period-switch button {
-    margin-right: 8px;
-    padding: 6px 12px;
-    border: 1px solid var(--gold);
-    background: white;
-    cursor: pointer;
-    border-radius: 6px;
+  margin-right: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--gold);
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .period-switch button.active {
-    background: var(--gold);
-    color: white;
+  background: var(--gold);
+  color: #111;
 }
 
-.period-row {
+/* =====================================================
+   MODAL
+===================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 10px 0 6px;
+  justify-content: center;
+  z-index: 10000;
 }
 
-.period-diff {
-  background: #f0f0f0;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
-  color: #333;
-  min-width: 140px;
-  text-align: right;
+.modal {
+  background: #fff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
 }
 
-.period-diff.pos {
-  color: #1a7f37;
-}
-
-.period-diff.neg {
-  color: #b42318;
-}
-
-/* =====================================
-   GRAF
-===================================== */
-
-#chart-portfolio,
-#chart-stock {
-    width: 100%;
-    margin-top: 16px;
-}
-
-
-#chart-stock,
-#chart-portfolio,
-#chart-currency {
-  position: relative;
-  z-index: 1;
-}
-
-
-/* =====================================
-   TLAČÍTKO ZPĚT
-===================================== */
+/* =====================================================
+   BACK BUTTON
+===================================================== */
 
 .back-btn {
-    margin-top: 24px;
-    padding: 12px 16px;
-    font-size: 15px;
-    background: white;
-    border: 1px solid var(--gold);
-    border-radius: 8px;
-    cursor: pointer;
-    width: fit-content;
+  margin-top: 24px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--gold);
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .back-btn:hover {
-    background: var(--gold);
-    color: white;
+  background: var(--gold);
+  color: #111;
 }
 
-/* =====================================
+/* =====================================================
    FOOTER
-===================================== */
+===================================================== */
 
 .footer {
-    background: var(--green);
-    text-align: center;
-    padding: 20px;
+  background: #111;
+  text-align: center;
+  padding: 20px;
 }
 
 .footer a {
-    color: white;
-    font-size: 12px;
-    margin: 0 16px;
+  color: #fff;
+  font-size: 12px;
+  margin: 0 12px;
 }
 
-/* =====================================
-   RESPONSIVE – MOBILE
-===================================== */
+/* =====================================================
+   RESPONSIVE
+===================================================== */
 
 @media (max-width: 768px) {
-
-    body {
-        font-size: 16px;
-    }
-
-    /* layout */
-    .layout {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar {
-        display: none;
-    }
-
-    .content {
-        padding: 16px;
-    }
-
-    /* grid */
-    .fund-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .fund-card {
-        padding: 16px;
-    }
-
-    /* KPI */
-    .kpi-row {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .kpi {
-        width: 100%;
-    }
-
-    /* header */
-    .main-header h1 {
-        font-size: 16px;
-    }
-
-    .logo {
-        height: 40px;
-    }
-
-    /* back button */
-    .back-btn {
-        width: 100%;
-    }
-}
-
-/* =====================================
-RESPONSIVE – TABULKA FONDŮ (MOBILE)
-===================================== */
-@media (max-width: 768px) {
-
-  .fund-table thead {
-    display: none; /* ❌ hlavička pryč */
+  .layout {
+    grid-template-columns: 1fr;
   }
 
-  .fund-table,
-  .fund-table tbody,
-  .fund-table tr {
-    display: block;
-    width: 100%;
-  }
-
-  .fund-table tbody tr {
-    margin-bottom: 12px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: white;
-    border: 1px solid #e5e5e5;
-  }
-
-  /* zebra jemně zachovaná */
-  .fund-table tbody tr:nth-child(even) {
-    background: #f7f7f7;
-  }
-
-  /* aktivní řádek – světle zlatá */
-  .fund-table tbody tr.active {
-    background: var(--gold-active) !important;
-    border-color: var(--gold);
-  }
-
-  .fund-table td {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-  }
-
-  .fund-table td:last-child {
-    border-bottom: none;
-  }
-
-  /* label před hodnotou */
-  .fund-table td::before {
-    content: attr(data-label);
-    font-weight: 500;
-    color: #555;
-    margin-right: 12px;
-  }
-
-  /* skryjeme méně důležitý údaj */
-  .fund-table td.hide-mobile {
+  .sidebar {
     display: none;
   }
-}
 
-/* =====================================
-MOBILE SORT PANEL
-===================================== */
-.mobile-sort {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .mobile-sort {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+  .kpi-row {
+    flex-direction: column;
   }
-
-  .mobile-sort label {
-    font-size: 13px;
-    color: #555;
-  }
-
-  .mobile-sort select {
-    flex: 1;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-  }
-
-  .mobile-sort button {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--gold);
-    background: white;
-    color: var(--gold);
-    font-size: 16px;
-    cursor: pointer;
-  }
-
-  .mobile-sort button.active {
-    background: var(--gold);
-    color: #111;
-  }
-}
-
-@media (max-width: 768px) {
-  .fund-table tbody tr.active {
-    position: relative;
-  }
-
-  .fund-table tbody tr.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--gold);
-  }
-}
-
-/* =====================================
-PORTFOLIO TABS – override .button
-STEJNÝ VZHLED JAKO DLAŽDICE / ŘÁDKY
-===================================== */
-
-.portfolio-tabs .button.tab {
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--gold);
-  background: white !important;
-  color: var(--gold) !important;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.portfolio-tabs .button.tab:hover {
-  background: var(--gold-light);
-}
-
-/* ✅ AKTIVNÍ TAB */
-.portfolio-tabs .button.tab.active {
-  background: var(--gold) !important;
-  color: #111 !important;
-}
-
-/* hover = vizuálně aktivní */
-.portfolio-tabs .button.tab:hover {
-  background: var(--gold);
-  color: #111;
-}
-
-/* aktivní zůstává stejné */
-.portfolio-tabs .button.tab.active {
-  background: var(--gold);
-  color: #111;
-}
-
-/* =====================================
-PILL BUTTON – app‑wide (Dlaždice / Řádky / Přidat)
-===================================== */
-
-.pill-button {
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--gold);
-  background: white;
-  color: var(--gold);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all .2s ease;
-}
-
-.pill-button:hover {
-  background: var(--gold);
-  color: #111;
 }
