@@ -71,7 +71,7 @@ window.loadPortfolioPage = async function (page) {
 
       <h1>Portfolio ${portfolioId}</h1>
 
-      <section id="tab-overview" class="portfolio-tab active">
+      <section id="tab-overview" class="portfolio-tab">
         <div class="kpi-row">
           <div class="kpi">
             <span>Hodnota</span>
@@ -91,7 +91,7 @@ window.loadPortfolioPage = async function (page) {
 
       </section>
 
-    <section id="tab-instruments" class="portfolio-tab active">
+    <section id="tab-instruments" class="portfolio-tab">
 
     <div class="mobile-sort">
       <label for="inst-sort">Řadit podle</label>
@@ -793,10 +793,25 @@ function initPortfolioTabs() {
   const tabs = document.querySelectorAll('.portfolio-tabs .tab');
   const sections = document.querySelectorAll('.portfolio-tab');
 
+  // ✅ reset – všechno pryč
+  tabs.forEach(t => t.classList.remove('active'));
+  sections.forEach(s => s.classList.remove('active'));
+
+  // ✅ výchozí tab = Přehled
+  const defaultTab = document.querySelector('.portfolio-tabs .tab[data-tab="overview"]');
+  const defaultSection = document.getElementById('tab-overview');
+
+  if (defaultTab && defaultSection) {
+    defaultTab.classList.add('active');
+    defaultSection.classList.add('active');
+  }
+
+  // ✅ klikání na taby
   tabs.forEach(btn => {
     btn.onclick = () => {
       tabs.forEach(t => t.classList.remove('active'));
       sections.forEach(s => s.classList.remove('active'));
+
       btn.classList.add('active');
       document
         .getElementById(`tab-${btn.dataset.tab}`)
