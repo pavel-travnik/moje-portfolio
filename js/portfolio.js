@@ -91,30 +91,31 @@ window.loadPortfolioPage = async function (page) {
 
       </section>
 
-      <h3>Instrumenty</h3>
+    <section id="tab-instruments" class="portfolio-tab active">
 
-<div class="mobile-sort">
-  <label for="inst-sort">Řadit podle</label>
-  <select id="inst-sort">
-    <option value="type">Instrument</option>
-    <option value="name">Název</option>
-    <option value="quantity">Počet kusů</option>
-  </select>
-  <button id="inst-sort-dir">↑</button>
-</div>
+    <div class="mobile-sort">
+      <label for="inst-sort">Řadit podle</label>
+      <select id="inst-sort">
+        <option value="type">Instrument</option>
+        <option value="name">Název</option>
+        <option value="quantity">Počet kusů</option>
+    </select>
+    <button id="inst-sort-dir">↑</button>
+    </div>
 
-<table class="fund-table" id="instruments-table">
-  <thead>
-    <tr>
-      <th data-key="type">Instrument</th>
-      <th data-key="name">Název</th>
-      <th data-key="quantity">Počet kusů</th>
-    </tr>
-  </thead>
-  <tbody id="portfolio-instruments"></tbody>
-</table>
+    <table class="fund-table" id="instruments-table">
+      <thead>
+        <tr>
+          <th data-key="type">Instrument</th>
+          <th data-key="name">Název</th>
+          <th data-key="quantity">Počet kusů</th>
+        </tr>
+      </thead>
+      <tbody id="portfolio-instruments"></tbody>
+    </table>
+    </section>
 
-      <section id="tab-transactions" class="portfolio-tab">
+    <section id="tab-transactions" class="portfolio-tab">
         <div class="toolbar" style="justify-content:space-between">
           <span class="muted">Transakce</span>
           <button
@@ -126,33 +127,33 @@ window.loadPortfolioPage = async function (page) {
         </div>
 
        
-<div class="mobile-sort">
-  <label for="tx-sort">Řadit podle</label>
-  <select id="tx-sort">
-    <option value="date">Datum</option>
-    <option value="instrument">Instrument</option>
-    <option value="type">Směr</option>
-    <option value="quantity">Množství</option>
-    <option value="price">Cena</option>
-  </select>
-  <button id="tx-sort-dir">↑</button>
-</div>
+    <div class="mobile-sort">
+      <label for="tx-sort">Řadit podle</label>
+      <select id="tx-sort">
+        <option value="date">Datum</option>
+        <option value="instrument">Instrument</option>
+        <option value="type">Směr</option>
+        <option value="quantity">Množství</option>
+        <option value="price">Cena</option>
+      </select>
+      <button id="tx-sort-dir">↑</button>
+    </div>
 
-<table class="fund-table" id="transactions-table">
-  <thead>
-    <tr>
-      <th data-key="date">Datum</th>
-      <th data-key="instrument">Instrument</th>
-      <th data-key="type">Směr</th>
-      <th data-key="quantity">Množství</th>
-      <th data-key="price">Cena</th>
-    </tr>
-  </thead>
-  <tbody id="portfolio-transactions"></tbody>
-</table>
-      </section>
+    <table class="fund-table" id="transactions-table">
+      <thead>
+        <tr>
+          <th data-key="date">Datum</th>
+          <th data-key="instrument">Instrument</th>
+          <th data-key="type">Směr</th>
+          <th data-key="quantity">Množství</th>
+          <th data-key="price">Cena</th>
+        </tr>
+      </thead>
+    <tbody id="portfolio-transactions"></tbody>
+    </table>
+    </section>
 
-      <section id="tab-settings" class="portfolio-tab">
+     <section id="tab-settings" class="portfolio-tab">
         <div class="card" style="max-width:420px">
           <label class="stack">
             <span class="muted">E‑mail</span>
