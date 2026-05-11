@@ -49,6 +49,7 @@ body {
      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: var(--green);
     color: var(--text-dark);
+    overflow-x: hidden;
 }
 
 a {
@@ -166,6 +167,9 @@ a:hover {
 
 .content {
     padding: 40px;
+     max-width: 100%;
+     overflow-x: hidden;
+
 }
 
 .sidebar {
@@ -424,6 +428,31 @@ a:hover {
 .fund-table td.neg {
   color: #c0392b;
   font-weight: 500;
+}
+
+/* ===== INSTRUMENTY – RESPONSIVE ===== */
+#instruments-table th:nth-child(1),
+#instruments-table td:nth-child(1) {
+  width: 25%;
+}
+
+#instruments-table th:nth-child(2),
+#instruments-table td:nth-child(2) {
+  width: 50%;
+}
+
+#instruments-table th:nth-child(3),
+#instruments-table td:nth-child(3) {
+  width: 25%;
+  text-align: right;
+}
+
+/* ✅ název max 2 řádky */
+.instrument-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* TABULKA */
@@ -794,7 +823,11 @@ RESPONSIVE – TABULKA FONDŮ (MOBILE)
     display: none; /* ❌ hlavička pryč */
   }
 
-  .fund-table,
+.fund-table {
+  width: 100%;
+  table-layout: fixed; /* ✅ KLÍČOVÉ */
+  word-wrap: break-word;
+}
   .fund-table tbody,
   .fund-table tr {
     display: block;
