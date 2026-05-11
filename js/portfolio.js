@@ -93,17 +93,16 @@ window.loadPortfolioPage = async function (page) {
 
       <section id="tab-instruments" class="portfolio-tab">
         <table class="app-table">
-          <thead>
-            <tr>
-              <th>Instrument</th>
-              <th>Měna</th>
-              <th>Hodnota</th>
-              <th>1M</th>
-              <th>6M</th>
-              <th>1Y</th>
-            </tr>
-          </thead>
-          <tbody id="portfolio-instruments"></tbody>
+          
+      <thead>
+         <tr>
+          <th>Instrument</th>
+          <th>Název</th>
+         <th>Počet kusů</th>
+        </tr>
+       </thead>
+      <tbody id="portfolio-instruments"></tbody>
+
         </table>
       </section>
 
@@ -261,6 +260,30 @@ function renderAllocationDonut(data, containerId) {
   el.appendChild(legend);
 }
 
+function openAssetDetail(assetType, assetId) {
+  let path;
+
+  switch (assetType) {
+    case 'ETF':
+      path = `etf/${assetId}`;
+      break;
+    case 'STOCK':
+      path = `akcie/${assetId}`;
+      break;
+    case 'FUND':
+      path = `podilove-fondy/${assetId}`;
+      break;
+    case 'DPS':
+      path = `penze/${assetId}`;
+      break;
+    default:
+      return;
+  }
+
+  history.pushState({ page: path }, '', `/${path}`);
+  loadPage(path, false); // ✅ stejný router jako app.js
+}
+
 // ===================================================
 // API
 // ===================================================
@@ -378,16 +401,34 @@ function renderPortfolioInstruments(positions) {
   const tbody = document.getElementById('portfolio-instruments');
   tbody.innerHTML = '';
 
+  const typeLabel = {
+    ETF: 'ETF',
+    STOCK: 'Akcie',
+    FUND: 'Fondy',
+    DPS: 'Penze'
+  };
+
   positions.forEach(p => {
     const tr = document.createElement('tr');
+    tr.className = 'clickable';
+
+    const label = typeLabel[p.asset_type] || p.asset_type;
+    const quantity =
+      p.quantity != null
+        ? fmtNumber(p.quantity, 4)
+        : '—';
+
     tr.innerHTML = `
-      <td data-label="Instrument">${p.asset_type} · ${p.asset_id}</td>
-      <td data-label="Měna">${p.cost_currency}</td>
-      <td data-label="Hodnota">${fmtNumber(p.book_value)} ${p.cost_currency}</td>
-      <td data-label="1M">—</td>
-      <td data-label="6M">—</td>
-      <td data-label="1Y">—</td>
+      <td>${label}</td>
+      <td>${p.asset_name || p.asset_id}</td>
+      <td>${quantity}</td>
     `;
+
+    // ✅ klik → detail (stejné jako app.js)
+    tr.onclick = () => {
+      openAssetDetail(p.asset_type, p.asset_id);
+    };
+
     tbody.appendChild(tr);
   });
 
