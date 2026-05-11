@@ -91,20 +91,28 @@ window.loadPortfolioPage = async function (page) {
 
       </section>
 
-      <section id="tab-instruments" class="portfolio-tab">
-        <table class="app-table">
-          
-      <thead>
-         <tr>
-          <th>Instrument</th>
-          <th>Název</th>
-         <th>Počet kusů</th>
-        </tr>
-       </thead>
-      <tbody id="portfolio-instruments"></tbody>
+      <h3>Instrumenty</h3>
 
-        </table>
-      </section>
+<div class="mobile-sort">
+  <label for="inst-sort">Řadit podle</label>
+  <select id="inst-sort">
+    <option value="type">Instrument</option>
+    <option value="name">Název</option>
+    <option value="quantity">Počet kusů</option>
+  </select>
+  <button id="inst-sort-dir">↑</button>
+</div>
+
+<table class="fund-table" id="instruments-table">
+  <thead>
+    <tr>
+      <th data-key="type">Instrument</th>
+      <th data-key="name">Název</th>
+      <th data-key="quantity">Počet kusů</th>
+    </tr>
+  </thead>
+  <tbody id="portfolio-instruments"></tbody>
+</table>
 
       <section id="tab-transactions" class="portfolio-tab">
         <div class="toolbar" style="justify-content:space-between">
@@ -117,18 +125,31 @@ window.loadPortfolioPage = async function (page) {
           </button>
         </div>
 
-        <table class="app-table">
-          <thead>
-            <tr>
-              <th>Datum</th>
-              <th>Instrument</th>
-              <th>Směr</th>
-              <th>Množství</th>
-              <th>Cena</th>
-            </tr>
-          </thead>
-          <tbody id="portfolio-transactions"></tbody>
-        </table>
+       
+<div class="mobile-sort">
+  <label for="tx-sort">Řadit podle</label>
+  <select id="tx-sort">
+    <option value="date">Datum</option>
+    <option value="instrument">Instrument</option>
+    <option value="type">Směr</option>
+    <option value="quantity">Množství</option>
+    <option value="price">Cena</option>
+  </select>
+  <button id="tx-sort-dir">↑</button>
+</div>
+
+<table class="fund-table" id="transactions-table">
+  <thead>
+    <tr>
+      <th data-key="date">Datum</th>
+      <th data-key="instrument">Instrument</th>
+      <th data-key="type">Směr</th>
+      <th data-key="quantity">Množství</th>
+      <th data-key="price">Cena</th>
+    </tr>
+  </thead>
+  <tbody id="portfolio-transactions"></tbody>
+</table>
       </section>
 
       <section id="tab-settings" class="portfolio-tab">
@@ -399,7 +420,10 @@ function renderPortfolioOverview(data) {
 
 function renderPortfolioInstruments(positions) {
   const tbody = document.getElementById('portfolio-instruments');
-  tbody.innerHTML = '';
+  const table = document.getElementById('instruments-table');
+  if (!tbody || !table) return;
+
+  let sort = { key: 'type', asc: true };
 
   const typeLabel = {
     ETF: 'ETF',
@@ -408,31 +432,89 @@ function renderPortfolioInstruments(positions) {
     DPS: 'Penze'
   };
 
-  positions.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.className = 'clickable';
+  function getValue(p, key) {
+    switch (key) {
+      case 'type':
+        return (typeLabel[p.asset_type] || p.asset_type).toLowerCase();
+      case 'name':
+        return (p.asset_name || p.asset_id).toLowerCase();
+      case 'quantity':
+        return p.quantity || 0;
+      default:
+        return '';
+    }
+  }
 
-    const label = typeLabel[p.asset_type] || p.asset_type;
-    const quantity =
-      p.quantity != null
-        ? fmtNumber(p.quantity, 4)
-        : '—';
+  function render() {
+    const data = [...positions];
 
-    tr.innerHTML = `
-      <td>${label}</td>
-      <td>${p.asset_name || p.asset_id}</td>
-      <td>${quantity}</td>
-    `;
+    data.sort((a, b) => {
+      const A = getValue(a, sort.key);
+      const B = getValue(b, sort.key);
+      if (A < B) return sort.asc ? -1 : 1;
+      if (A > B) return sort.asc ? 1 : -1;
+      return 0;
+    });
 
-    // ✅ klik → detail (stejné jako app.js)
-    tr.onclick = () => {
-      openAssetDetail(p.asset_type, p.asset_id);
+    tbody.innerHTML = '';
+
+    data.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.className = 'clickable';
+
+      tr.innerHTML = `
+        <td data-label="Instrument">${typeLabel[p.asset_type] || p.asset_type}</td>
+        <td data-label="Název">${p.asset_name || p.asset_id}</td>
+        <td data-label="Počet kusů">
+          ${p.quantity != null ? fmtNumber(p.quantity, 4) : '—'}
+        </td>
+      `;
+
+      // ✅ klik → detail instrumentu
+      tr.onclick = () => openAssetDetail(p.asset_type, p.asset_id);
+
+      tbody.appendChild(tr);
+    });
+
+    bindAppTableRows(table);
+  }
+
+  // ===== desktop sort (klik na hlavičku) =====
+  table.querySelectorAll('th').forEach(th => {
+    th.onclick = () => {
+      const key = th.dataset.key;
+      if (!key) return;
+
+      sort.asc = sort.key === key ? !sort.asc : true;
+      sort.key = key;
+
+      table.querySelectorAll('th')
+        .forEach(x => x.classList.remove('sort-asc', 'sort-desc'));
+
+      th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
+      render();
     };
-
-    tbody.appendChild(tr);
   });
 
-  bindAppTableRows(tbody.closest('table'));
+  // ===== mobile sort =====
+  const mobileSelect = document.getElementById('inst-sort');
+  const mobileDir = document.getElementById('inst-sort-dir');
+
+  if (mobileSelect && mobileDir) {
+    mobileSelect.onchange = () => {
+      sort.key = mobileSelect.value;
+      render();
+    };
+
+    mobileDir.onclick = () => {
+      sort.asc = !sort.asc;
+      mobileDir.textContent = sort.asc ? '↑' : '↓';
+      mobileDir.classList.toggle('active', sort.asc);
+      render();
+    };
+  }
+
+  render();
 
   
   // ✅ DONUT CHART
@@ -443,21 +525,98 @@ function renderPortfolioInstruments(positions) {
 
 function renderPortfolioTransactions(trades) {
   const tbody = document.getElementById('portfolio-transactions');
-  tbody.innerHTML = '';
+  const table = document.getElementById('transactions-table');
+  if (!tbody || !table) return;
 
-  trades.forEach(t => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td data-label="Datum">${new Date(t.trade_date).toLocaleDateString('cs-CZ')}</td>
-      <td data-label="Instrument">${t.asset_type} · ${t.asset_id}</td>
-      <td data-label="Směr">${t.trade_type}</td>
-      <td data-label="Množství">${fmtNumber(t.quantity, 4)}</td>
-      <td data-label="Cena">${fmtNumber(t.price, 4)} ${t.currency}</td>
-    `;
-    tbody.appendChild(tr);
+  let sort = { key: 'date', asc: false };
+
+  function getValue(t, key) {
+    switch (key) {
+      case 'date': return new Date(t.trade_date);
+      case 'instrument': return `${t.asset_type}-${t.asset_id}`.toLowerCase();
+      case 'type': return t.trade_type;
+      case 'quantity': return t.quantity;
+      case 'price': return t.price;
+      default: return '';
+    }
+  }
+
+  function render() {
+    const data = [...trades];
+
+    data.sort((a, b) => {
+      const A = getValue(a, sort.key);
+      const B = getValue(b, sort.key);
+      if (A < B) return sort.asc ? -1 : 1;
+      if (A > B) return sort.asc ? 1 : -1;
+      return 0;
+    });
+
+    tbody.innerHTML = '';
+
+    data.forEach(t => {
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td data-label="Datum">
+          ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
+        </td>
+        <td data-label="Instrument">
+          ${t.asset_type} · ${t.asset_id}
+        </td>
+        <td data-label="Směr">
+          ${t.trade_type}
+        </td>
+        <td data-label="Množství">
+          ${fmtNumber(t.quantity, 4)}
+        </td>
+        <td data-label="Cena">
+          ${fmtNumber(t.price, 4)} ${t.currency}
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    bindAppTableRows(table);
+  }
+
+  // ===== desktop sort (klik na th) =====
+  table.querySelectorAll('th').forEach(th => {
+    th.onclick = e => {
+      const key = th.dataset.key;
+      if (!key) return;
+
+      sort.asc = sort.key === key ? !sort.asc : true;
+      sort.key = key;
+
+      table.querySelectorAll('th')
+        .forEach(x => x.classList.remove('sort-asc', 'sort-desc'));
+
+      th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
+      render();
+    };
   });
 
-  bindAppTableRows(tbody.closest('table'));
+  // ===== mobile sort =====
+  const mobileSelect = document.getElementById('tx-sort');
+  const mobileDir = document.getElementById('tx-sort-dir');
+
+  if (mobileSelect && mobileDir) {
+    mobileSelect.onchange = () => {
+      sort.key = mobileSelect.value;
+      render();
+    };
+
+    mobileDir.onclick = () => {
+      sort.asc = !sort.asc;
+      mobileDir.textContent = sort.asc ? '↑' : '↓';
+      mobileDir.classList.toggle('active', sort.asc);
+      render();
+    };
+  }
+
+  render();
 }
 
 // ===================================================
