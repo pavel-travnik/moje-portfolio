@@ -804,21 +804,27 @@ async function loadStockName(ticker) {
 }
 
 async function loadStockData(ticker, period) {
-  const res = await fetch(`${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`);
-  let data = await res.json();
-  if (!Array.isArray(data)) data = [];
 
-  data.sort((a, b) => new Date(a.date) - new Date(b.date));
-  const filtered = filterPeriod(data, period);
-  const finalData = filtered.length ? filtered : data;
+  // ✅ 1️⃣ fetch jen jednou
+  if (!apiCache.stocks[ticker]) {
+    const res = await fetch(
+      `${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`
+    );
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [];
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    apiCache.stocks[ticker] = data;
+  }
 
+  // ✅ 2️⃣ period = frontend filtr
+  const filtered = filterPeriod(apiCache.stocks[ticker], period);
+  const finalData = filtered.length ? filtered : apiCache.stocks[ticker];
+
+  // ✅ 3️⃣ render
   renderStockKPI(finalData);
-  
   renderPeriodDifference(
-  finalData.map(d => ({ value: d.close }))
+    finalData.map(d => ({ value: d.close }))
   );
-
-
   renderPortfolioChart(
     finalData.map(d => ({ date: d.date, value: d.close })),
     'chart-stock'

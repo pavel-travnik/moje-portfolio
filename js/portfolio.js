@@ -81,7 +81,14 @@ window.loadPortfolioPage = async function (page) {
             <span>Denní změna</span>
             <strong id="pf-kpi-daily">—</strong>
           </div>
+          </div>
+
+        
+        <div class="overview-right">
+          <div id="portfolio-allocation-chart"></div>
+          </div>
         </div>
+
       </section>
 
       <section id="tab-instruments" class="portfolio-tab">
@@ -166,6 +173,93 @@ window.loadPortfolioPage = async function (page) {
     renderPortfolioTransactions(trades);
   }
 };
+
+function calculateAllocationByType(positions) {
+  const map = {
+    ETF: 'ETF',
+    STOCK: 'Akcie',
+    FUND: 'Fondy',
+    DPS: 'Penze'
+  };
+
+  const totals = {};
+  let sum = 0;
+
+  positions.forEach(p => {
+    const key = map[p.asset_type] ?? 'Ostatní';
+    const val = Number(p.book_value) || 0;
+    totals[key] = (totals[key] || 0) + val;
+    sum += val;
+  });
+
+  return Object.entries(totals)
+    .map(([label, value]) => ({
+      label,
+      value,
+      pct: sum ? value / sum : 0
+    }))
+    .filter(x => x.value > 0);
+}
+
+function renderAllocationDonut(data, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el || !data.length) return;
+
+  el.innerHTML = '';
+
+  const size = 220;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  el.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const cx = size / 2;
+  const cy = size / 2;
+  const rOuter = size / 2 - 8;
+  const rInner = rOuter * 0.65;
+
+  const colors = {
+    ETF: '#C9A646',
+    Akcie: '#6B7280',
+    Fondy: '#4B5563',
+    Penze: '#9CA3AF',
+    Ostatní: '#D1D5DB'
+  };
+
+  let angle = -Math.PI / 2;
+
+  data.forEach(d => {
+    const a = d.pct * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter, angle, angle + a);
+    ctx.arc(cx, cy, rInner, angle + a, angle, true);
+    ctx.closePath();
+    ctx.fillStyle = colors[d.label] || '#ccc';
+    ctx.fill();
+    angle += a;
+  });
+
+  // střed – celkem
+  ctx.fillStyle = '#111';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 14px Arial';
+  ctx.fillText('Rozložení', cx, cy - 6);
+  ctx.font = '12px Arial';
+  ctx.fillText('portfolia', cx, cy + 10);
+
+  // legenda
+  const legend = document.createElement('div');
+  legend.className = 'donut-legend';
+  legend.innerHTML = data.map(d => `
+    <div>
+      <span style="background:${colors[d.label] || '#ccc'}"></span>
+      ${d.label} – ${(d.pct * 100).toFixed(1)} %
+    </div>
+  `).join('');
+  el.appendChild(legend);
+}
 
 // ===================================================
 // API
@@ -298,6 +392,12 @@ function renderPortfolioInstruments(positions) {
   });
 
   bindAppTableRows(tbody.closest('table'));
+
+  
+  // ✅ DONUT CHART
+  const allocation = calculateAllocationByType(positions);
+  renderAllocationDonut(allocation, 'portfolio-allocation-chart');
+
 }
 
 function renderPortfolioTransactions(trades) {
