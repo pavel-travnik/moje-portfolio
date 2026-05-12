@@ -222,13 +222,13 @@ function calculateAllocationByType(positions) {
     .filter(x => x.value > 0);
 }
 
-function renderAllocationDonut(data, containerId) {
+function renderAllocationDonut(data, containerId, totalValueCZK) {
   const el = document.getElementById(containerId);
   if (!el || !data.length) return;
 
   el.innerHTML = '';
 
-  const size = 220;
+  const size = 230;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -240,46 +240,96 @@ function renderAllocationDonut(data, containerId) {
   const rOuter = size / 2 - 8;
   const rInner = rOuter * 0.65;
 
-  const colors = {
-    ETF: '#C9A646',
-    Akcie: '#6B7280',
-    Fondy: '#4B5563',
-    Penze: '#9CA3AF',
-    Ostatní: '#D1D5DB'
-  };
+  let activeIndex = null;
 
-  let angle = -Math.PI / 2;
-
-  data.forEach(d => {
-    const a = d.pct * Math.PI * 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, rOuter, angle, angle + a);
-    ctx.arc(cx, cy, rInner, angle + a, angle, true);
-    ctx.closePath();
-    ctx.fillStyle = colors[d.label] || '#ccc';
-    ctx.fill();
-    angle += a;
+  // přiřazení barev
+  data.forEach((d, i) => {
+    d._color = GOLD_PALETTE[i % GOLD_PALETTE.length];
   });
 
-  // střed – celkem
-  ctx.fillStyle = '#111';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 14px Arial';
-  ctx.fillText('Rozložení', cx, cy - 6);
-  ctx.font = '12px Arial';
-  ctx.fillText('portfolia', cx, cy + 10);
+  function draw() {
+    ctx.clearRect(0, 0, size, size);
 
-  // legenda
-  const legend = document.createElement('div');
-  legend.className = 'donut-legend';
-  legend.innerHTML = data.map(d => `
-    <div>
-      <span style="background:${colors[d.label] || '#ccc'}"></span>
-      ${d.label} – ${(d.pct * 100).toFixed(1)} %
-    </div>
-  `).join('');
-  el.appendChild(legend);
+    let angle = -Math.PI / 2;
+
+    data.forEach((d, i) => {
+      const a = d.pct * Math.PI * 2;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter + (i === activeIndex ? 6 : 0), angle, angle + a);
+      ctx.arc(cx, cy, rInner, angle + a, angle, true);
+      ctx.closePath();
+      ctx.fillStyle = d._color;
+      ctx.fill();
+
+      d._start = angle;
+      d._end = angle + a;
+
+      angle += a;
+    });
+
+    // ===== STŘED =====
+    ctx.fillStyle = '#111';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.font = '12px Arial';
+
+    if (activeIndex === null) {
+      ctx.fillStyle = '#666';
+      ctx.fillText('Celkem', cx, cy - 10);
+
+      ctx.font = 'bold 16px Arial';
+      ctx.fillStyle = '#111';
+      ctx.fillText(
+        `${totalValueCZK.toLocaleString('cs-CZ')} Kč`,
+        cx,
+        cy + 10
+      );
+    } else {
+      const d = data[activeIndex];
+      ctx.fillStyle = '#666';
+      ctx.fillText(d.label, cx, cy - 10);
+
+      ctx.font = 'bold 18px Arial';
+      ctx.fillStyle = '#111';
+      ctx.fillText(
+        `${(d.pct * 100).toFixed(1)} %`,
+        cx,
+        cy + 12
+      );
+    }
+  }
+
+  // ===== KLIK INTERAKCE =====
+  canvas.onclick = e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - cx;
+    const y = e.clientY - rect.top - cy;
+    const dist = Math.sqrt(x * x + y * y);
+
+    // klik mimo donut → reset
+    if (dist < rInner || dist > rOuter + 10) {
+      activeIndex = null;
+      draw();
+      return;
+    }
+
+    let ang = Math.atan2(y, x);
+    if (ang < -Math.PI / 2) ang += 2 * Math.PI;
+    ang += Math.PI / 2;
+
+    activeIndex = null;
+    data.forEach((d, i) => {
+      if (ang >= d._start && ang <= d._end) {
+        activeIndex = i;
+      }
+    });
+
+    draw();
+  };
+
+  draw();
 }
 
 function openAssetDetail(assetType, assetId) {
@@ -520,7 +570,13 @@ function renderPortfolioInstruments(positions) {
   
   // ✅ DONUT CHART
   const allocation = calculateAllocationByType(positions);
-  renderAllocationDonut(allocation, 'portfolio-allocation-chart');
+  
+renderAllocationDonut(
+  allocation,
+  'portfolio-allocation-chart',
+  data.valuation.gross_value_base // ✅ suma portfolia
+);
+
 
 }
 
