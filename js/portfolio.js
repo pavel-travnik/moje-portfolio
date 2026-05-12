@@ -16,6 +16,16 @@ const fmtNumber = (value, decimals = 2) =>
     maximumFractionDigits: decimals
   }).format(value);
 
+  
+const GOLD_PALETTE = [
+  '#C9A646',
+  '#D8B85A',
+  '#E3C97A',
+  '#B89A3C',
+  '#A8872F'
+];
+
+
 // ===================================================
 // TABLE ROW BEHAVIOUR (GLOBAL)
 // ===================================================
@@ -186,6 +196,16 @@ window.loadPortfolioPage = async function (page) {
       renderPortfolioInstruments(detail.positions);
     }
 
+    
+    const allocation = calculateAllocationByType(detail.positions);
+
+    renderAllocationDonut(
+      allocation,
+      'portfolio-allocation-chart',
+      detail?.valuation?.gross_value_base
+    );
+
+
     if (!portfolioId || isNaN(Number(portfolioId))) {
   alert('Chyba: neplatné portfolio ID.');
   return;
@@ -222,7 +242,7 @@ function calculateAllocationByType(positions) {
     .filter(x => x.value > 0);
 }
 
-function renderAllocationDonut(data, containerId, totalValueCZK) {
+function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   const el = document.getElementById(containerId);
   if (!el || !data.length) return;
 
@@ -568,16 +588,6 @@ function renderPortfolioInstruments(positions) {
   render();
 
   
-  // ✅ DONUT CHART
-  const allocation = calculateAllocationByType(positions);
-  
-renderAllocationDonut(
-  allocation,
-  'portfolio-allocation-chart',
-  data.valuation.gross_value_base // ✅ suma portfolia
-);
-
-
 }
 
 function renderPortfolioTransactions(trades) {
