@@ -270,7 +270,7 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   function draw() {
     ctx.clearRect(0, 0, size, size);
 
-    let angle = -Math.PI / 2;
+    let angle = 0; // 0 = nahoře
 
     data.forEach((d, i) => {
       const a = d.pct * Math.PI * 2;
@@ -323,30 +323,30 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
 
   // ===== KLIK INTERAKCE =====
   canvas.onclick = e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - cx;
-    const y = e.clientY - rect.top - cy;
-    const dist = Math.sqrt(x * x + y * y);
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - cx;
+  const y = e.clientY - rect.top - cy;
+  const dist = Math.sqrt(x * x + y * y);
 
-    // klik mimo donut → reset
-    if (dist < rInner || dist > rOuter + 10) {
-      activeIndex = null;
-      draw();
-      return;
-    }
-
-    let ang = Math.atan2(y, x);
-    if (ang < -Math.PI / 2) ang += 2 * Math.PI;
-    ang += Math.PI / 2;
-
+  // mimo donut
+  if (dist < rInner || dist > rOuter + 10) {
     activeIndex = null;
-    data.forEach((d, i) => {
-      if (ang >= d._start && ang <= d._end) {
-        activeIndex = i;
-      }
-    });
-
     draw();
+    return;
+  }
+
+  // ✅ správná normalizace úhlu
+  let ang = Math.atan2(y, x) + Math.PI / 2;
+  if (ang < 0) ang += 2 * Math.PI;
+
+  activeIndex = null;
+  data.forEach((d, i) => {
+    if (ang >= d._start && ang < d._end) {
+      activeIndex = i;
+    }
+  });
+
+  draw();
   };
 
   draw();
