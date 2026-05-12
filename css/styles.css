@@ -996,3 +996,69 @@ PILL BUTTON – app‑wide (Dlaždice / Řádky / Přidat)
   background: var(--gold);
   color: #111;
 }
+
+/* =====================================================
+PORTFOLIO – MOBILE TABULKY JAKO SKUTEČNÉ TABULKY
+(přepíše card/dlaždice layout)
+===================================================== */
+
+@media (max-width: 768px) {
+
+  /* ===== Instrumenty + Transakce ===== */
+  #instruments-table,
+  #transactions-table {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  #instruments-table thead,
+  #transactions-table thead {
+    display: table-header-group;
+  }
+
+  #instruments-table tbody,
+  #transactions-table tbody {
+    display: table-row-group;
+  }
+
+  #instruments-table tr,
+  #transactions-table tr {
+    display: table-row;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+  }
+
+  #instruments-table td,
+  #transactions-table td {
+    display: table-cell;
+    padding: 8px 6px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+  }
+
+  /* ❌ zrušíme pseudo-labely z card režimu */
+  #instruments-table td::before,
+  #transactions-table td::before {
+    display: none;
+    content: none;
+  }
+}
+
+
+#instruments-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+#transactions-table td:last-child {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.content,
+.portfolio-tab {
+  max-width: 100%;
+  overflow-x: hidden;
+}
