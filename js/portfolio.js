@@ -275,12 +275,13 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
     data.forEach((d, i) => {
       const a = d.pct * Math.PI * 2;
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter + (i === activeIndex ? 6 : 0), angle, angle + a);
-      ctx.arc(cx, cy, rInner, angle + a, angle, true);
-      ctx.closePath();
-      ctx.fillStyle = d._color;
-      ctx.fill();
+      
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter + bump, angle, angle + a);
+    ctx.arc(cx, cy, rInner, angle + a, angle, true);
+    ctx.closePath();
+    ctx.fill();
+
 
       d._start = angle;
       d._end = angle + a;
