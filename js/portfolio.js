@@ -267,27 +267,36 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
     d._color = GOLD_PALETTE[i % GOLD_PALETTE.length];
   });
 
+  const DONUT_GAP = 0.025; // cca 1.4°
+
   function draw() {
     ctx.clearRect(0, 0, size, size);
 
-    let angle = 0; // 0 = nahoře
+    let angle = 0; // 0 = horní střed
 
-    data.forEach((d, i) => {
-      const a = d.pct * Math.PI * 2;
+  data.forEach((d, i) => {
+  const a = d.pct * Math.PI * 2;
+  const gap = DONUT_GAP;
+  const isTooSmall = a < gap * 2;
 
-      
-    ctx.beginPath();
-    ctx.arc(cx, cy, rOuter + bump, angle, angle + a);
-    ctx.arc(cx, cy, rInner, angle + a, angle, true);
-    ctx.closePath();
-    ctx.fill();
+  const start = angle + (isTooSmall ? 0 : gap);
+  const end   = angle + a - (isTooSmall ? 0 : gap);
 
+  const bump = i === activeIndex ? 6 : 0;
 
-      d._start = angle;
-      d._end = angle + a;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rOuter + bump, start, end);
+  ctx.arc(cx, cy, rInner, end, start, true);
+  ctx.closePath();
+  ctx.fillStyle = d._color;
+  ctx.fill();
 
-      angle += a;
-    });
+  // ✅ logické úhly zůstávají CELÉ (bez mezery!)
+  d._start = angle;
+  d._end = angle + a;
+
+  angle += a;
+});
 
     // ===== STŘED =====
     ctx.fillStyle = '#111';
