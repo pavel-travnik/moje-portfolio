@@ -412,12 +412,7 @@ function loadFundDetail(isin) {
   main.innerHTML = `
     <h3 id="fund-name">Detail fondu</h3>
 
-    <p>
-      <strong>Fond:</strong>
-      <span id="fund-title"></span>
-    </p>
-
-    <p class="meta">
+     <p class="meta">
       <span id="fund-provider"></span><br>
       ISIN: <span id="fund-isin">${isin}</span>
     </p>
