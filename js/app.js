@@ -346,22 +346,28 @@ function renderFundMeta(isin) {
   const fund = apiCache.dpsFundsMeta.find(f => f.isin === isin);
   if (!fund) return;
 
-  document.getElementById('fund-name').textContent = fund.name;
-  document.getElementById('fund-provider').textContent = fund.provider;
-  document.getElementById('fund-title').textContent = fund.name;
-
-  // Rizikovost (1–7)
+  const nameEl = document.getElementById('fund-name');
+  const providerEl = document.getElementById('fund-provider');
   const riskEl = document.getElementById('kpi-risk');
-  riskEl.textContent = ` ${fund.riskCategory} / 7`;
-  riskEl.className = 'risk risk-' + fund.riskCategory;
-
-  // URL fondu
   const link = document.getElementById('fund-url');
-  if (fund.url) {
-  link.href = fund.url.startsWith('http') ? fund.url : `https://${fund.url}`;
-} else {
-  link.style.display = 'none';
-}
+  const titleEl = document.getElementById('fund-title');
+
+  if (nameEl) nameEl.textContent = fund.name;
+  if (titleEl) titleEl.textContent = fund.name;
+  if (providerEl) providerEl.textContent = fund.provider;
+
+  if (riskEl) {
+    riskEl.textContent = `${fund.riskCategory} / 7`;
+    riskEl.className = 'risk risk-' + fund.riskCategory;
+  }
+
+  if (link) {
+    if (fund.url) {
+      link.href = fund.url.startsWith('http') ? fund.url : `https://${fund.url}`;
+    } else {
+      link.style.display = 'none';
+    }
+  }
 }
 
 async function getDpsTableMetrics(isin) {
@@ -403,8 +409,6 @@ async function getDpsTableMetrics(isin) {
 // ===================================================
 
 function loadFundDetail(isin) {
-
-ensureFundsMeta().then(() => renderFundMeta(isin));
 
  main.innerHTML = `
   
@@ -455,6 +459,8 @@ ensureFundsMeta().then(() => renderFundMeta(isin));
 
  `;
 
+ensureFundsMeta().then(() => renderFundMeta(isin));
+
  document.querySelector('.back-btn').onclick = () => history.back();
 
  document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -467,7 +473,6 @@ ensureFundsMeta().then(() => renderFundMeta(isin));
   };
  });
 
- renderFundMeta(isin); 
 
  // stejně jako akcie → default 3Y
  loadDPSData(isin, '3Y');
