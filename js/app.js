@@ -409,73 +409,77 @@ async function getDpsTableMetrics(isin) {
 // ===================================================
 
 function loadFundDetail(isin) {
+  main.innerHTML = `
+    <h3 id="fund-name">Detail fondu</h3>
 
- main.innerHTML = `
-  
-  <h3 id="fund-name">Detail fondu</h3>
-  <p class="meta">
-  <span id="fund-provider"></span>
-  </p>
+    <p>
+      <strong>Fond:</strong>
+      <span id="fund-title"></span>
+    </p>
 
-  <p><strong>Fond:</strong> <span id="fund-title"></span></p>
-  <p class="meta">ISIN: ${fund.isin}</p>
+    <p class="meta">
+      <span id="fund-provider"></span><br>
+      ISIN: <span id="fund-isin">${isin}</span>
+    </p>
 
-  <div class="kpi-row">
-   <div class="kpi">
-    <span>Poslední hodnota</span>
-    <strong id="kpi-last"> - </strong>
-   </div>
-   <div class="kpi">
-    <span>Změna</span>
-    <strong id="kpi-change"> - </strong>
-   </div>
-   <div class="kpi">
-    <span>Rizikovost</span>
-    <strong id="kpi-risk"> - </strong>
-   </div>
- </div>
+    <div class="kpi-row">
+      <div class="kpi">
+        <span>Poslední hodnota</span>
+        <strong id="kpi-last"> - </strong>
+      </div>
 
-   <p class="meta">
-     <a id="fund-url" href="#" target="_blank" rel="noopener">
-    Detail fondu
-     </a>
-   </p>
-	
- 
+      <div class="kpi">
+        <span>Změna</span>
+        <strong id="kpi-change"> - </strong>
+      </div>
 
-  <div class="period-row">
-   <div class="period-switch">
-    <button data-period="1M">1M</button>
-    <button data-period="6M">6M</button>
-    <button data-period="1Y">1Y</button>
-    <button data-period="3Y" class="active">3Y</button>
-    <button data-period="MAX">MAX</button>
-   </div>
-   <div id="period-diff" class="period-diff">—</div>
-  </div>
+      <div class="kpi">
+        <span>Rizikovost</span>
+        <strong id="kpi-risk"> - </strong>
+      </div>
+    </div>
 
-  <div id="chart-portfolio"></div>
-  <button class="back-btn">← Zpět</button>
+    <p class="meta">
+      <a id="fund-url" href="#" target="_blank" rel="noopener">
+        Detail fondu
+      </a>
+    </p>
 
- `;
+    <div class="period-row">
+      <div class="period-switch">
+        <button data-period="1M">1M</button>
+        <button data-period="6M">6M</button>
+        <button data-period="1Y">1Y</button>
+        <button data-period="3Y" class="active">3Y</button>
+        <button data-period="MAX">MAX</button>
+      </div>
+      <div id="period-diff" class="period-diff">—</div>
+    </div>
 
-ensureFundsMeta().then(() => renderFundMeta(isin));
+    <div id="chart-portfolio"></div>
+    <button class="back-btn">← Zpět</button>
+  `;
 
- document.querySelector('.back-btn').onclick = () => history.back();
+  // ✅ BACK
+  document.querySelector('.back-btn').onclick = () => history.back();
 
- document.querySelectorAll('.period-switch button').forEach(btn => {
-  btn.onclick = () => {
-   document
-    .querySelectorAll('.period-switch button')
-    .forEach(b => b.classList.remove('active'));
-   btn.classList.add('active');
-   loadDPSData(isin, btn.dataset.period);
-  };
- });
+  // ✅ PERIOD SWITCH
+  document.querySelectorAll('.period-switch button').forEach(btn => {
+    btn.onclick = () => {
+      document
+        .querySelectorAll('.period-switch button')
+        .forEach(b => b.classList.remove('active'));
 
+      btn.classList.add('active');
+      loadDPSData(isin, btn.dataset.period);
+    };
+  });
 
- // stejně jako akcie → default 3Y
- loadDPSData(isin, '3Y');
+  // ✅ META (SPRÁVNĚ ASYNC)
+  ensureFundsMeta().then(() => renderFundMeta(isin));
+
+  // ✅ DATA
+  loadDPSData(isin, '3Y');
 }
 
 async function loadDPSData(isin, period) {
