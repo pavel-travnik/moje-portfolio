@@ -995,7 +995,7 @@ for (let i = 0; i < history.length; i += step) {
   ctx.stroke();
 
   ctx.fillText(dateStr, x, h - padding.bottom + 6);
-}
+
 
   // malá značka
   ctx.strokeStyle = '#ccc';
