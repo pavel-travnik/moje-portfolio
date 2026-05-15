@@ -920,8 +920,7 @@ function renderPortfolioChart(history, containerId) {
   
   const isMobile = canvas.width < 500;
   ctx.font = isMobile ? '10px Arial' : '12px Arial';
-  const maxXTicks = isMobile ? 3 : 5;
-
+  
   ctx.textAlign = 'right';
 
   for (let i = 0; i <= 5; i++) {
@@ -975,19 +974,28 @@ ctx.textAlign = 'center';
 ctx.textBaseline = 'top';
 ctx.fillStyle = '#666';
 
-const maxXTicks = 5;
+const maxXTicks = isMobile ? 3 : 5; // ✅ pouze jednou
 const step = Math.max(1, Math.floor(history.length / maxXTicks));
 
 for (let i = 0; i < history.length; i += step) {
   const x =
     padding.left +
     (i / (history.length - 1)) *
-      (w - padding.left - padding.right);
+    (w - padding.left - padding.right);
 
   const d = new Date(history[i].date);
   const dateStr = isMobile
-  ? `${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`
-  : d.toLocaleDateString('cs-CZ');
+    ? `${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`
+    : d.toLocaleDateString('cs-CZ');
+
+  ctx.strokeStyle = '#ccc';
+  ctx.beginPath();
+  ctx.moveTo(x, h - padding.bottom);
+  ctx.lineTo(x, h - padding.bottom + 4);
+  ctx.stroke();
+
+  ctx.fillText(dateStr, x, h - padding.bottom + 6);
+}
 
   // malá značka
   ctx.strokeStyle = '#ccc';
