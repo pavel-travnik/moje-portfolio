@@ -144,6 +144,14 @@ function loadPage(page, pushState = true) {
 // PENZE preHLED
 // ===================================================
 
+async function ensureFundsMeta() {
+  if (apiCache.dpsFundsMeta) return;
+
+  const res = await fetch(DPS_API);
+  apiCache.dpsFundsMeta = await res.json();
+}
+
+
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   const table = document.getElementById('fundTable');
@@ -340,6 +348,7 @@ function renderFundMeta(isin) {
 
   document.getElementById('fund-name').textContent = fund.name;
   document.getElementById('fund-provider').textContent = fund.provider;
+  document.getElementById('fund-title').textContent = fund.name;
 
   // Rizikovost (1–7)
   const riskEl = document.getElementById('kpi-risk');
@@ -348,7 +357,11 @@ function renderFundMeta(isin) {
 
   // URL fondu
   const link = document.getElementById('fund-url');
-  link.href = fund.url;
+  if (fund.url) {
+  link.href = fund.url.startsWith('http') ? fund.url : `https://${fund.url}`;
+} else {
+  link.style.display = 'none';
+}
 }
 
 async function getDpsTableMetrics(isin) {
@@ -390,6 +403,9 @@ async function getDpsTableMetrics(isin) {
 // ===================================================
 
 function loadFundDetail(isin) {
+
+ensureFundsMeta().then(() => renderFundMeta(isin));
+
  main.innerHTML = `
   
   <h3 id="fund-name">Detail fondu</h3>
@@ -397,7 +413,8 @@ function loadFundDetail(isin) {
   <span id="fund-provider"></span>
   </p>
 
-  <p><strong>ISIN:</strong> ${isin}</p>
+  <p><strong>Fond:</strong> <span id="fund-title"></span></p>
+  <p class="meta">ISIN: ${fund.isin}</p>
 
   <div class="kpi-row">
    <div class="kpi">
@@ -486,19 +503,6 @@ async function loadDPSData(isin, period) {
  );
 }
 
-function renderGrid() {
-  grid.innerHTML = '';
-  apiCache.dpsFundsOverview.forEach(f => {
-    const card = document.createElement('div');
-    card.className = 'fund-card';
-    card.innerHTML = `
-      <h3>${f.name}</h3>
-      <small>${f.provider}</small>
-    `;
-    card.onclick = () => selectFund(f.isin);
-    grid.appendChild(card);
-  });
-}
 
 function renderFundKPI(data) {
   if (!data.length) return;
@@ -884,10 +888,14 @@ function renderPortfolioChart(history, containerId) {
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
   tooltip.style.pointerEvents = 'none';
-  tooltip.style.background = '#111';
+  tooltip.style.background = 'rgba(20,20,20,0.9)';
   tooltip.style.color = '#C9A646';
   tooltip.style.padding = '6px 8px';
-  tooltip.style.fontSize = '12px';
+  tooltip.style.fontSize = '11px';
+  
+  tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+  tooltip.style.border = '1px solid rgba(255,255,255,0.08)';
+
   tooltip.style.borderRadius = '6px';
   tooltip.style.display = 'none';
   tooltip.style.whiteSpace = 'nowrap';
@@ -909,7 +917,11 @@ function renderPortfolioChart(history, containerId) {
   // Grid
   ctx.strokeStyle = '#e6e6e6';
   ctx.fillStyle = '#666';
-  ctx.font = '12px Arial';
+  
+  const isMobile = canvas.width < 500;
+  ctx.font = isMobile ? '10px Arial' : '12px Arial';
+  const maxXTicks = isMobile ? 3 : 5;
+
   ctx.textAlign = 'right';
 
   for (let i = 0; i <= 5; i++) {
@@ -941,13 +953,18 @@ function renderPortfolioChart(history, containerId) {
   ctx.moveTo(points[0].x, h - padding.bottom);
   points.forEach(pt => ctx.lineTo(pt.x, pt.y));
   ctx.lineTo(points.at(-1).x, h - padding.bottom);
-  ctx.fillStyle = 'rgba(201,162,70,0.15)';
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, h);
+
+  gradient.addColorStop(0, 'rgba(201,162,70,0.35)');
+  gradient.addColorStop(1, 'rgba(201,162,70,0.02)');
+
+  ctx.fillStyle = gradient;
   ctx.fill();
 
   // Line
   ctx.beginPath();
   ctx.strokeStyle = '#C9A646';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.8;
   points.forEach((pt, i) =>
     i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
   );
@@ -967,7 +984,10 @@ for (let i = 0; i < history.length; i += step) {
     (i / (history.length - 1)) *
       (w - padding.left - padding.right);
 
-  const dateStr = new Date(history[i].date).toLocaleDateString('cs-CZ');
+  const d = new Date(history[i].date);
+  const dateStr = isMobile
+  ? `${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`
+  : d.toLocaleDateString('cs-CZ');
 
   // malá značka
   ctx.strokeStyle = '#ccc';
