@@ -658,36 +658,42 @@ MOBILE
    PERIOD SWITCH
 ===================================== */
 
-
+/* =========================
+   DESKTOP (default)
+   ========================= */
 .period-switch {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;   /* ✅ NEzalomí */
   gap: 6px;
 }
 
-
 .period-switch button {
-    margin-right: 8px;
-    padding: 6px 12px;
-    border: 1px solid var(--gold);
-    background: white;
-    cursor: pointer;
-    border-radius: 6px;
-    flex: 1 1 30%;
+  padding: 6px 12px;
+  border: 1px solid var(--gold);
+  background: white;
+  cursor: pointer;
+  border-radius: 6px;
+
+  flex: 0 0 auto;      /* ✅ zabrání přepočtu šířky */
 }
 
+/* aktivní */
 .period-switch button.active {
-    background: var(--gold);
-    color: white;
+  background: var(--gold);
+  color: white;
 }
 
+/* =========================
+   MOBILE
+   ========================= */
 @media (max-width: 600px) {
   .period-switch {
+    flex-wrap: wrap;        /* ✅ zalamování POVOLENO jen na mobilu */
     justify-content: center;
   }
 
   .period-switch button {
-    flex: 1 1 28%; /* 2 řádky */
+    flex: 1 1 30%;          /* ✅ cca 3 na řádek */
   }
 }
 
