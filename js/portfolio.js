@@ -388,9 +388,6 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   draw();
   };
 
-  draw();
-}
-
 canvas.onmousemove = e => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left - cx;
@@ -423,6 +420,11 @@ canvas.onmousemove = e => {
         draw();
     }
 };
+
+  draw();
+}
+
+
 
 canvas.onmouseleave = () => {
     if (hoverIndex !== null) {
