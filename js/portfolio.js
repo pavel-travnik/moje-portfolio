@@ -962,3 +962,4 @@ function initPortfolioTabs() {
     };
   });
 }
+}
