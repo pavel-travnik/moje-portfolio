@@ -422,7 +422,6 @@ canvas.onmousemove = e => {
 };
 
   draw();
-}
 
 
 
@@ -432,6 +431,8 @@ canvas.onmouseleave = () => {
         draw();
     }
 };
+}
+
 
 function openAssetDetail(assetType, assetId) {
   let path;
@@ -906,6 +907,7 @@ function openTransactionModal(portfolioId) {
     }
   };
 }
+}
 
 async function savePortfolioTrade(portfolioId, trade) {
   const payload = {
@@ -930,6 +932,8 @@ async function savePortfolioTrade(portfolioId, trade) {
   }
   return data;
 }
+
+
 
 // ===================================================
 // TABS
@@ -963,5 +967,4 @@ function initPortfolioTabs() {
         ?.classList.add('active');
     };
   });
-}
 }
