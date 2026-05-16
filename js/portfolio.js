@@ -260,7 +260,10 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   const rOuter = size / 2 - 8;
   const rInner = rOuter * 0.65;
 
+  
   let activeIndex = null;
+  let hoverIndex = null;
+
 
   // přiřazení barev
   data.forEach((d, i) => {
@@ -268,6 +271,19 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   });
 
   const DONUT_GAP = 0.025; // cca 1.4°
+
+  function lightenColor(hex, factor = 0.2) {
+    const num = parseInt(hex.slice(1), 16);
+    let r = (num >> 16) + 255 * factor;
+    let g = ((num >> 8) & 0x00FF) + 255 * factor;
+    let b = (num & 0x0000FF) + 255 * factor;
+
+    r = Math.min(255, Math.floor(r));
+    g = Math.min(255, Math.floor(g));
+    b = Math.min(255, Math.floor(b));
+
+    return `rgb(${r}, ${g}, ${b})`;
+}
 
   function draw() {
     ctx.clearRect(0, 0, size, size);
@@ -279,16 +295,29 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   const gap = DONUT_GAP;
   const isTooSmall = a < gap * 2;
 
-  const start = angle + (isTooSmall ? 0 : gap);
-  const end   = angle + a - (isTooSmall ? 0 : gap);
+  
+  const offset = -Math.PI / 2;
 
-  const bump = i === activeIndex ? 6 : 0;
+  const start = angle + (isTooSmall ? 0 : gap) + offset;
+  const end = angle + a - (isTooSmall ? 0 : gap) + offset;
+
+
+  const isActive = i === activeIndex;
+  const isHover = i === hoverIndex;
+
+  const bump = isActive ? 8 : isHover ? 4 : 0;
 
   ctx.beginPath();
   ctx.arc(cx, cy, rOuter + bump, start, end);
   ctx.arc(cx, cy, rInner, end, start, true);
   ctx.closePath();
-  ctx.fillStyle = d._color;
+  if (isActive) {
+    ctx.fillStyle = d._color;
+  } else if (isHover) {
+    ctx.fillStyle = lightenColor(d._color, 0.25);
+  } else {
+    ctx.fillStyle = d._color;
+  }
   ctx.fill();
 
   // ✅ logické úhly zůstávají CELÉ (bez mezery!)
@@ -361,6 +390,46 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
 
   draw();
 }
+
+canvas.onmousemove = e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - cx;
+    const y = e.clientY - rect.top - cy;
+
+    const dist = Math.sqrt(x * x + y * y);
+
+    // mimo donut
+    if (dist < rInner || dist > rOuter + 10) {
+        if (hoverIndex !== null) {
+            hoverIndex = null;
+            draw();
+        }
+        return;
+    }
+
+    let ang = Math.atan2(y, x) + Math.PI / 2;
+    if (ang < 0) ang += 2 * Math.PI;
+
+    let newHover = null;
+
+    data.forEach((d, i) => {
+        if (ang >= d._start && ang < d._end) {
+            newHover = i;
+        }
+    });
+
+    if (hoverIndex !== newHover) {
+        hoverIndex = newHover;
+        draw();
+    }
+};
+
+canvas.onmouseleave = () => {
+    if (hoverIndex !== null) {
+        hoverIndex = null;
+        draw();
+    }
+};
 
 function openAssetDetail(assetType, assetId) {
   let path;
