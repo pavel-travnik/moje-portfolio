@@ -899,13 +899,13 @@ function openTransactionModal(portfolioId) {
 
 
     try {
-      await savePortfolioTrade(portfolioId, trade);
-      modal.remove();
-      document.body.style.overflow = '';
-      loadPortfolioPage(`portfolio/${portfolioId}`);
+    await savePortfolioTrade(portfolioId, trade);
+    modal.remove();
+    document.body.style.overflow = '';
+    loadPortfolioPage(`portfolio/${portfolioId}`);
     } catch (e) {
-      alert('Uložení transakce selhalo');
-      console.error(e);
+    alert('Uložení transakce selhalo');
+    console.error(e);
     }
   };
 }
