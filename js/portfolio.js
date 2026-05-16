@@ -773,73 +773,56 @@ function openTransactionModal(portfolioId) {
   modal.className = 'modal-backdrop';
 
   modal.innerHTML = `
-    <div class="modal gold-theme">
-      <h3>Nová transakce</h3>
+<div class="modal">
+    <h3>Nová transakce</h3>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Typ aktiva</label>
-          <select id="tx-asset-type">
-            <option value="">— vyber —</option>
-            <option value="DPS">DPS</option>
-            <option value="ETF">ETF</option>
-            <option value="STOCK">Akcie</option>
-            <option value="FUND">Podílový fond</option>
-          </select>
+    <div class="form-grid">
+        <div>
+            <label>Typ aktiva</label>
+            <select id="tx-asset-type">
+                <option value="">— vyber —</option>
+                <option value="DPS">DPS</option>
+                <option value="ETF">ETF</option>
+                <option value="STOCK">Akcie</option>
+                <option value="FUND">Podílový fond</option>
+            </select>
         </div>
 
-        <div class="form-group">
-          <label>Instrument</label>
-          <select id="tx-asset-id">
-            <option value="">— nejdříve zvol typ —</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Směr</label>
-          <select id="tx-direction">
-            <option value="BUY">Nákup</option>
-            <option value="SELL">Prodej</option>
-          </select>
+        <div class="full">
+            <label>Instrument</label>
+            <select id="tx-asset-id"></select>
         </div>
 
-        <div class="form-group">
-          <label>Datum</label>
-          <input type="date" id="tx-date" />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Množství</label>
-          <input type="number" step="0.0001" id="tx-quantity" />
+        <div>
+            <label>Směr</label>
+            <select id="tx-direction">
+                <option value="BUY">Nákup</option>
+                <option value="SELL">Prodej</option>
+            </select>
         </div>
 
-        <div class="form-group">
-          <label>Cena</label>
-          <input type="number" step="0.0001" id="tx-price" />
+        <div>
+            <label>Datum</label>
+            <input type="date" id="tx-date"/>
         </div>
-      </div>
 
-      <div class="form-row">
-        <div class="form-group single">
-          <label>Měna</label>
-          <select id="tx-currency">
-            <option value="CZK">CZK</option>
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-          </select>
+        <div>
+            <label>Množství</label>
+            <input type="number" id="tx-quantity"/>
         </div>
-      </div>
 
-      <div class="modal-actions">
-        <button class="button secondary" id="tx-cancel">Zrušit</button>
-        <button class="button primary" id="tx-save">Uložit</button>
-      </div>
+        <div>
+            <label>Měna</label>
+            <input type="text" id="tx-currency" disabled/>
+        </div>
     </div>
-  `;
+
+    <div class="modal-actions">
+        <button id="tx-cancel">Zrušit</button>
+        <button id="tx-save">Uložit</button>
+    </div>
+</div>
+`;
 
   document.body.appendChild(modal);
   document.body.style.overflow = 'hidden';
@@ -854,7 +837,27 @@ function openTransactionModal(portfolioId) {
       const list = await loadAssetsByType(type);
       sel.innerHTML = `<option value="">— vyber —</option>`;
       list.forEach(a => {
-        const id = a.isin || a.ticker;
+    const id = a.isin || a.ticker;
+    if (!id) return;
+
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = a.name || id;
+
+    // ✅ uložíme měnu do option
+    opt.dataset.currency = a.currency || '';
+
+    sel.appendChild(opt);
+    });
+
+    document.getElementById('tx-asset-id').onchange = e => {
+    const selected = e.target.selectedOptions[0];
+    const currency = selected?.dataset?.currency || '';
+
+    document.getElementById('tx-currency').value = currency;
+    };
+
+
         if (!id) return;
         const opt = document.createElement('option');
         opt.value = id;
@@ -879,12 +882,12 @@ function openTransactionModal(portfolioId) {
       asset_id: document.getElementById('tx-asset-id').value,
       trade_type: document.getElementById('tx-direction').value,
       quantity: Number(document.getElementById('tx-quantity').value),
-      price: Number(document.getElementById('tx-price').value),
+      
       currency: document.getElementById('tx-currency').value,
       trade_date: document.getElementById('tx-date').value
     };
 
-    if (!trade.asset_type || !trade.asset_id || !trade.quantity || !trade.price) {
+    if (!trade.asset_type || !trade.asset_id || !trade.quantity) {
       alert('Vyplň prosím všechna povinná pole.');
       return;
     }
