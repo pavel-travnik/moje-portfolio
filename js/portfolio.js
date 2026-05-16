@@ -834,40 +834,35 @@ function openTransactionModal(portfolioId) {
     sel.innerHTML = `<option>Načítám…</option>`;
 
     try {
-      const list = await loadAssetsByType(type);
-      sel.innerHTML = `<option value="">— vyber —</option>`;
-      list.forEach(a => {
-    const id = a.isin || a.ticker;
-    if (!id) return;
+    const list = await loadAssetsByType(type);
 
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = a.name || id;
+    sel.innerHTML = `<option value="">— vyber —</option>`;
 
-    // ✅ uložíme měnu do option
-    opt.dataset.currency = a.currency || '';
-
-    sel.appendChild(opt);
-    });
-
-    document.getElementById('tx-asset-id').onchange = e => {
-    const selected = e.target.selectedOptions[0];
-    const currency = selected?.dataset?.currency || '';
-
-    document.getElementById('tx-currency').value = currency;
-    };
-
-
+    list.forEach(a => {
+        const id = a.isin || a.ticker;
         if (!id) return;
+
         const opt = document.createElement('option');
         opt.value = id;
         opt.textContent = a.name || id;
+
+        // ✅ uložíme měnu
+        opt.dataset.currency = a.currency || '';
+
         sel.appendChild(opt);
-      });
-    } catch {
-      sel.innerHTML = `<option>Chyba načítání</option>`;
-    }
-  };
+    });
+
+    // ✅ onchange handler
+    sel.onchange = e => {
+        const selected = e.target.selectedOptions[0];
+        const currency = selected?.dataset?.currency || '';
+
+        document.getElementById('tx-currency').value = currency || 'CZK';
+    };
+
+} catch (e) {
+    sel.innerHTML = `<option>Chyba načítání</option>`;
+}
 
   // ===== Zrušit =====
   document.getElementById('tx-cancel').onclick = () => {
