@@ -898,6 +898,27 @@ function openTransactionModal(portfolioId) {
     body: JSON.stringify({ portfolio_id: Number(portfolioId) })
     });
 
+    await savePortfolioTrade(portfolioId, trade);
+
+
+    // ✅ TEPRVE TEĎ načti NOVÁ data
+    const detail = await fetchPortfolioDetail(portfolioId);
+
+    // ✅ překresli UI
+    renderPortfolioOverview(detail);
+
+    if (Array.isArray(detail?.positions)) {
+      renderPortfolioInstruments(detail.positions);
+    }
+
+    const allocation = calculateAllocationByType(detail.positions);
+
+    renderAllocationDonut(
+      allocation,
+      'portfolio-allocation-chart',
+    detail?.valuation?.gross_value_base
+    );
+
 
     modal.remove();
     document.body.style.overflow = '';
