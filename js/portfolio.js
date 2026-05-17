@@ -871,7 +871,7 @@ function openTransactionModal(portfolioId) {
       asset_id: document.getElementById('tx-asset-id').value,
       trade_type: document.getElementById('tx-direction').value,
       quantity: Number(document.getElementById('tx-quantity').value),
-      price: null, // ✅ důležité
+      price: 0, // ✅ důležité
       currency: document.getElementById('tx-currency').value,
       trade_date: document.getElementById('tx-date').value
     };
