@@ -96,6 +96,7 @@ window.loadPortfolioPage = async function (page) {
         
         <div class="overview-right">
           <div id="portfolio-allocation-chart"></div>
+          <div id="portfolio-allocation-drill"></div>
           </div>
         </div>
 
@@ -197,13 +198,23 @@ window.loadPortfolioPage = async function (page) {
     }
 
     
-    const allocation = calculateAllocationByType(detail.positions);
+    // ✅ NOVĚ – z valuation detail (backend)
+  const allocation = (detail.valuation_by_asset_type || []).map(x => ({
+  label:
+    x.asset_type === 'ETF'   ? 'ETF' :
+    x.asset_type === 'STOCK' ? 'Akcie' :
+    x.asset_type === 'FUND'  ? 'Fondy' :
+    x.asset_type === 'DPS'   ? 'Penze' :
+    x.asset_type,
+  value: x.value,
+  pct: 0 // dopočítá se v renderovací funkci
+  }));
 
-    renderAllocationDonut(
-      allocation,
-      'portfolio-allocation-chart',
-      detail?.valuation?.gross_value_base
-    );
+  renderAllocationDonut(
+  allocation,
+  'portfolio-allocation-chart',
+  detail?.valuation?.gross_value_base
+  );
 
 
     if (!portfolioId || isNaN(Number(portfolioId))) {
@@ -382,6 +393,10 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
   data.forEach((d, i) => {
     if (ang >= d._start && ang < d._end) {
       activeIndex = i;
+  
+      // ✅ NOVÁ AKCE – drilldown
+      showDrilldownDonut(d);
+
     }
   });
 
@@ -433,6 +448,40 @@ canvas.onmouseleave = () => {
 };
 }
 
+function showDrilldownDonut(segment) {
+  const container = document.getElementById('portfolio-allocation-drill');
+
+  if (!container) return;
+
+  // mock / nebo reálná data podle typu
+  let detailData;
+
+  if (segment.label === 'ETF') {
+    detailData = [
+      { label: 'USA', value: 50 },
+      { label: 'Evropa', value: 30 },
+      { label: 'Emerging', value: 20 }
+    ];
+  } else if (segment.label === 'Akcie') {
+    detailData = [
+      { label: 'Technologie', value: 60 },
+      { label: 'Finance', value: 25 },
+      { label: 'Ostatní', value: 15 }
+    ];
+  } else {
+    detailData = [
+      { label: 'Detail 1', value: 70 },
+      { label: 'Detail 2', value: 30 }
+    ];
+  }
+
+  // přepočet %
+  const sum = detailData.reduce((s, d) => s + d.value, 0);
+  detailData.forEach(d => d.pct = d.value / sum);
+
+  // reuse stejné funkce
+  renderAllocationDonut(detailData, 'portfolio-allocation-drill');
+}
 
 function openAssetDetail(assetType, assetId) {
   let path;
