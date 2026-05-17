@@ -775,55 +775,43 @@ function openTransactionModal(portfolioId) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
 
-  modal.innerHTML = `
-<div class="modal">
-    <h3>Nová transakce</h3>
+ modal.innerHTML = `
+<div class="tx-modal">
+  <h3>Nová transakce</h3>
 
-    <div class="form-grid">
-        <div>
-            <label>Typ aktiva</label>
-            <select id="tx-asset-type">
-                <option value="">— vyber —</option>
-                <option value="DPS">DPS</option>
-                <option value="ETF">ETF</option>
-                <option value="STOCK">Akcie</option>
-                <option value="FUND">Podílový fond</option>
-            </select>
-        </div>
+  <label>Typ aktiva</label>
+  <select id="tx-asset-type" class="tx-input">
+    <option value="">— vyber —</option>
+    <option value="DPS">DPS</option>
+    <option value="ETF">ETF</option>
+    <option value="STOCK">Akcie</option>
+    <option value="FUND">Podílový fond</option>
+  </select>
 
-        <div class="full">
-            <label>Instrument</label>
-            <select id="tx-asset-id"></select>
-        </div>
+  <label>Instrument</label>
+  <select id="tx-asset-id" class="tx-input" disabled>
+    <option>Nejprve vyber typ aktiva</option>
+  </select>
 
-        <div>
-            <label>Směr</label>
-            <select id="tx-direction">
-                <option value="BUY">Nákup</option>
-                <option value="SELL">Prodej</option>
-            </select>
-        </div>
+  <label>Směr</label>
+  <select id="tx-direction" class="tx-input">
+    <option value="BUY">Nákup</option>
+    <option value="SELL">Prodej</option>
+  </select>
 
-        <div>
-            <label>Datum</label>
-            <input type="date" id="tx-date"/>
-        </div>
+  <label>Datum</label>
+  <input id="tx-date" type="date" class="tx-input"/>
 
-        <div>
-            <label>Množství</label>
-            <input type="number" id="tx-quantity"/>
-        </div>
+  <label>Množství</label>
+  <input id="tx-quantity" type="number" step="0.0001" class="tx-input"/>
 
-        <div>
-            <label>Měna</label>
-            <input type="text" id="tx-currency" disabled/>
-        </div>
-    </div>
+  <label>Měna</label>
+  <input id="tx-currency" class="tx-input"/>
 
-    <div class="modal-actions">
-        <button id="tx-cancel">Zrušit</button>
-        <button id="tx-save">Uložit</button>
-    </div>
+  <div class="tx-actions">
+    <button id="tx-cancel" class="btn-gold-outline">Zrušit</button>
+    <button id="tx-save" class="btn-gold">Uložit</button>
+  </div>
 </div>
 `;
 
