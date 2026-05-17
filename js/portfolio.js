@@ -199,22 +199,32 @@ window.loadPortfolioPage = async function (page) {
 
     
     // ✅ NOVĚ – z valuation detail (backend)
-  const allocation = (detail.valuation_by_asset_type || []).map(x => ({
-  label:
-    x.asset_type === 'ETF'   ? 'ETF' :
-    x.asset_type === 'STOCK' ? 'Akcie' :
-    x.asset_type === 'FUND'  ? 'Fondy' :
-    x.asset_type === 'DPS'   ? 'Penze' :
-    x.asset_type,
-  value: x.value,
-  pct: 0 // dopočítá se v renderovací funkci
-  }));
+  const raw = detail.valuation_by_asset_type || [];
 
-  renderAllocationDonut(
+const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
+
+const allocation = raw.map(x => {
+  const value = Number(x.value) || 0;
+
+  return {
+    label:
+      x.asset_type === 'ETF'   ? 'ETF' :
+      x.asset_type === 'STOCK' ? 'Akcie' :
+      x.asset_type === 'FUND'  ? 'Fondy' :
+      x.asset_type === 'DPS'   ? 'Penze' :
+      x.asset_type,
+
+    value: value,
+
+    pct: total > 0 ? value / total : 0   // ✅ KLÍČOVÝ FIX
+  };
+});
+
+renderAllocationDonut(
   allocation,
   'portfolio-allocation-chart',
   detail?.valuation?.gross_value_base
-  );
+);
 
 
     if (!portfolioId || isNaN(Number(portfolioId))) {
