@@ -264,6 +264,7 @@ function calculateAllocationByType(positions) {
 }
 
 function renderAllocationDonut(data, containerId, totalValueCZK = null) {
+  totalValueCZK = Number(totalValueCZK) || 0;
   const el = document.getElementById(containerId);
   if (!el || !data.length) return;
 
@@ -361,11 +362,14 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
 
       ctx.font = 'bold 16px Arial';
       ctx.fillStyle = '#111';
+      
+      const safeTotal = Number(totalValueCZK) || 0;
+
       ctx.fillText(
-        `${totalValueCZK.toLocaleString('cs-CZ')} Kč`,
-        cx,
-        cy + 10
+      `${safeTotal.toLocaleString('cs-CZ')} Kč`,
+      cx, cy + 10
       );
+
     } else {
       const d = data[activeIndex];
       ctx.fillStyle = '#666';
