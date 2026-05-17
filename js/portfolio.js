@@ -889,9 +889,19 @@ function openTransactionModal(portfolioId) {
 
     try {
     await savePortfolioTrade(portfolioId, trade);
+
+    
+    // ✅ NOVÉ – přepočet
+    await fetch(`${PORTFOLIO_API}/recalculate_portfolio`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ portfolio_id: Number(portfolioId) })
+    });
+
+
     modal.remove();
     document.body.style.overflow = '';
-    loadPortfolioPage(`portfolio/${portfolioId}`);
+    await loadPortfolioPage(`portfolio/${portfolioId}`);
     } catch (e) {
     alert('Uložení transakce selhalo');
     console.error(e);
