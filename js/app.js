@@ -70,10 +70,18 @@ window.addEventListener('popstate', e => {
 // ===================================================
 // INIT
 // ===================================================
+
 (function init() {
-  const path = location.pathname.replace(/^\/+/, '');
-  loadPage(path || 'penze', false);
+ let path = location.pathname.replace(/^\/+/, '');
+
+ // když je root nebo index → úvod
+ if (!path || path === 'index.html') {
+     path = 'uvod';
+ }
+
+ loadPage(path, false);
 })();
+
 
 // ===================================================
 // ROUTER
