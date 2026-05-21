@@ -839,41 +839,44 @@ function openTransactionModal(portfolioId) {
   modal.className = 'modal-backdrop';
 
  modal.innerHTML = `
-<div class="tx-modal">
+
+<div class="modal">
   <h3>Nová transakce</h3>
 
-  <label>Typ aktiva</label>
-  <select id="tx-asset-type" class="tx-input">
-    <option value="">— vyber —</option>
-    <option value="DPS">DPS</option>
-    <option value="ETF">ETF</option>
-    <option value="STOCK">Akcie</option>
-    <option value="FUND">Podílový fond</option>
-  </select>
+  <div class="tx-form">
 
-  <label>Instrument</label>
-  <select id="tx-asset-id" class="tx-input" disabled>
-    <option>Nejprve vyber typ aktiva</option>
-  </select>
+    <label class="full">Typ aktiva</label>
+    <select id="tx-asset-type" class="full">
+      <option value="">— vyber —</option>
+      <option value="DPS">DPS</option>
+      <option value="ETF">ETF</option>
+      <option value="STOCK">Akcie</option>
+      <option value="FUND">Podílový fond</option>
+    </select>
 
-  <label>Směr</label>
-  <select id="tx-direction" class="tx-input">
-    <option value="BUY">Nákup</option>
-    <option value="SELL">Prodej</option>
-  </select>
+    <label class="full">Instrument</label>
+    <select id="tx-asset-id" disabled class="full"></select>
 
-  <label>Datum</label>
-  <input id="tx-date" type="date" class="tx-input"/>
+    <label>Směr</label>
+    <select id="tx-direction">
+      <option value="BUY">Nákup</option>
+      <option value="SELL">Prodej</option>
+    </select>
 
-  <label>Množství</label>
-  <input id="tx-quantity" type="number" step="0.0001" class="tx-input"/>
+    <label>Datum</label>
+    <input id="tx-date" type="date">
 
-  <label>Měna</label>
-  <input id="tx-currency" class="tx-input"/>
+    <label>Množství</label>
+    <input id="tx-quantity" type="number" inputmode="decimal">
 
-  <div class="tx-actions">
-    <button id="tx-cancel" class="btn-gold-outline">Zrušit</button>
-    <button id="tx-save" class="btn-gold">Uložit</button>
+    <label>Měna</label>
+    <input id="tx-currency" readonly>
+
+    <div class="full tx-actions">
+      <button id="tx-cancel">Zrušit</button>
+      <button id="tx-save" class="primary">Uložit</button>
+    </div>
+
   </div>
 </div>
 `;
