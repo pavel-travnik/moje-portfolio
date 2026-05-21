@@ -1180,3 +1180,99 @@ PORTFOLIO – MOBILE TABULKY JAKO SKUTEČNÉ TABULKY
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* =====================================================
+zadávání transakce - mobile
+(přepíše card/dlaždice layout)
+===================================================== */
+
+/* backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* samotné okno */
+.modal {
+  background: #111;
+  color: white;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+/* ✅ MOBILE: full screen */
+@media (max-width: 768px) {
+  .modal {
+    height: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    overflow-y: auto;
+  }
+}
+
+.tx-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tx-form .full {
+  grid-column: span 2;
+}
+
+/* ✅ MOBILE → jeden sloupec */
+@media (max-width: 768px) {
+  .tx-form {
+    grid-template-columns: 1fr;
+  }
+
+  .tx-form .full {
+    grid-column: span 1;
+  }
+}
+
+.tx-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.tx-actions button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+/* Mobile → stacked */
+@media (max-width: 480px) {
+  .tx-actions {
+    flex-direction: column;
+  }
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: white;
+  font-size: 16px; /* ✅ zabrání zoomu na iOS */
+}
+
+@media (max-width: 768px) {
+  .tx-actions {
+    position: sticky;
+    bottom: 0;
+    background: #111;
+    padding-top: 10px;
+  }
+}
