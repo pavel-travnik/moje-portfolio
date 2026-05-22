@@ -328,10 +328,16 @@ a:hover {
   font-size: 14px;
 }
 
-.tx-input:disabled {
-  background: #eee;
-  color: #888;
+.tx-input:disabled,
+input:disabled,
+select:disabled {
+background: #eee;
+color: #888;
+border-color: #ddd;
+cursor: not-allowed;
+opacity: 0.7;
 }
+
 
 /* LABELY */
 .tx-modal label {
@@ -1145,7 +1151,14 @@ PORTFOLIO – MOBILE TABULKY JAKO SKUTEČNÉ TABULKY
     display: table-row;
     margin: 0;
     border-radius: 0;
+    font-size: 60%;
     border: none;
+  }
+
+  
+  #instruments-table th,
+  #transactions-table th {
+  font-size: 60%;
   }
 
   #instruments-table td,
@@ -1153,7 +1166,7 @@ PORTFOLIO – MOBILE TABULKY JAKO SKUTEČNÉ TABULKY
     display: table-cell;
     padding: 8px 6px;
     border-bottom: 1px solid #e5e7eb;
-    font-size: 13px;
+    font-size: 60%;
   }
 
   /* ❌ zrušíme pseudo-labely z card režimu */
@@ -1190,7 +1203,7 @@ zadávání transakce - mobile
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(223, 221, 221, 0.55);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1199,7 +1212,8 @@ zadávání transakce - mobile
 
 /* samotné okno */
 .modal {
-  background: rgba(223, 221, 221, 0.55);
+  background: rgba(255, 255, 255, 0.95); /* ✅ méně průhledné, čisté */
+  backdrop-filter: blur(6px);
   color: black;
   width: 100%;
   max-width: 520px;
