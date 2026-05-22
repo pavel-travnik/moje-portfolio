@@ -5,7 +5,7 @@
 :root {
     --green: #666666;
     --green-dark: #333333;
-    --gold: #C9A646;
+    --gold: rgba(201,162,70,0.6);
     --gold-light: rgba(201,162,70,0.15);
 
 
@@ -1190,7 +1190,7 @@ zadávání transakce - mobile
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(223, 221, 221, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1199,8 +1199,8 @@ zadávání transakce - mobile
 
 /* samotné okno */
 .modal {
-  background: #111;
-  color: white;
+  background: rgba(223, 221, 221, 0.55);
+  color: black;
   width: 100%;
   max-width: 520px;
   border-radius: 14px;
@@ -1262,9 +1262,9 @@ input, select {
   width: 100%;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #333;
-  background: #1a1a1a;
-  color: white;
+  border: 1px solid rgba(201,162,70,0.6);
+  background: rgba(223, 221, 221, 0.55);
+  color: black;
   font-size: 16px; /* ✅ zabrání zoomu na iOS */
 }
 
@@ -1272,7 +1272,7 @@ input, select {
   .tx-actions {
     position: sticky;
     bottom: 0;
-    background: #111;
+    background: rgba(223, 221, 221, 0.55);
     padding-top: 10px;
   }
 }
