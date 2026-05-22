@@ -682,7 +682,7 @@ function renderPortfolioInstruments(positions) {
         <td data-label="Instrument">${typeLabel[p.asset_type] || p.asset_type}</td>
         <td data-label="Název">${p.asset_name || p.asset_id}</td>
         <td data-label="Počet kusů">
-          ${p.quantity != null ? fmtNumber(p.quantity, 4) : '—'}
+          ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
         </td>
       `;
 
@@ -745,7 +745,7 @@ function renderPortfolioTransactions(trades) {
   function getValue(t, key) {
     switch (key) {
       case 'date': return new Date(t.trade_date);
-      case 'instrument': return `${t.asset_type}-${t.asset_id}`.toLowerCase();
+      case 'instrument': return `${t.asset_type} · ${t.asset_name}`.toLowerCase();
       case 'type': return t.trade_type;
       case 'quantity': return t.quantity;
       case 'price': return t.price;
@@ -774,7 +774,7 @@ function renderPortfolioTransactions(trades) {
           ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
         </td>
         <td data-label="Instrument">
-          ${t.asset_type} · ${t.asset_id}
+          ${t.asset_type} · ${t.asset_name}
         </td>
         <td data-label="Směr">
           ${t.trade_type}
