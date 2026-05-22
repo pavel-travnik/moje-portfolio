@@ -862,7 +862,7 @@ MOBILE
 ===================================== */
 
 .footer {
-    background: #0a0a0a;
+    background: #333333;
     border-top: 1px solid var(--border-light);
 }
 
@@ -1037,7 +1037,7 @@ MOBILE SORT PANEL
 
   .mobile-sort button.active {
     background: var(--gold);
-    color: #111;
+    color: #333333;
   }
 }
 
