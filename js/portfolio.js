@@ -145,7 +145,7 @@ window.loadPortfolioPage = async function (page) {
         <option value="instrument">Instrument</option>
         <option value="type">Směr</option>
         <option value="quantity">Množství</option>
-        <option value="price">Cena</option>
+        
       </select>
       <button id="tx-sort-dir">↑</button>
     </div>
@@ -157,7 +157,7 @@ window.loadPortfolioPage = async function (page) {
           <th data-key="instrument">Instrument</th>
           <th data-key="type">Směr</th>
           <th data-key="quantity">Množství</th>
-          <th data-key="price">Cena</th>
+          
         </tr>
       </thead>
     <tbody id="portfolio-transactions"></tbody>
@@ -780,11 +780,9 @@ function renderPortfolioTransactions(trades) {
           ${t.trade_type}
         </td>
         <td data-label="Množství">
-          ${fmtNumber(t.quantity, 4)}
+          ${fmtNumber(t.quantity, 1)}
         </td>
-        <td data-label="Cena">
-          ${fmtNumber(t.price, 4)} ${t.currency}
-        </td>
+        
       `;
 
       tbody.appendChild(tr);
