@@ -870,11 +870,11 @@ function openTransactionModal(portfolioId) {
     <input id="tx-quantity" type="number" inputmode="decimal">
 
     <label>Měna</label>
-    <input id="tx-currency" readonly>
+    <input id="tx-currency" disabled>
 
     <div class="full tx-actions">
-      <button id="tx-cancel">Zrušit</button>
-      <button id="tx-save" class="primary">Uložit</button>
+      <button id="tx-cancel" class="pill-button">Zrušit</button>
+      <button id="tx-save" class="pill-button">Uložit</button>
     </div>
 
   </div>
