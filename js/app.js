@@ -574,7 +574,14 @@ function loadPodiloveFondy() {
 function loadPodilovyFondDetail(isin) {
   main.innerHTML = `
     <h3>Detail podílového fondu</h3>
+    <h3 id="pf-title">Detail podílového fondu</h3>
     <p><strong>ISIN:</strong> ${isin}</p>
+    
+    <p>
+    <strong id="pf-name">—</strong><br>
+    <small>ISIN: ${isin}</small>
+    </p>
+
 
     <div class="kpi-row">
       <div class="kpi">
@@ -624,6 +631,7 @@ function loadPodilovyFondDetail(isin) {
   });
 
   loadPodilovyFondData(isin, '3Y');
+  loadPodilovyFondName(isin);
 }
 
 async function loadPodilovyFondData(isin, period) {
@@ -648,6 +656,21 @@ async function loadPodilovyFondData(isin, period) {
     filtered.map(d => ({ date: d.date, value: d.value })),
     'chart-podilovy-fond'
   );
+}
+
+async function loadPodilovyFondName(isin) {
+    try {
+        const res = await fetch(PODILOVE_FONDY_API);
+        const funds = await res.json();
+
+        const fund = funds.find(f => f.isin === isin);
+        if (!fund) return;
+
+        document.getElementById('pf-name').textContent = fund.name;
+        document.getElementById('pf-title').textContent = fund.name;
+    } catch (e) {
+        console.warn('Nepovedlo se načíst název fondu', e);
+    }
 }
 
 function renderPodilovyFondKPI(data) {
@@ -1038,6 +1061,16 @@ for (let i = 0; i < history.length; i += step) {
 
     const p = points[index];
     const d = history[index];
+
+    
+    // ✅ VERTIKÁLNÍ čára
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(201,166,70,0.6)';
+    ctx.lineWidth = 1;
+    ctx.moveTo(p.x, padding.top);
+    ctx.lineTo(p.x, h - padding.bottom);
+    ctx.stroke();
+
 
     // ctx.clearRect(0, 0, w, h);
     // renderPortfolioChart(history, containerId); // redraw background only once
