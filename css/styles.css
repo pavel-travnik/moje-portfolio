@@ -1151,14 +1151,14 @@ PORTFOLIO – MOBILE TABULKY JAKO SKUTEČNÉ TABULKY
     display: table-row;
     margin: 0;
     border-radius: 0;
-    font-size: 60%;
+    font-size: 85%;
     border: none;
   }
 
   
   #instruments-table th,
   #transactions-table th {
-  font-size: 60%;
+  font-size: 85%;
   }
 
   #instruments-table td,
@@ -1166,7 +1166,7 @@ PORTFOLIO – MOBILE TABULKY JAKO SKUTEČNÉ TABULKY
     display: table-cell;
     padding: 8px 6px;
     border-bottom: 1px solid #e5e7eb;
-    font-size: 60%;
+    font-size: 85%;
   }
 
   /* ❌ zrušíme pseudo-labely z card režimu */
