@@ -78,9 +78,11 @@ window.addEventListener('popstate', e => {
 
  // když je root nebo index → úvod
  
+
 if (!path || path === 'index.html') {
-    path = localStorage.getItem("user_id") ? 'portfolio' : 'login';
+    path = 'uvod';   // ✅ vždy úvod
 }
+
 
 
  updateMenu();   // ✅ přidat
@@ -93,11 +95,25 @@ if (!path || path === 'index.html') {
 // ROUTER
 // ===================================================
 function updateMenu() {
-    const el = document.getElementById("menu-portfolio");
-    if (!el) return;
+    const portfolioLink = document.getElementById("menu-portfolio");
+    const btnLogin = document.getElementById("btn-login");
+    const btnLogout = document.getElementById("btn-logout");
 
-    el.style.display = isLogged() ? "block" : "none";
+    const logged = !!localStorage.getItem("user_id");
+
+    if (portfolioLink) {
+        portfolioLink.style.display = logged ? "block" : "none";
+    }
+
+    if (btnLogin) {
+        btnLogin.style.display = logged ? "none" : "inline-block";
+    }
+
+    if (btnLogout) {
+        btnLogout.style.display = logged ? "inline-block" : "none";
+    }
 }
+
 
 
 function loadPage(page, pushState = true) {
@@ -1352,6 +1368,13 @@ async function loginUser() {
         alert("Chyba přihlášení");
     }
 }
+
+function logout() {
+    localStorage.removeItem("user_id");
+    updateMenu();
+    loadPage("uvod");
+}
+
 
 async function registerUser() {
     const email = document.getElementById("login-email").value;
