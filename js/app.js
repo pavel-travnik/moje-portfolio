@@ -114,6 +114,56 @@ function updateMenu() {
     }
 }
 
+function openLoginModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+
+    modal.innerHTML = `
+        <div class="tx-modal">
+            
+            <h3>Přihlášení</h3>
+
+            <label>Email</label>
+            <input id="login-email" class="tx-input" placeholder="Email">
+
+            <label>Heslo</label>
+            <input id="login-password" type="password" class="tx-input" placeholder="Heslo">
+
+            <div class="tx-actions">
+                <button class="pill-button" id="login-cancel">Zrušit</button>
+                <button class="pill-button" id="login-submit">Přihlásit</button>
+            </div>
+
+            <div class="tx-actions">
+                <button class="pill-button" id="login-register">
+                    Nemám účet → Registrovat
+                </button>
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    // ❌ zavřít
+    document.getElementById("login-cancel").onclick = () => {
+        modal.remove();
+        document.body.style.overflow = '';
+    };
+
+    // ✅ login
+    document.getElementById("login-submit").onclick = async () => {
+        await loginUser();
+        modal.remove();
+        document.body.style.overflow = '';
+    };
+
+    // ✅ registrace
+    document.getElementById("login-register").onclick = async () => {
+        await registerUser();
+    };
+}
 
 
 function loadPage(page, pushState = true) {
@@ -121,18 +171,6 @@ function loadPage(page, pushState = true) {
   // ===============================
 // LOGIN PAGE
 // ===============================
-if (page === 'login') {
-    main.innerHTML = `
-        <h2>Přihlášení</h2>
-
-        <div style="max-width:300px; display:flex; flex-direction:column; gap:10px;">
-            <input id="login-email" placeholder="Email">
-            <input id="login-password" type="password" placeholder="Heslo">
-
-            <button class="pill-button" onclick="loginUser()">Přihlásit</button>
-            <button class="pill-button" onclick="registerUser()">Registrovat</button>
-        </div>
-    `;
     
 if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
     loadPage("login");
@@ -1336,37 +1374,28 @@ async function loginUser() {
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
 
-    try {
-        const res = await fetch(`${PORTFOLIO_API}/login_user`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            alert(data.error || "Login failed");
-            return;
-        }
-
-        // ✅ uložit user_id
-        localStorage.setItem("user_id", data.user_id);
-
-        // ✅ aktualizovat menu
-        if (typeof updateMenu === "function") {
-            updateMenu();
-        }
-
-        // ✅ jít do portfolia
-        loadPage("portfolio");
-
-    } catch (err) {
-        console.error(err);
-        alert("Chyba přihlášení");
+    if (!email || !password) {
+        alert("Vyplň email a heslo");
+        return;
     }
+
+    const res = await fetch(`${PORTFOLIO_API}/login_user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data.error || "Login failed");
+        return;
+    }
+
+    localStorage.setItem("user_id", data.user_id);
+
+    updateMenu();
+    loadPage("portfolio");
 }
 
 function logout() {
