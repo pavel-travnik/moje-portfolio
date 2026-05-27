@@ -179,7 +179,7 @@ if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
 
     if (pushState) history.pushState({ page }, '', `/login`);
     return;
-}
+
   
  // ===============================
   // OSOBNÍ PORTFOLIO (delegace)
