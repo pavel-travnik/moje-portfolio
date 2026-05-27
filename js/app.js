@@ -1366,17 +1366,28 @@ async function registerUser() {
             body: JSON.stringify({ email, password })
         });
 
-        const data = await res.json();
+        // ✅ DEBUG – klíčové!
+        console.log("STATUS:", res.status);
+
+        const text = await res.text();
+        console.log("RESPONSE:", text);
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            data = { error: text };
+        }
 
         if (!res.ok) {
             alert(data.error || "Registrace selhala");
             return;
         }
 
-        alert("Registrace proběhla – nyní se přihlas");
+        alert("Registrace OK – přihlas se");
 
     } catch (err) {
-        console.error(err);
+        console.error("REGISTER ERROR:", err);
         alert("Chyba registrace");
     }
 }
