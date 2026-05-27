@@ -3,6 +3,8 @@
 // ===================================================
 const main = document.getElementById('mainContent');
 
+const PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
+
 const apiCache = {
   dps: {},
   stocks: {},
@@ -1321,7 +1323,7 @@ async function loginUser() {
     const password = document.getElementById("login-password").value;
 
     try {
-        const res = await fetch("/api/login_user", {
+        const res = await fetch(`${PORTFOLIO_API}/save_user`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -1358,7 +1360,7 @@ async function registerUser() {
     const password = document.getElementById("login-password").value;
 
     try {
-        const res = await fetch("/api/save_user", {
+        const res = await fetch(`${PORTFOLIO_API}/save_user`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
