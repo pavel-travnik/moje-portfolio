@@ -3,8 +3,6 @@
 // ===================================================
 const main = document.getElementById('mainContent');
 
-const PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
-
 const apiCache = {
   dps: {},
   stocks: {},
