@@ -168,76 +168,78 @@ function openLoginModal() {
 
 function loadPage(page, pushState = true) {
 
-  // ===============================
-// LOGIN PAGE
-// ===============================
-    
-if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
-    loadPage("login");
-    return;
-}
-
-    if (pushState) history.pushState({ page }, '', `/login`);
-    return;
-
-  
- // ===============================
-  // OSOBNÍ PORTFOLIO (delegace)
-  // ===============================
-  if (page.startsWith('portfolio')) {
-    if (window.loadPortfolioPage) {
-      window.loadPortfolioPage(page);
-      if (pushState) history.pushState({ page }, '', `/${page}`);
-      return;
+    // 🔒 ochrana portfolio
+    if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
+        openLoginModal();
+        return;
     }
-  }
 
+    // ===============================
+    // OSOBNÍ PORTFOLIO (delegace)
+    // ===============================
+    if (page.startsWith('portfolio')) {
+        if (window.loadPortfolioPage) {
+            window.loadPortfolioPage(page);
 
-  if (page.startsWith('penze/')) {
-    loadFundDetail(page.split('/')[1]);
-    return;
-  }
+            if (pushState) {
+                history.pushState({ page }, '', `/${page}`);
+            }
+            return;
+        }
+    }
 
-  if (page.startsWith('podilove-fondy/')) {
-    loadPodilovyFondDetail(page.split('/')[1]);
-    return;
-  }
+    // ===============================
+    // DETAIL PAGES
+    // ===============================
+    if (page.startsWith('penze/')) {
+        loadFundDetail(page.split('/')[1]);
+        return;
+    }
 
-  if (page.startsWith('akcie/')) {
-    loadStockDetail(page.split('/')[1]);
-    return;
-  }
+    if (page.startsWith('podilove-fondy/')) {
+        loadPodilovyFondDetail(page.split('/')[1]);
+        return;
+    }
 
-  if (page.startsWith('etf/')) {
-    loadStockDetail(page.split('/')[1]);
-    return;
-  }
+    if (page.startsWith('akcie/')) {
+        loadStockDetail(page.split('/')[1]);
+        return;
+    }
 
-  if (page.startsWith('meny/')) {
-    loadStockDetail(page.split('/')[1]);
-    return;
-  }
+    if (page.startsWith('etf/')) {
+        loadStockDetail(page.split('/')[1]);
+        return;
+    }
 
-  
-  fetch(`pages/${page}.html`)
-    .then(res => {
-      if (!res.ok) throw new Error();
-      return res.text();
-    })
-    .then(html => {
-      main.innerHTML = html;
+    if (page.startsWith('meny/')) {
+        loadStockDetail(page.split('/')[1]);
+        return;
+    }
 
-      if (page === 'penze') loadPensionFunds();
-      if (page === 'podilove-fondy') loadPodiloveFondy();
-      if (page === 'akcie') loadStocks();
-      if (page === 'etf') loadEtfs();
-      if (page === 'meny') loadCurrencies();
+    // ===============================
+    // STANDARD PAGE LOAD
+    // ===============================
+    fetch(`pages/${page}.html`)
+        .then(res => {
+            if (!res.ok) throw new Error();
+            return res.text();
+        })
+        .then(html => {
+            main.innerHTML = html;
 
-      if (pushState) history.pushState({ page }, '', `/${page}`);
-    })
-    .catch(() => {
-      main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
-    });
+            if (page === 'penze') loadPensionFunds();
+            if (page === 'podilove-fondy') loadPodiloveFondy();
+            if (page === 'akcie') loadStocks();
+            if (page === 'etf') loadEtfs();
+            if (page === 'meny') loadCurrencies();
+
+            if (pushState) {
+                history.pushState({ page }, '', `/${page}`);
+            }
+        })
+        .catch(() => {
+            main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
+        });
 }
 
 // ===================================================
