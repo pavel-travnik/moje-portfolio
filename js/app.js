@@ -14,6 +14,8 @@ apiCache.dpsFundsMeta = null;
 apiCache.dpsTableMetrics = {};
 apiCache.dpsFundsOverview = null;
 
+
+
 // ===================================================
 // API URL
 // ===================================================
@@ -75,9 +77,13 @@ window.addEventListener('popstate', e => {
  let path = location.pathname.replace(/^\/+/, '');
 
  // když je root nebo index → úvod
- if (!path || path === 'index.html') {
-     path = 'uvod';
- }
+ 
+if (!path || path === 'index.html') {
+    path = localStorage.getItem("user_id") ? 'portfolio' : 'login';
+}
+
+
+ updateMenu();   // ✅ přidat
 
  loadPage(path, false);
 })();
@@ -86,8 +92,40 @@ window.addEventListener('popstate', e => {
 // ===================================================
 // ROUTER
 // ===================================================
+function updateMenu() {
+    const el = document.getElementById("menu-portfolio");
+    if (!el) return;
+
+    el.style.display = isLogged() ? "block" : "none";
+}
+
+
 function loadPage(page, pushState = true) {
 
+  // ===============================
+// LOGIN PAGE
+// ===============================
+if (page === 'login') {
+    main.innerHTML = `
+        <h2>Přihlášení</h2>
+
+        <div style="max-width:300px; display:flex; flex-direction:column; gap:10px;">
+            <input id="login-email" placeholder="Email">
+            <input id="login-password" type="password" placeholder="Heslo">
+
+            <button class="pill-button" onclick="loginUser()">Přihlásit</button>
+            <button class="pill-button" onclick="registerUser()">Registrovat</button>
+        </div>
+    `;
+    
+if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
+    loadPage("login");
+    return;
+}
+
+    if (pushState) history.pushState({ page }, '', `/login`);
+    return;
+}
   
  // ===============================
   // OSOBNÍ PORTFOLIO (delegace)
@@ -1272,4 +1310,73 @@ function renderCurrencyKPI(data) {
     el.textContent = `${diff.toFixed(4)} (${pct.toFixed(2)}%)`;
     el.className = diff >= 0 ? 'pos' : 'neg';
   }
+}
+
+// ===============================
+// LOGIN / REGISTER
+// ===============================
+
+async function loginUser() {
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+
+    try {
+        const res = await fetch("/api/login_user", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || "Login failed");
+            return;
+        }
+
+        // ✅ uložit user_id
+        localStorage.setItem("user_id", data.user_id);
+
+        // ✅ aktualizovat menu
+        if (typeof updateMenu === "function") {
+            updateMenu();
+        }
+
+        // ✅ jít do portfolia
+        loadPage("portfolio");
+
+    } catch (err) {
+        console.error(err);
+        alert("Chyba přihlášení");
+    }
+}
+
+async function registerUser() {
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+
+    try {
+        const res = await fetch("/api/save_user", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || "Registrace selhala");
+            return;
+        }
+
+        alert("Registrace proběhla – nyní se přihlas");
+
+    } catch (err) {
+        console.error(err);
+        alert("Chyba registrace");
+    }
 }
