@@ -1321,7 +1321,7 @@ async function loginUser() {
     const password = document.getElementById("login-password").value;
 
     try {
-        const res = await fetch(`${PORTFOLIO_API}/save_user`, {
+        const res = await fetch(`${PORTFOLIO_API}/login_user`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
