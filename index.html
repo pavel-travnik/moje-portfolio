@@ -24,9 +24,19 @@
                 <a href="#" data-page="akcie">Akcie</a>
                 <a href="#" data-page="etf">ETF</a>
                 <a href="#" data-page="meny">Měny</a>
-                <a href="#" data-page="portfolio">Moje portfolio</a>
+                // <a href="#" data-page="portfolio">Moje portfolio</a>
+
+
+		<a href="#" data-page="portfolio" id="menu-portfolio" style="display:none;">Moje portfolio</a>
+
             </div>
         </div>
+
+	
+	<button id="btn-login" class="pill-button" onclick="loadPage('login')">Přihlásit</button>
+
+	<button id="btn-logout" class="pill-button" onclick="logout()" style="display:none;">Odhlásit</button>
+
     </nav>
 </header>
 
