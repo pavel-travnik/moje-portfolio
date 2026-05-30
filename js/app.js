@@ -704,10 +704,11 @@ function loadPodiloveFondy() {
 
 function loadPodilovyFondDetail(isin) {
   main.innerHTML = `
-    <h3>Detail podílového fondu</h3>
+    
     <h3 id="pf-title">Detail podílového fondu</h3>
     <p><strong>ISIN:</strong> ${isin}</p>
     
+    <strong id="pf-name">${fundName}</strong>
  
     <div class="kpi-row">
       <div class="kpi">
