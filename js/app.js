@@ -61,7 +61,7 @@ document.addEventListener('click', e => {
  if (menu.classList.contains('open')) {
   menu.classList.remove('open');
  }
-});
+
 
   if (toggle) {
     e.preventDefault();
