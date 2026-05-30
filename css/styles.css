@@ -1290,3 +1290,39 @@ input, select {
     padding-top: 10px;
   }
 }
+
+/* ✅ sidebar background */
+.sidebar {
+  background: #f2f2f2;  /* šedá */
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* ✅ grid layout */
+.side-grid {
+  display: grid;
+  gap: 12px;
+}
+
+/* ✅ karta (inspirovaná fondama) */
+.side-card {
+  background: white;
+  padding: 14px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* ✅ hover efekt (jako fund-card) */
+.side-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+/* ✅ nadpis */
+.side-card h4 {
+  margin: 0;
+  color: #C9A646; /* tvé gold */
+  font-weight: 600;
+}
