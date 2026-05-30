@@ -1000,188 +1000,178 @@ function renderStockKPI(data) {
 let lastChartData = null;
 
 function renderPortfolioChart(history, containerId) {
-  lastChartData = { history, containerId };
+ lastChartData = { history, containerId };
 
-  const div = document.getElementById(containerId);
-  if (!div || history.length < 2) return;
+ const div = document.getElementById(containerId);
+ if (!div || history.length < 2) return;
 
-  div.innerHTML = '';
-  div.style.position = 'relative';
+ div.innerHTML = '';
+ div.style.position = 'relative';
 
-  const canvas = document.createElement('canvas');
-  canvas.width = div.clientWidth;
-  canvas.height = Math.min(div.clientWidth * 0.65, 320);
-  div.appendChild(canvas);
+ const width = div.clientWidth;
+ const height = Math.min(width * 0.65, 320);
 
-  // Tooltip
-  const tooltip = document.createElement('div');
-  tooltip.style.position = 'absolute';
-  tooltip.style.pointerEvents = 'none';
-  tooltip.style.background = 'rgba(20,20,20,0.9)';
-  tooltip.style.color = '#C9A646';
-  tooltip.style.padding = '6px 8px';
-  tooltip.style.fontSize = '11px';
-  
-  tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
-  tooltip.style.border = '1px solid rgba(255,255,255,0.08)';
+ // ✅ BASE CANVAS (graf)
+ const baseCanvas = document.createElement('canvas');
+ baseCanvas.width = width;
+ baseCanvas.height = height;
+ baseCanvas.style.position = 'absolute';
+ baseCanvas.style.left = '0';
+ baseCanvas.style.top = '0';
 
-  tooltip.style.borderRadius = '6px';
-  tooltip.style.display = 'none';
-  tooltip.style.whiteSpace = 'nowrap';
-  div.appendChild(tooltip);
+ // ✅ OVERLAY CANVAS (hover)
+ const overlayCanvas = document.createElement('canvas');
+ overlayCanvas.width = width;
+ overlayCanvas.height = height;
+ overlayCanvas.style.position = 'absolute';
+ overlayCanvas.style.left = '0';
+ overlayCanvas.style.top = '0';
 
-  const ctx = canvas.getContext('2d');
+ div.appendChild(baseCanvas);
+ div.appendChild(overlayCanvas);
 
-  const padding = { top: 20, right: 60, bottom: 30, left: 20 };
-  const w = canvas.width;
-  const h = canvas.height;
+ // Tooltip
+ const tooltip = document.createElement('div');
+ tooltip.style.position = 'absolute';
+ tooltip.style.pointerEvents = 'none';
+ tooltip.style.background = 'rgba(20,20,20,0.9)';
+ tooltip.style.color = '#C9A646';
+ tooltip.style.padding = '6px 8px';
+ tooltip.style.fontSize = '11px';
+ tooltip.style.borderRadius = '6px';
+ tooltip.style.display = 'none';
+ tooltip.style.whiteSpace = 'nowrap';
+ div.appendChild(tooltip);
 
+ const ctx = baseCanvas.getContext('2d');
+ const octx = overlayCanvas.getContext('2d');
 
+ const padding = { top: 20, right: 60, bottom: 30, left: 20 };
 
-  const values = history.map(p => p.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
+ const values = history.map(p => p.value);
+ const min = Math.min(...values);
+ const max = Math.max(...values);
+ const range = max - min || 1;
 
-  // Grid
-  ctx.strokeStyle = '#e6e6e6';
-  ctx.fillStyle = '#666';
-  
-  const isMobile = canvas.width < 500;
-  ctx.font = isMobile ? '10px Arial' : '12px Arial';
-  
-  ctx.textAlign = 'right';
+ const w = width;
+ const h = height;
 
-  for (let i = 0; i <= 5; i++) {
-    const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(w - padding.right, y);
-    ctx.stroke();
-    ctx.fillText(
-      (max - (i / 5) * range).toFixed(2),
-      w - 8,
-      y + 4
-    );
-  }
+ const points = history.map((p, i) => ({
+  x: padding.left + (i / (history.length - 1)) * (w - padding.left - padding.right),
+  y: padding.top + ((max - p.value) / range) * (h - padding.top - padding.bottom)
+ }));
 
-  // Body (area)
-  const points = history.map((p, i) => ({
-    x:
-      padding.left +
-      (i / (history.length - 1)) *
-        (w - padding.left - padding.right),
-    y:
-      padding.top +
-      ((max - p.value) / range) *
-        (h - padding.top - padding.bottom)
-  }));
+ // =====================================================
+ // ✅ BASE CHART (vykreslí se jen jednou)
+ // =====================================================
 
+ ctx.strokeStyle = '#e6e6e6';
+ ctx.fillStyle = '#666';
+ ctx.font = '12px Arial';
+ ctx.textAlign = 'right';
+
+ for (let i = 0; i <= 5; i++) {
+  const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
   ctx.beginPath();
-  ctx.moveTo(points[0].x, h - padding.bottom);
-  points.forEach(pt => ctx.lineTo(pt.x, pt.y));
-  ctx.lineTo(points.at(-1).x, h - padding.bottom);
-  const gradient = ctx.createLinearGradient(0, padding.top, 0, h);
-
-  gradient.addColorStop(0, 'rgba(201,162,70,0.35)');
-  gradient.addColorStop(1, 'rgba(201,162,70,0.02)');
-
-  ctx.fillStyle = gradient;
-  ctx.fill();
-
-  // Line
-  ctx.beginPath();
-  ctx.strokeStyle = '#C9A646';
-  ctx.lineWidth = 1.8;
-  points.forEach((pt, i) =>
-    i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)
-  );
+  ctx.moveTo(padding.left, y);
+  ctx.lineTo(w - padding.right, y);
   ctx.stroke();
 
-// ===== OSA X – DATUM =====
-ctx.textAlign = 'center';
-ctx.textBaseline = 'top';
-ctx.fillStyle = '#666';
-
-const maxXTicks = isMobile ? 3 : 5; // ✅ pouze jednou
-const step = Math.max(1, Math.floor(history.length / maxXTicks));
-
-for (let i = 0; i < history.length; i += step) {
-  const x =
-    padding.left +
-    (i / (history.length - 1)) *
-    (w - padding.left - padding.right);
-
-  const d = new Date(history[i].date);
-  const dateStr = isMobile
-    ? `${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`
-    : d.toLocaleDateString('cs-CZ');
-
-  ctx.strokeStyle = '#ccc';
-  ctx.beginPath();
-  ctx.moveTo(x, h - padding.bottom);
-  ctx.lineTo(x, h - padding.bottom + 4);
-  ctx.stroke();
-
-  ctx.fillText(dateStr, x, h - padding.bottom + 6);
-
-
-  // malá značka
-  ctx.strokeStyle = '#ccc';
-  ctx.beginPath();
-  ctx.moveTo(x, h - padding.bottom);
-  ctx.lineTo(x, h - padding.bottom + 4);
-  ctx.stroke();
-
-  // datum
-  ctx.fillText(dateStr, x, h - padding.bottom + 6);
-}
-
-  // 🔍 Tooltip logic
-
-canvas.addEventListener('mousemove', e => {
- const rect = canvas.getBoundingClientRect();
- const x = e.clientX - rect.left;
-
- const index = Math.round(
-  (x - padding.left) /
-  (w - padding.left - padding.right) *
-  (history.length - 1)
- );
-
- if (index < 0 || index >= history.length) {
-  tooltip.style.display = 'none';
-  return;
+  ctx.fillText((max - (i / 5) * range).toFixed(2), w - 8, y + 4);
  }
 
- // ✅ RESET CANVAS
- ctx.clearRect(0, 0, w, h);
-
- // ✅ ZNOVU vykreslit graf (POZOR – bez infinite loop!)
- drawBaseChart();
-
- const p = points[index];
- const d = history[index];
-
- // ✅ VERTIKÁLNÍ čára
+ // AREA
  ctx.beginPath();
- ctx.strokeStyle = 'rgba(201,166,70,0.6)';
- ctx.lineWidth = 1;
- ctx.moveTo(p.x, padding.top);
- ctx.lineTo(p.x, h - padding.bottom);
+ ctx.moveTo(points[0].x, h - padding.bottom);
+ points.forEach(pt => ctx.lineTo(pt.x, pt.y));
+ ctx.lineTo(points.at(-1).x, h - padding.bottom);
+
+ const gradient = ctx.createLinearGradient(0, padding.top, 0, h);
+ gradient.addColorStop(0, 'rgba(201,162,70,0.35)');
+ gradient.addColorStop(1, 'rgba(201,162,70,0.02)');
+ ctx.fillStyle = gradient;
+ ctx.fill();
+
+ // LINE
+ ctx.beginPath();
+ ctx.strokeStyle = '#C9A646';
+ ctx.lineWidth = 1.8;
+ points.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y));
  ctx.stroke();
 
- tooltip.style.display = 'block';
- const dateStr = new Date(d.date).toLocaleDateString('cs-CZ');
- tooltip.innerHTML = `${dateStr}<br><strong>${d.value.toFixed(4)}</strong>`;
- tooltip.style.left = `${p.x + 10}px`;
- tooltip.style.top = `${p.y}px`;
-});
+ // =====================================================
+ // ✅ X AXIS
+ // =====================================================
 
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'top';
+ ctx.fillStyle = '#666';
 
-  canvas.addEventListener('mouseleave', () => {
-    tooltip.style.display = 'none';
-  });
+ const maxXTicks = w < 500 ? 3 : 5;
+ const step = Math.max(1, Math.floor(history.length / maxXTicks));
+
+ for (let i = 0; i < history.length; i += step) {
+  const x = padding.left + (i / (history.length - 1)) * (w - padding.left - padding.right);
+  const d = new Date(history[i].date);
+
+  const label = d.toLocaleDateString('cs-CZ');
+
+  ctx.beginPath();
+  ctx.moveTo(x, h - padding.bottom);
+  ctx.lineTo(x, h - padding.bottom + 4);
+  ctx.stroke();
+
+  ctx.fillText(label, x, h - padding.bottom + 6);
+ }
+
+ // =====================================================
+ // ✅ HOVER (overlay canvas)
+ // =====================================================
+
+ overlayCanvas.addEventListener('mousemove', e => {
+  const rect = overlayCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+
+  const index = Math.round(
+   (x - padding.left) /
+   (w - padding.left - padding.right) *
+   (history.length - 1)
+  );
+
+  if (index < 0 || index >= history.length) {
+   tooltip.style.display = 'none';
+   octx.clearRect(0, 0, w, h);
+   return;
+  }
+
+  const p = points[index];
+  const d = history[index];
+
+  // ✅ smaž jen overlay
+  octx.clearRect(0, 0, w, h);
+
+  // ✅ vertikální čára
+  octx.beginPath();
+  octx.strokeStyle = 'rgba(201,166,70,0.7)';
+  octx.lineWidth = 1;
+  octx.setLineDash([4, 4]);
+  octx.moveTo(p.x, padding.top);
+  octx.lineTo(p.x, h - padding.bottom);
+  octx.stroke();
+
+  tooltip.style.display = 'block';
+  tooltip.innerHTML =
+   new Date(d.date).toLocaleDateString('cs-CZ') +
+   '<br><strong>' + d.value.toFixed(4) + '</strong>';
+
+  tooltip.style.left = (p.x + 10) + 'px';
+  tooltip.style.top = (p.y) + 'px';
+ });
+
+ overlayCanvas.addEventListener('mouseleave', () => {
+  tooltip.style.display = 'none';
+  octx.clearRect(0, 0, w, h);
+ });
 }
 
 function renderPeriodDifference(data) {
