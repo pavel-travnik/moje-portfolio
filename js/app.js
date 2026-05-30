@@ -39,8 +39,29 @@ const PODILOVY_FOND_DATA_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.wes
 // DROPDOWN – MOBILE SAFE
 // ===================================================
 document.addEventListener('click', e => {
-  const toggle = e.target.closest('.dropdown-toggle');
-  const menu = document.querySelector('.dropdown-menu');
+ const toggle = e.target.closest('.dropdown-toggle');
+ const menu = document.querySelector('.dropdown-menu');
+
+ if (!menu) return;
+
+ // ✅ toggle
+ if (toggle) {
+  e.preventDefault();
+  e.stopPropagation();
+  menu.classList.toggle('open');
+  return;
+ }
+
+ // ✅ klik NA LINK → neřešit (router to vezme)
+ if (e.target.closest('a[data-page]')) {
+  return;
+ }
+
+ // ✅ klik mimo → zavřít
+ if (menu.classList.contains('open')) {
+  menu.classList.remove('open');
+ }
+});
 
   if (toggle) {
     e.preventDefault();
@@ -58,11 +79,22 @@ document.addEventListener('click', e => {
 // SPA NAVIGATION
 // ===================================================
 document.addEventListener('click', e => {
-  const link = e.target.closest('a[data-page]');
-  if (!link) return;
-  e.preventDefault();
-  e.stopPropagation();
-  loadPage(link.dataset.page);
+ const link = e.target.closest('a[data-page]');
+ if (!link) return;
+
+ e.preventDefault();
+ e.stopImmediatePropagation(); // 🔥 KRITICKÉ
+
+ const page = link.dataset.page;
+
+ if (!page) return;
+
+ // ✅ VŽDY načti root (žádná relativita)
+ loadPage(page);
+
+ // ✅ zavři dropdown
+ const menu = document.querySelector('.dropdown-menu');
+ if (menu) menu.classList.remove('open');
 });
 
 window.addEventListener('popstate', e => {
@@ -168,6 +200,13 @@ function openLoginModal() {
 
 function loadPage(page, pushState = true) {
 
+    
+     // 🔥 vždy reset obsah (kill nested render)
+     main.innerHTML = '';
+
+     window.scrollTo(0, 0);
+
+
     // 🔒 ochrana portfolio
     if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
         openLoginModal();
@@ -245,7 +284,7 @@ function loadPage(page, pushState = true) {
 // ===================================================
 // PENZE preHLED
 // ===================================================
-
+document.addEventListener('click', e => {
 async function ensureFundsMeta() {
   if (apiCache.dpsFundsMeta) return;
 
@@ -634,7 +673,6 @@ function renderFundKPI(data) {
 // ===================================================
 // PODILOVE FONDY
 // ===================================================
-
 function loadPodiloveFondy() {
   const grid = document.getElementById('podilovyFondGrid');
   if (!grid) return;
@@ -671,12 +709,7 @@ function loadPodilovyFondDetail(isin) {
     <h3 id="pf-title">Detail podílového fondu</h3>
     <p><strong>ISIN:</strong> ${isin}</p>
     
-    <p>
-    <strong id="pf-name">—</strong><br>
-    <small>ISIN: ${isin}</small>
-    </p>
-
-
+ 
     <div class="kpi-row">
       <div class="kpi">
         <span>Poslední kurz</span>
