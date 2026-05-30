@@ -221,8 +221,6 @@ function loadPage(page, pushState = true) {
  }
 
 
-const main = document.getElementById('mainContent');
- if (!main) return;
 
  main.innerHTML = ''; // bezpečné
 
