@@ -220,13 +220,16 @@ function loadPage(page, pushState = true) {
   return;
  }
 
+
+const main = document.getElementById('mainContent');
+ if (!main) return;
+
  main.innerHTML = ''; // bezpečné
 
 
     
      // 🔥 vždy reset obsah (kill nested render)
-     main.innerHTML = '';
-
+  
      window.scrollTo(0, 0);
 
 
@@ -287,6 +290,10 @@ function loadPage(page, pushState = true) {
             return res.text();
         })
         .then(html => {
+          
+const main = document.getElementById('mainContent');
+ if (!main) return;
+
             main.innerHTML = html;
 
             if (page === 'penze') loadPensionFunds();
@@ -572,6 +579,10 @@ async function getDpsTableMetrics(isin) {
 // ===================================================
 
 function loadFundDetail(isin) {
+  
+const main = document.getElementById('mainContent');
+ if (!main) return;
+
   main.innerHTML = `
     <h3 id="fund-name">Detail fondu</h3>
 
@@ -736,6 +747,11 @@ function loadPodilovyFondDetail(isin) {
    const fund = cachedList.find(f => f.isin === isin);
    if (fund) fundName = fund.name;
   }
+
+
+const main = document.getElementById('mainContent');
+ if (!main) return;
+
 
   main.innerHTML = `
     
@@ -927,6 +943,12 @@ function loadEtfs() {
 // DETAIL AKCIE
 // ===================================================
 function loadStockDetail(ticker) {
+
+  
+const main = document.getElementById('mainContent');
+ if (!main) return;
+
+
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
     <p>
@@ -1337,6 +1359,12 @@ function loadCurrencies() {
 // DETAIL MeNY
 // ===================================================
 function loadCurrencyDetail(code) {
+
+  
+const main = document.getElementById('mainContent');
+ if (!main) return;
+
+
   main.innerHTML = `
     <h3>Detail měny</h3>
     <p><strong>${code}</strong></p>
