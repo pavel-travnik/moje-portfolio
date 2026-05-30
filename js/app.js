@@ -1138,44 +1138,46 @@ for (let i = 0; i < history.length; i += step) {
 }
 
   // 🔍 Tooltip logic
-  canvas.addEventListener('mousemove', e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
 
-    const index = Math.round(
-      (x - padding.left) /
-        (w - padding.left - padding.right) *
-        (history.length - 1)
-    );
+canvas.addEventListener('mousemove', e => {
+ const rect = canvas.getBoundingClientRect();
+ const x = e.clientX - rect.left;
 
-    if (index < 0 || index >= history.length) {
-      tooltip.style.display = 'none';
-      return;
-    }
+ const index = Math.round(
+  (x - padding.left) /
+  (w - padding.left - padding.right) *
+  (history.length - 1)
+ );
 
-    const p = points[index];
-    const d = history[index];
+ if (index < 0 || index >= history.length) {
+  tooltip.style.display = 'none';
+  return;
+ }
 
-    
-    // ✅ VERTIKÁLNÍ čára
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(201,166,70,0.6)';
-    ctx.lineWidth = 1;
-    ctx.moveTo(p.x, padding.top);
-    ctx.lineTo(p.x, h - padding.bottom);
-    ctx.stroke();
+ // ✅ RESET CANVAS
+ ctx.clearRect(0, 0, w, h);
 
+ // ✅ ZNOVU vykreslit graf (POZOR – bez infinite loop!)
+ drawBaseChart();
 
-    // ctx.clearRect(0, 0, w, h);
-    // renderPortfolioChart(history, containerId); // redraw background only once
-    tooltip.style.display = 'block';
+ const p = points[index];
+ const d = history[index];
 
-    const dateStr = new Date(d.date).toLocaleDateString('cs-CZ');
-    tooltip.innerHTML = `${dateStr}<br><strong>${d.value.toFixed(4)}</strong>`;
+ // ✅ VERTIKÁLNÍ čára
+ ctx.beginPath();
+ ctx.strokeStyle = 'rgba(201,166,70,0.6)';
+ ctx.lineWidth = 1;
+ ctx.moveTo(p.x, padding.top);
+ ctx.lineTo(p.x, h - padding.bottom);
+ ctx.stroke();
 
-    tooltip.style.left = `${p.x + 10}px`;
-    tooltip.style.top = `${p.y}px`;
-  });
+ tooltip.style.display = 'block';
+ const dateStr = new Date(d.date).toLocaleDateString('cs-CZ');
+ tooltip.innerHTML = `${dateStr}<br><strong>${d.value.toFixed(4)}</strong>`;
+ tooltip.style.left = `${p.x + 10}px`;
+ tooltip.style.top = `${p.y}px`;
+});
+
 
   canvas.addEventListener('mouseleave', () => {
     tooltip.style.display = 'none';
