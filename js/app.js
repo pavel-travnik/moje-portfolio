@@ -707,12 +707,7 @@ function loadPodilovyFondDetail(isin) {
 
   const cachedList = apiCache.podiloveFondyList;
 
-  let fundName = 'Načítám...';
 
-  if (cachedList) {
-   const fund = cachedList.find(f => f.isin === isin);
-   if (fund) fundName = fund.name;
-  }
 
   main.innerHTML = `
     
