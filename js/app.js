@@ -100,6 +100,19 @@ window.addEventListener('popstate', e => {
   if (e.state?.page) loadPage(e.state.page, false);
 });
 
+document.addEventListener('click', e => {
+ const card = e.target.closest('.side-card');
+ if (!card) return;
+
+ const page = card.dataset.page;
+ if (!page) return;
+
+ e.preventDefault();
+ e.stopImmediatePropagation();
+
+ loadPage(page);
+});
+
 // ===================================================
 // INIT
 // ===================================================
