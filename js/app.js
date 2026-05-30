@@ -284,14 +284,13 @@ function loadPage(page, pushState = true) {
 // ===================================================
 // PENZE preHLED
 // ===================================================
-document.addEventListener('click', e => {
+
 async function ensureFundsMeta() {
   if (apiCache.dpsFundsMeta) return;
 
   const res = await fetch(DPS_API);
   apiCache.dpsFundsMeta = await res.json();
 }
-
 
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
