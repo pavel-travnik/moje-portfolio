@@ -696,6 +696,7 @@ function loadPodiloveFondy() {
             `/podilove-fondy/${f.isin}`
           );
           loadPodilovyFondDetail(f.isin);
+          apiCache.podiloveFondyList = funds;
         };
         grid.appendChild(card);
       });
@@ -703,11 +704,22 @@ function loadPodiloveFondy() {
 }
 
 function loadPodilovyFondDetail(isin) {
+
+  const cachedList = apiCache.podiloveFondyList;
+
+  let fundName = 'Načítám...';
+
+  if (cachedList) {
+   const fund = cachedList.find(f => f.isin === isin);
+   if (fund) fundName = fund.name;
+  }
+
   main.innerHTML = `
     
     <h3 id="pf-title">Detail podílového fondu</h3>
     <p><strong>ISIN:</strong> ${isin}</p>
     
+    <h3 id="pf-title">${fundName}</h3>
     <strong id="pf-name">${fundName}</strong>
  
     <div class="kpi-row">
