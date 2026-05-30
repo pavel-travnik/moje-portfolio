@@ -1,7 +1,6 @@
 // ===================================================
 // HLAVNi KONTEJNER
 // ===================================================
-const main = document.getElementById('mainContent');
 
 const apiCache = {
   dps: {},
@@ -199,6 +198,17 @@ function openLoginModal() {
 
 
 function loadPage(page, pushState = true) {
+
+  
+ const main = document.getElementById('mainContent'); // ✅ přesun sem
+
+ if (!main) {
+  console.error('mainContent not found');
+  return;
+ }
+
+ main.innerHTML = ''; // bezpečné
+
 
     
      // 🔥 vždy reset obsah (kill nested render)
