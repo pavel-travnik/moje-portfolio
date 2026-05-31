@@ -736,67 +736,51 @@ function loadPodiloveFondy() {
 }
 
 function loadPodilovyFondDetail(isin) {
-
-  const cachedList = apiCache.podiloveFondyList;
-
-  let fundName = '';
-
-  if (cachedList) {
-   const fund = cachedList.find(f => f.isin === isin);
-   if (fund) fundName = fund.name;
-  }
-
-
-const main = document.getElementById('mainContent');
- if (!main) return;
-
+  const main = document.getElementById('mainContent');
+  if (!main) return;
 
   main.innerHTML = `
-    
-    <h3 id="pf-title">Detail podílového fondu</h3>
-    <p><strong>ISIN:</strong> ${isin}</p>
-    
-    <h3 id="pf-title">${fundName}</h3>
-    <strong id="pf-name">${fundName}</strong>
- 
-    <div class="kpi-row">
-      <div class="kpi">
-        <span>Poslední kurz</span>
-        <strong id="pf-kpi-last">-</strong>
-      </div>
-      <div class="kpi">
-        <span>Změna</span>
-        <strong id="pf-kpi-change">-</strong>
-      </div>
-      <div class="kpi">
-        <span>Záznamů</span>
-        <strong id="pf-kpi-count">-</strong>
-      </div>
+  <h3 id="pf-title">Detail fondu</h3>
+  <p class="meta">
+    <span id="pf-name"> - </span><br>
+    <small>ID: ${isin}</small>
+  </p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <span>Poslední kurz</span>
+      <strong id="pf-kpi-last">-</strong>
     </div>
-
-<div class="period-row">
-  <div class="period-switch">
-    <button data-period="1M">1M</button>
-    <button data-period="6M">6M</button>
-    <button data-period="1Y">1Y</button>
-    <button data-period="3Y" class="active">3Y</button>
-    <button data-period="MAX">MAX</button>
+    <div class="kpi">
+      <span>Změna</span>
+      <strong id="pf-kpi-change">-</strong>
+    </div>
+    <div class="kpi">
+      <span>Záznamů</span>
+      <strong id="pf-kpi-count">-</strong>
+    </div>
   </div>
 
-  <div id="period-diff" class="period-diff">
-    —
+  <div class="period-row">
+    <div class="period-switch">
+      <button data-period="1M">1M</button>
+      <button data-period="6M">6M</button>
+      <button data-period="1Y">1Y</button>
+      <button data-period="3Y" class="active">3Y</button>
+      <button data-period="MAX">MAX</button>
+    </div>
+    <div id="period-diff" class="period-diff">—</div>
   </div>
-</div>
 
+  <div id="chart-podilovy-fond"></div>
 
-    <div id="chart-podilovy-fond"></div>
-    <button class="back-btn">← Zpět</button>
+  <button class="back-btn">← Zpět</button>
   `;
 
-  renderFundMeta(isin);
-  
+  // ✅ BACK
   document.querySelector('.back-btn').onclick = () => history.back();
 
+  // ✅ PERIOD SWITCH
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('.period-switch button')
@@ -806,8 +790,18 @@ const main = document.getElementById('mainContent');
     };
   });
 
+  // ✅ název – použij cache (bez dalšího fetch)
+  const list = apiCache.podiloveFondyList;
+  if (list) {
+    const fund = list.find(f => f.isin === isin);
+    if (fund) {
+      document.getElementById('pf-name').textContent = fund.name;
+      document.getElementById('pf-title').textContent = fund.name;
+    }
+  }
+
+  // ✅ data
   loadPodilovyFondData(isin, '3Y');
-  loadPodilovyFondName(isin);
 }
 
 async function loadPodilovyFondData(isin, period) {
@@ -834,20 +828,6 @@ async function loadPodilovyFondData(isin, period) {
   );
 }
 
-async function loadPodilovyFondName(isin) {
-    try {
-        const res = await fetch(PODILOVE_FONDY_API);
-        const funds = await res.json();
-
-        const fund = funds.find(f => f.isin === isin);
-        if (!fund) return;
-
-        document.getElementById('pf-name').textContent = fund.name;
-        document.getElementById('pf-title').textContent = fund.name;
-    } catch (e) {
-        console.warn('Nepovedlo se načíst název fondu', e);
-    }
-}
 
 function renderPodilovyFondKPI(data) {
   if (!data.length) return;
@@ -1096,8 +1076,10 @@ function renderPortfolioChart(history, containerId) {
  div.innerHTML = '';
  div.style.position = 'relative';
 
+ 
  const width = div.clientWidth;
  const height = Math.min(width * 0.65, 320);
+ div.style.height = height + 'px';
 
  // ✅ BASE CANVAS (graf)
  const baseCanvas = document.createElement('canvas');
