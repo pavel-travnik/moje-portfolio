@@ -113,6 +113,28 @@ document.addEventListener('click', e => {
  loadPage(page);
 });
 
+const tooltip = document.createElement('div');
+tooltip.className = 'tooltip';
+document.body.appendChild(tooltip);
+
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-tooltip]');
+  if (!el) return;
+
+  tooltip.textContent = el.dataset.tooltip;
+  tooltip.classList.add('show');
+
+  const rect = el.getBoundingClientRect();
+  tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+  tooltip.style.top = rect.top - 30 + 'px';
+});
+
+document.addEventListener('mouseout', e => {
+  if (e.target.closest('[data-tooltip]')) {
+    tooltip.classList.remove('show');
+  }
+});
+
 // ===================================================
 // INIT
 // ===================================================
@@ -614,17 +636,23 @@ const main = document.getElementById('mainContent');
 
     <div class="period-row">
       <div class="period-switch">
-        <button data-period="1M">1M</button>
-        <button data-period="6M">6M</button>
-        <button data-period="1Y">1Y</button>
-        <button data-period="3Y" class="active">3Y</button>
-        <button data-period="MAX">MAX</button>
+        
+      <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
+      <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
+      <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
+      <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
+
       </div>
       <div id="period-diff" class="period-diff">—</div>
     </div>
 
     <div id="chart-portfolio"></div>
-    <button class="back-btn">← Zpět</button>
+    
+<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+  ← Zpět
+</button>
+
   `;
 
   // ✅ BACK
@@ -763,18 +791,24 @@ function loadPodilovyFondDetail(isin) {
 
   <div class="period-row">
     <div class="period-switch">
-      <button data-period="1M">1M</button>
-      <button data-period="6M">6M</button>
-      <button data-period="1Y">1Y</button>
-      <button data-period="3Y" class="active">3Y</button>
-      <button data-period="MAX">MAX</button>
+      
+      <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
+      <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
+      <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
+      <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
+
     </div>
     <div id="period-diff" class="period-diff">—</div>
   </div>
 
   <div id="chart-podilovy-fond"></div>
 
-  <button class="back-btn">← Zpět</button>
+  
+<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+  ← Zpět
+</button>
+
   `;
 
   // ✅ BACK
@@ -955,11 +989,13 @@ const main = document.getElementById('mainContent');
 
 <div class="period-row">
   <div class="period-switch">
-    <button data-period="1M">1M</button>
-    <button data-period="6M">6M</button>
-    <button data-period="1Y">1Y</button>
-    <button data-period="3Y" class="active">3Y</button>
-    <button data-period="MAX">MAX</button>
+    
+      <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
+      <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
+      <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
+      <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
+
   </div>
 
   <div id="period-diff" class="period-diff">
@@ -970,7 +1006,11 @@ const main = document.getElementById('mainContent');
 
 
     <div id="chart-stock"></div>
-    <button class="back-btn">← Zpět</button>
+    
+<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+  ← Zpět
+</button>
+
   `;
 
   
@@ -1357,11 +1397,13 @@ const main = document.getElementById('mainContent');
 
 <div class="period-row">
   <div class="period-switch">
-    <button data-period="1M">1M</button>
-    <button data-period="6M">6M</button>
-    <button data-period="1Y">1Y</button>
-    <button data-period="3Y" class="active">3Y</button>
-    <button data-period="MAX">MAX</button>
+    
+      <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
+      <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
+      <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
+      <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
+
   </div>
 
   <div id="period-diff" class="period-diff">
@@ -1371,7 +1413,11 @@ const main = document.getElementById('mainContent');
 
 
     <div id="chart-currency"></div>
-    <button class="back-btn">← Zpět</button>
+    
+<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+  ← Zpět
+</button>
+
   `;
 
   
