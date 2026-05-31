@@ -74,7 +74,7 @@ window.loadPortfolioPage = async function (page) {
     main.innerHTML = `
       <div class="toolbar portfolio-tabs" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
-        <button class="button tab" data-tab="instruments">Instrumenty</button>
+        <button class="button tab" data-tab="instruments">Název</button>
         <button class="button tab" data-tab="transactions">Transakce</button>
         <button class="button tab" data-tab="settings">Nastavení</button>
       </div>
@@ -107,7 +107,7 @@ window.loadPortfolioPage = async function (page) {
     <div class="mobile-sort">
       <label for="inst-sort">Řadit podle</label>
       <select id="inst-sort">
-        <option value="type">Instrument</option>
+        <option value="type">Typ</option>
         <option value="name">Název</option>
         <option value="quantity">Počet kusů</option>
     </select>
@@ -117,7 +117,7 @@ window.loadPortfolioPage = async function (page) {
     <table class="fund-table" id="instruments-table">
       <thead>
         <tr>
-          <th data-key="type">Instrument</th>
+          <th data-key="type">Typ</th>
           <th data-key="name">Název</th>
           <th data-key="quantity">Počet kusů</th>
         </tr>
@@ -142,9 +142,9 @@ window.loadPortfolioPage = async function (page) {
       <label for="tx-sort">Řadit podle</label>
       <select id="tx-sort">
         <option value="date">Datum</option>
-        <option value="instrument">Instrument</option>
+        <option value="instrument">Typ</option>
         <option value="type">Směr</option>
-        <option value="quantity">Množství</option>
+        <option value="quantity">Počet kusů</option>
         
       </select>
       <button id="tx-sort-dir">↑</button>
@@ -154,9 +154,9 @@ window.loadPortfolioPage = async function (page) {
       <thead>
         <tr>
           <th data-key="date">Datum</th>
-          <th data-key="instrument">Instrument</th>
+          <th data-key="instrument">Typ</th>
           <th data-key="type">Směr</th>
-          <th data-key="quantity">Množství</th>
+          <th data-key="quantity">Počet kusů</th>
           
         </tr>
       </thead>
@@ -679,7 +679,7 @@ function renderPortfolioInstruments(positions) {
       tr.className = 'clickable';
 
       tr.innerHTML = `
-        <td data-label="Instrument">${typeLabel[p.asset_type] || p.asset_type}</td>
+        <td data-label="Typ">${typeLabel[p.asset_type] || p.asset_type}</td>
         <td data-label="Název">${p.asset_name || p.asset_id}</td>
         <td data-label="Počet kusů">
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
@@ -773,7 +773,7 @@ function renderPortfolioTransactions(trades) {
         <td data-label="Datum">
           ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
         </td>
-        <td data-label="Instrument">
+        <td data-label="Typ">
           ${t.asset_type} · ${t.asset_name}
         </td>
         <td data-label="Směr">
@@ -852,7 +852,7 @@ function openTransactionModal(portfolioId) {
       <option value="FUND">Podílový fond</option>
     </select>
 
-    <label class="full">Instrument</label>
+    <label class="full">Typ</label>
     <select id="tx-asset-id" disabled class="full"></select>
 
     <label>Směr</label>
