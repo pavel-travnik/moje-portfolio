@@ -3,17 +3,20 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Investiční přehled</title>
+    <title>Moje portfolio</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
+
 <body>
 
+<!-- ================= HEADER ================= -->
 <header class="main-header">
-    <img src="img/logo.png" class="logo" alt="Logo">
-
-    <h1>
-        <a href="#" class="gold-text" data-page="uvod">Moje-portfolio.cz</a>
-    </h1>
+    <div class="header-left">
+        <img src="img/fondy.png" class="logo" alt="Logo">
+        <h1 class="site-title">
+            <a href="#" class="gold-text" data-page="uvod">Moje‑portfolio</a>
+        </h1>
+    </div>
 
     <nav class="main-nav">
         <div class="dropdown">
@@ -25,119 +28,78 @@
                 <a href="#" data-page="etf">ETF</a>
                 <a href="#" data-page="meny">Měny</a>
                 <a href="#" data-page="portfolio" id="menu-portfolio" style="display:none;">Moje portfolio</a>
-
             </div>
         </div>
 
-	
-	<button id="btn-login" class="pill-button" onclick="openLoginModal()">Přihlásit</button>
-
-	<button id="btn-logout" class="pill-button" onclick="logout()" style="display:none;">Odhlásit</button>
-
+        <button id="btn-login" class="pill-button" onclick="openLoginModal()">Přihlásit</button>
+        <button id="btn-logout" class="pill-button" onclick="logout()" style="display:none;">Odhlásit</button>
     </nav>
 </header>
 
+
+<!-- ================= LAYOUT ================= -->
 <div class="layout">
-  <main id="mainContent" class="content"></main>
 
-  <!-- ✅ PRAVÝ BLOK (sidebar) -->
-  <aside class="sidebar">
-  
-  <div class="side-grid">
-    <div class="side-card" data-page="penze">
-      <h4>Penzijní fondy</h4>
-    </div>
+    <!-- ===== MAIN CONTENT ===== -->
+    <main id="mainContent" class="content">
 
-    <div class="side-card" data-page="podilove-fondy">
-      <h4>Podílové fondy</h4>
-    </div>
+        <!-- ✅ ÚVOD -->
+        <section class="home-hero">
+            <img src="img/fondy.png" class="hero-image" alt="Fondy">
+            <h2>Investiční přehled</h2>
+        </section>
 
-    <div class="side-card" data-page="akcie">
-      <h4>Akcie</h4>
-    </div>
+        <!-- ✅ DLAŽDICE -->
+        <section class="home-grid">
+            <div class="home-card" data-page="penze">Penzijní fondy</div>
+            <div class="home-card" data-page="podilove-fondy">Podílové fondy</div>
+            <div class="home-card" data-page="akcie">Akcie</div>
+            <div class="home-card" data-page="etf">ETF</div>
+            <div class="home-card" data-page="meny">Měny</div>
+        </section>
 
-    <div class="side-card" data-page="etf">
-      <h4>ETF</h4>
-    </div>
+    </main>
 
-    <div class="side-card" data-page="meny">
-      <h4>Měny</h4>
-    </div>
-  </div>
-</aside>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+
+        <!-- ✅ výběr měny -->
+        <div class="currency-box">
+            <label>Měna</label>
+            <select>
+                <option>CZK</option>
+                <option>EUR</option>
+                <option>USD</option>
+            </select>
+        </div>
+
+        <!-- ✅ rychlá navigace -->
+        <div class="side-grid">
+            <div class="side-card" data-page="penze">Penzijní fondy</div>
+            <div class="side-card" data-page="podilove-fondy">Podílové fondy</div>
+            <div class="side-card" data-page="akcie">Akcie</div>
+            <div class="side-card" data-page="etf">ETF</div>
+            <div class="side-card" data-page="meny">Měny</div>
+        </div>
+
+    </aside>
 </div>
 
-<footer class="footer">
-    <a href="#" data-page="gdpr">GDPR </a>
-    <a href="#" data-page="upozorneni">Investiční upozornění </a>
-    <a href="#" data-page="slovnik">Investiční slovníček </a>
 
-    <p>
-        Informace na tomto webu nepředstavují investiční doporučení ani nabídku.
-        Investování je spojeno s rizikem.
-    </p>
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+    <div class="footer-content">
+        <a href="#" data-page="gdpr">GDPR</a>
+        <a href="#" data-page="upozorneni">Investiční upozornění</a>
+        <a href="#" data-page="slovnik">Slovníček</a>
+    </div>
 </footer>
 
 
+<!-- ================= SCRIPTS ================= -->
 <script src="js/portfolio.js"></script>
 <script src="js/app.js"></script>
-
-<div id="cookieBanner" style="
-position: fixed;
-bottom: 0;
-left: 0;
-right: 0;
-background: #173d2a;
-color: white;
-padding: 20px;
-display: none;
-z-index: 9999;
-box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-">
-    <p style="margin-bottom:10px;">
-        Tento web používá cookies pro správné fungování, analytiku a zlepšování služeb.
-        Nepovinné cookies používáme pouze s vaším souhlasem.
-        <a href="#" data-page="gdpr" style="color:gold;">Více informací</a>
-    </p>
-    <button onclick="acceptCookies()" style="margin-right:10px;">Souhlasím</button>
-    <button onclick="rejectCookies()">Pouze nutné</button>
-</div>
-
-<script>
-function setCookie(name, value, days) {
-    const d = new Date();
-    d.setTime(d.getTime() + (days*24*60*60*1000));
-    document.cookie = name + "=" + value + ";path=/;expires=" + d.toUTCString();
-}
-
-function getCookie(name) {
-    let cname = name + "=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for(let c of ca) {
-        while (c.charAt(0) === ' ') c = c.substring(1);
-        if (c.indexOf(cname) === 0) return c.substring(cname.length, c.length);
-    }
-    return "";
-}
-
-function acceptCookies() {
-    setCookie("cookieConsent", "all", 365);
-    document.getElementById("cookieBanner").style.display = "none";
-}
-
-function rejectCookies() {
-    setCookie("cookieConsent", "necessary", 365);
-    document.getElementById("cookieBanner").style.display = "none";
-}
-
-window.onload = function() {
-    if (!getCookie("cookieConsent")) {
-        document.getElementById("cookieBanner").style.display = "block";
-    }
-};
-</script>
-
 
 </body>
 </html>
