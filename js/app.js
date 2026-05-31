@@ -195,6 +195,8 @@ if (!path || path === 'index.html') {
  updateMenu();   // ✅ přidat
 
  loadPage(path, false);
+
+ checkSession();
 })();
 
 
@@ -1550,7 +1552,7 @@ async function loginUser() {
     }
 
     localStorage.setItem("user_id", data.user_id);
-
+    resetInactivityTimer(); // ⬅️ důležité
     updateMenu();
     loadPage("portfolio");
 }
@@ -1600,3 +1602,45 @@ async function registerUser() {
         alert("Chyba registrace");
     }
 }
+
+// ===============================
+// AUTO LOGOUT (10 min neaktivita)
+// ===============================
+let inactivityTimer;
+
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+
+  // 10 minut = 600000 ms
+  inactivityTimer = setTimeout(() => {
+    console.log("Auto logout – neaktivita");
+    logout();
+  }, 600000);
+}
+
+// sleduj aktivitu uživatele
+["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(evt => {
+  document.addEventListener(evt, resetInactivityTimer, true);
+});
+
+function updateLastActivity() {
+  localStorage.setItem("last_activity", Date.now());
+}
+
+document.addEventListener("click", updateLastActivity);
+document.addEventListener("keydown", updateLastActivity);
+document.addEventListener("mousemove", updateLastActivity);
+
+function checkSession() {
+  const last = localStorage.getItem("last_activity");
+  if (!last) return;
+
+  const diff = Date.now() - parseInt(last);
+
+  // 10 minut
+  if (diff > 600000) {
+    console.log("Session expirovala");
+    logout();
+  }
+}
+
