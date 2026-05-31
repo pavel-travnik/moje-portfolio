@@ -117,23 +117,64 @@ const tooltip = document.createElement('div');
 tooltip.className = 'tooltip';
 document.body.appendChild(tooltip);
 
+let tooltipTimeout = null;
+
+// ✅ DESKTOP (hover)
 document.addEventListener('mouseover', e => {
+  if (window.innerWidth < 768) return; // mobil ignoruj
+
   const el = e.target.closest('[data-tooltip]');
   if (!el) return;
 
-  tooltip.textContent = el.dataset.tooltip;
-  tooltip.classList.add('show');
-
-  const rect = el.getBoundingClientRect();
-  tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-  tooltip.style.top = rect.top - 30 + 'px';
+  showTooltip(el);
 });
 
 document.addEventListener('mouseout', e => {
+  if (window.innerWidth < 768) return;
+
   if (e.target.closest('[data-tooltip]')) {
-    tooltip.classList.remove('show');
+    hideTooltip();
   }
 });
+
+// ✅ MOBILE (tap)
+document.addEventListener('click', e => {
+  if (window.innerWidth >= 768) return; // desktop ignoruj
+
+  const el = e.target.closest('[data-tooltip]');
+  if (!el) return;
+
+  e.preventDefault();
+
+  showTooltip(el);
+
+  // auto hide
+  clearTimeout(tooltipTimeout);
+  tooltipTimeout = setTimeout(() => {
+    hideTooltip();
+  }, 2000);
+});
+
+function showTooltip(el) {
+  tooltip.textContent = el.dataset.tooltip;
+
+  const rect = el.getBoundingClientRect();
+
+  tooltip.style.left = Math.max(
+  8,
+  Math.min(
+    window.innerWidth - tooltip.offsetWidth - 8,
+    rect.left + rect.width / 2 - tooltip.offsetWidth / 2
+  )
+) + 'px';
+  tooltip.style.top = rect.top - 35 + 'px';
+
+  tooltip.classList.add('show');
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('show');
+}
 
 // ===================================================
 // INIT
