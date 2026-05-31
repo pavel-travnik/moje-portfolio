@@ -1333,7 +1333,7 @@ input, select {
 
 .tooltip {
   position: absolute;
-  background: rgba(20,20,20,0.95);
+  background: rgba(82, 82, 82, 0.95);
   color: #C9A646;
   padding: 6px 10px;
   font-size: 11px;
