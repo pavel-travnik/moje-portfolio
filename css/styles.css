@@ -76,7 +76,7 @@ a:hover {
 }
 
 .logo {
-    height: 48px;
+    height: 96px;
 }
 
 .main-header h1 {
@@ -109,9 +109,13 @@ a:hover {
    NAV + DROPDOWN
 ===================================== */
 
+
 .main-nav {
-    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px; /* ✅ mezery mezi položkami */
 }
+
 
 .dropdown {
     position: relative;
@@ -791,6 +795,7 @@ MOBILE
   background: #C9A646;
   color: #111;
   border-color: #C9A646;
+  transform: scale(0.96);
 }
 
 /* =========================
@@ -873,17 +878,53 @@ MOBILE
     color: white;
 }
 
+/* ===== HOME GRID ===== */
+
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.home-card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.25s;
+    border: 1px solid var(--border-light);
+}
+
+.home-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--gold);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+
 /* =====================================
    FOOTER
 ===================================== */
 
+
 .footer {
-    background: #333333;
-    border-top: 1px solid var(--border-light);
+    background: #333;
+    padding: 20px 0;
+    text-align: center;
+}
+
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
 }
 
 .footer a {
-    color: var(--text-muted);
+    color: #ccc;
+    font-size: 14px;
 }
 
 .footer a:hover {
@@ -941,6 +982,13 @@ MOBILE
     .logo {
         height: 40px;
     }
+
+    
+    .site-title {
+    font-size: 36px; /* ✅ 2x větší */
+    font-weight: 600;
+    }
+
 
     /* back button */
     .back-btn {
@@ -1308,13 +1356,20 @@ input, select {
   background: #f2f2f2;  /* šedá */
   padding: 20px;
   border-radius: 12px;
+  
+  position: sticky;
+  top: 20px; /* ✅ fix při scrollu */
+
 }
 
 /* ✅ grid layout */
 .side-grid {
-  display: grid;
-  gap: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* ✅ horizontálně na střed */
+    gap: 12px;
 }
+
 
 /* ✅ karta (inspirovaná fondama) */
 .side-card {
