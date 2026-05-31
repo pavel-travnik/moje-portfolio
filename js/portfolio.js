@@ -263,14 +263,15 @@ function calculateAllocationByType(positions) {
     .filter(x => x.value > 0);
 }
 
-function renderAllocationDonut(data, containerId, totalValueCZK = null) {
+function renderAllocationDonut(data, containerId, totalValueCZK = null, options = {}) {
+  const isDrilldown = options.drilldown === true;
   totalValueCZK = Number(totalValueCZK) || 0;
   const el = document.getElementById(containerId);
   if (!el || !data.length) return;
 
   el.innerHTML = '';
 
-  const size = 230;
+  const size = isDrilldown ? 140 : 230;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -356,32 +357,59 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null) {
 
     ctx.font = '12px Arial';
 
-    if (activeIndex === null) {
-      ctx.fillStyle = '#666';
-      ctx.fillText('Celkem', cx, cy - 10);
+    if (isDrilldown) {
+    if (hoverIndex !== null) {
+        const d = data[hoverIndex];
 
-      ctx.font = 'bold 16px Arial';
-      ctx.fillStyle = '#111';
-      
-      const safeTotal = Number(totalValueCZK) || 0;
+        ctx.fillStyle = '#666';
+        ctx.fillText(d.label, cx, cy - 10);
 
-      ctx.fillText(
-      `${safeTotal.toLocaleString('cs-CZ')} Kč`,
-      cx, cy + 10
-      );
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = '#111';
+        ctx.fillText(`${fmtNumber(d.value, 0)}`, cx, cy + 5);
+
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#666';
+        ctx.fillText(`${(d.pct * 100).toFixed(1)} %`, cx, cy + 18);
 
     } else {
-      const d = data[activeIndex];
-      ctx.fillStyle = '#666';
-      ctx.fillText(d.label, cx, cy - 10);
+        const sum = data.reduce((s, d) => s + d.value, 0);
 
-      ctx.font = 'bold 18px Arial';
-      ctx.fillStyle = '#111';
-      ctx.fillText(
-        `${(d.pct * 100).toFixed(1)} %`,
-        cx,
-        cy + 12
-      );
+        ctx.fillStyle = '#666';
+        ctx.fillText('Součet', cx, cy - 10);
+
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#111';
+        ctx.fillText(`${fmtNumber(sum, 0)}`, cx, cy + 10);
+    }
+}
+else {
+    // PŮVODNÍ LOGIKA (hlavní graf)
+    const idx = hoverIndex !== null ? hoverIndex : activeIndex;
+
+    if (idx === null) {
+        ctx.fillStyle = '#666';
+        ctx.fillText('Celkem', cx, cy - 10);
+
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#111';
+        const safeTotal = Number(totalValueCZK) || 0;
+        ctx.fillText(`${safeTotal.toLocaleString('cs-CZ')} Kč`, cx, cy + 10);
+
+    } else {
+        const d = data[idx];
+
+        ctx.fillStyle = '#666';
+        ctx.fillText(d.label, cx, cy - 15);
+
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#111';
+        ctx.fillText(`${fmtNumber(d.value, 0)} Kč`, cx, cy + 5);
+
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#666';
+        ctx.fillText(`${(d.pct * 100).toFixed(1)} %`, cx, cy + 20);
+    }
     }
   }
 
@@ -494,7 +522,12 @@ function showDrilldownDonut(segment) {
   detailData.forEach(d => d.pct = d.value / sum);
 
   // reuse stejné funkce
-  renderAllocationDonut(detailData, 'portfolio-allocation-drill');
+  renderAllocationDonut(detailData,
+    'portfolio-allocation-drill',
+    null,
+    { drilldown: true }
+  );
+
 }
 
 function openAssetDetail(assetType, assetId) {
