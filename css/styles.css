@@ -770,19 +770,27 @@ MOBILE
 }
 
 .period-switch button {
-  padding: 6px 12px;
-  border: 1px solid var(--gold);
-  background: white;
+  background: transparent;
+  border: 1px solid rgba(201,166,70,0.4);
+  color: #ccc;
+  padding: 6px 10px;
+  border-radius: 999px;
   cursor: pointer;
-  border-radius: 6px;
-
-  flex: 0 0 auto;      /* ✅ zabrání přepočtu šířky */
+  transition: all 0.2s ease;
 }
 
-/* aktivní */
+/* ✅ hover jako back-btn */
+.period-switch button:hover {
+  background: #C9A646;
+  color: #111;
+  border-color: #C9A646;
+}
+
+/* ✅ aktivní stav */
 .period-switch button.active {
-  background: var(--gold);
-  color: white;
+  background: #C9A646;
+  color: #111;
+  border-color: #C9A646;
 }
 
 /* =========================
