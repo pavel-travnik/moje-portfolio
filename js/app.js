@@ -160,14 +160,14 @@ function showTooltip(el) {
 
   const rect = el.getBoundingClientRect();
 
-  tooltip.style.left = Math.max(
-  8,
-  Math.min(
-    window.innerWidth - tooltip.offsetWidth - 8,
-    rect.left + rect.width / 2 - tooltip.offsetWidth / 2
-  )
-) + 'px';
-  tooltip.style.top = rect.top - 35 + 'px';
+  const top = rect.top + window.scrollY;
+  const left = rect.left + window.scrollX;
+
+  tooltip.style.left =
+    left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+
+  tooltip.style.top =
+    top - 35 + 'px';
 
   tooltip.classList.add('show');
 }
