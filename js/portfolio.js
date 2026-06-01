@@ -5,7 +5,9 @@
 const PORTFOLIO_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
 
-const CURRENT_USER_ID = 1;
+function getCurrentUserId() {
+    return Number(localStorage.getItem("user_id"));
+}
 
 // ===================================================
 // HELPERS
@@ -56,14 +58,80 @@ window.loadPortfolioPage = async function (page) {
   // /portfolio – seznam
   // ===============================
   if (page === 'portfolio') {
-    main.innerHTML = `
-      <h1>Moje portfolia</h1>
-      <div id="portfolioList" class="fund-grid"></div>
-    `;
     const portfolios = await fetchUserPortfolios();
+
+    // ✅ pokud existuje portfolio → rovnou otevři první
+    if (portfolios.length > 0) {
+        const firstId = portfolios[0].portfolio_id;
+        history.replaceState({}, '', `/portfolio/${firstId}`);
+        return loadPortfolioPage(`portfolio/${firstId}`);
+    }
+
+    // ❗ jinak zobraz seznam (a možnost vytvořit)
+    main.innerHTML = `
+        <h2>Moje portfolia</h2>
+        <button id="btn-create-portfolio" class="pill-button">
+            + Nové portfolio
+        </button>
+        <div id="portfolioList"></div>
+    `;
+
+    document.getElementById("btn-create-portfolio").onclick =
+        openCreatePortfolioModal;
+
     renderPortfolioList(portfolios);
     return;
-  }
+}
+
+function openCreatePortfolioModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+
+    modal.innerHTML = `
+        <div class="tx-modal">
+            <h3>Nové portfolio</h3>
+
+            <label>Název</label>
+            <input id="pf-name" class="tx-input" placeholder="Např. Dlouhodobé investice">
+
+            <div class="tx-actions">
+                <button id="pf-cancel" class="pill-button">Zrušit</button>
+                <button id="pf-save" class="pill-button">Vytvořit</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById("pf-cancel").onclick = () => {
+        modal.remove();
+        document.body.style.overflow = '';
+    };
+
+    document.getElementById("pf-save").onclick = async () => {
+        const name = document.getElementById("pf-name").value;
+
+        if (!name) {
+            alert("Zadej název");
+            return;
+        }
+
+        try {
+            const pf = await createPortfolio(name);
+
+            modal.remove();
+            document.body.style.overflow = '';
+
+            // ✅ přesměrování na nové portfolio
+            history.pushState({}, '', `/portfolio/${pf.portfolio_id}`);
+            loadPortfolioPage(`portfolio/${pf.portfolio_id}`);
+
+        } catch (e) {
+            alert("Nepodařilo se vytvořit portfolio");
+        }
+    };
+}
 
   // ===============================
   // /portfolio/{id} – detail
@@ -559,14 +627,14 @@ function openAssetDetail(assetType, assetId) {
 // ===================================================
 async function fetchUserPortfolios() {
   const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolios?user_id=${CURRENT_USER_ID}`
+    `${PORTFOLIO_API}/get_portfolios?user_id=${getCurrentUserId()}`
   );
   return await r.json();
 }
 
 async function fetchPortfolioDetail(id) {
   const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${id}&user_id=${CURRENT_USER_ID}`
+    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${id}&user_id=${getCurrentUserId()}`
   );
   return await r.json();
 }
@@ -574,7 +642,7 @@ async function fetchPortfolioDetail(id) {
 async function fetchPortfolioTransactions(portfolioId) {
   try {
     const r = await fetch(
-      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${CURRENT_USER_ID}`
+      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${getCurrentUserId()}`
     );
     if (!r.ok) return [];
 
