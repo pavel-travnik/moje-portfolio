@@ -142,7 +142,7 @@ function openCreatePortfolioModal() {
     main.innerHTML = `
       <div class="toolbar portfolio-tabs" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
-        <button class="button tab" data-tab="instruments">Název</button>
+        <button class="button tab" data-tab="instruments">Portfolio</button>
         <button class="button tab" data-tab="transactions">Transakce</button>
         <button class="button tab" data-tab="settings">Nastavení</button>
       </div>
@@ -160,6 +160,13 @@ function openCreatePortfolioModal() {
             <strong id="pf-kpi-daily">—</strong>
           </div>
           </div>
+
+          
+      <h2 id="pf-name-title">Portfolio</h2>
+
+      <button id="btn-create-portfolio" class="pill-button">
+          + Nové portfolio
+      </button>
 
         
         <div class="overview-right">
@@ -252,6 +259,11 @@ function openCreatePortfolioModal() {
 
       <button class="back-btn">← Zpět</button>
     `;
+
+
+    document.getElementById("btn-create-portfolio").onclick =
+    openCreatePortfolioModal;
+
 
     initPortfolioTabs();
     document.querySelector('.back-btn').onclick = () => history.back();
@@ -1099,7 +1111,7 @@ function openTransactionModal(portfolioId) {
 async function savePortfolioTrade(portfolioId, trade) {
   const payload = {
     portfolio_id: Number(portfolioId), // ← DŮLEŽITÉ
-    user_id: CURRENT_USER_ID,
+    user_id: getCurrentUserId(), // ✅ FIX
     trades: [trade]
   };
 
