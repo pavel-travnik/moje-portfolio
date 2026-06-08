@@ -1024,6 +1024,17 @@ const main = document.getElementById('mainContent');
     <span>Objem</span>
     <strong id="stock-kpi-volume"> - </strong>
   </div>
+  
+  <div class="kpi">
+    <span>Obor</span>
+    <strong id="stock-kpi-sector"> - </strong>
+  </div>
+
+  <div class="kpi">
+    <span>Burza</span>
+    <strong id="stock-kpi-exchange"> - </strong>
+  </div>
+
 </div>
 
 
@@ -1080,6 +1091,9 @@ function renderStockMeta(data) {
 
   const first = data[0];
 
+  document.getElementById('stock-kpi-sector').textContent = first.sektor || ' - ';
+  document.getElementById('stock-kpi-exchange').textContent = first.exchange || ' - ';
+
   // ✅ název
   document.getElementById('stock-name').textContent = first.name || first.ticker;
   document.getElementById('stock-title').textContent = first.name || first.ticker;
@@ -1098,7 +1112,6 @@ function renderStockMeta(data) {
     
   meta.innerHTML = `
   <div>
-    ${first.sektor ? `<span class="badge">${first.sektor}</span><br>` : ''}
     <a href="${url}" target="_blank" rel="noopener" class="tv-link">
       Detail akcie v TradingView ↗
     </a>
