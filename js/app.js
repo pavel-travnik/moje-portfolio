@@ -1071,21 +1071,43 @@ document.querySelector('.back-btn').onclick = () => history.back();
     };
   });
 
-  loadStockName(ticker);
+  
   loadStockData(ticker, '3Y');
 }
 
-async function loadStockName(ticker) {
-  try {
-    const res = await fetch(STOCK_LIST_API);
-    const stocks = await res.json();
-    const stock = stocks.find(s => s.ticker === ticker);
-    if (stock) {
-      document.getElementById('stock-name').textContent = stock.name;
-      document.getElementById('stock-title').textContent = stock.name;
-    }
-  } catch {}
+function renderStockMeta(data) {
+  if (!data.length) return;
+
+  const first = data[0];
+
+  // ✅ název
+  document.getElementById('stock-name').textContent = first.name || first.ticker;
+  document.getElementById('stock-title').textContent = first.name || first.ticker;
+
+  // ✅ TradingView URL
+  const symbol = first.symbolData || first.ticker;
+  const exchange = first.exchange;
+
+  const url = exchange
+    ? `https://www.tradingview.com/symbols/${exchange}:${symbol}/`
+    : null;
+
+  const meta = document.getElementById('stock-meta');
+
+  if (meta) {
+    
+  meta.innerHTML = `
+  <div>
+    ${first.sektor ? `<span class="badge">${first.sektor}</span><br>` : ''}
+    <a href="${url}" target="_blank" rel="noopener" class="tv-link">
+      Detail akcie v TradingView ↗
+    </a>
+  </div>
+  `;
+
+  }
 }
+
 
 async function loadStockData(ticker, period) {
 
@@ -1105,6 +1127,7 @@ async function loadStockData(ticker, period) {
   const finalData = filtered.length ? filtered : apiCache.stocks[ticker];
 
   // ✅ 3️⃣ render
+  renderStockMeta(finalData);
   renderStockKPI(finalData);
   renderPeriodDifference(
     finalData.map(d => ({ value: d.close }))
