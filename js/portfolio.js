@@ -147,178 +147,127 @@ function openCreatePortfolioModal() {
   if (page.startsWith('portfolio/')) {
     const portfolioId = page.split('/')[1];
 
+    if (!portfolioId || isNaN(Number(portfolioId))) {
+      alert('Chyba: neplatné portfolio ID.');
+      return;
+    }
+
     main.innerHTML = `
       <div class="toolbar portfolio-tabs" style="gap:.5rem;margin-bottom:1rem">
         <button class="button tab active" data-tab="overview">Přehled</button>
-        <button class="button tab" data-tab="instruments">Portfolio</button>
+        <button class="button tab" data-tab="value">Hodnota</button>
+        <button class="button tab" data-tab="instruments">Detail</button>
         <button class="button tab" data-tab="transactions">Transakce</button>
         <button class="button tab" data-tab="settings">Nastavení</button>
       </div>
 
-      <h1>Portfolio ${portfolioId}</h1>
+      <h1 id="pf-detail-title">Portfolio</h1>
 
       <section id="tab-overview" class="portfolio-tab">
+        <div class="toolbar" style="justify-content:space-between;margin-bottom:1rem">
+          <h2 style="margin:0">Přehled portfolií</h2>
+          <button id="btn-create-portfolio-overview" class="pill-button">+ Nové portfolio</button>
+        </div>
+        <div id="portfolio-overview-list"></div>
+      </section>
+
+      <section id="tab-value" class="portfolio-tab">
         <div class="kpi-row">
-          <div class="kpi">
-            <span>Hodnota</span>
-            <strong id="pf-kpi-value">—</strong>
-          </div>
-          <div class="kpi">
-            <span>Denní změna</span>
-            <strong id="pf-kpi-daily">—</strong>
-          </div>
-          </div>
-
-          
-      <h2 id="pf-name-title">Portfolio</h2>
-
-      <button id="btn-create-portfolio" class="pill-button">
-          + Nové portfolio
-      </button>
-
-        
+          <div class="kpi"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+          <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
+        </div>
         <div class="overview-right">
           <div id="portfolio-allocation-chart"></div>
           <div id="portfolio-allocation-drill"></div>
-          </div>
         </div>
-
       </section>
 
-    <section id="tab-instruments" class="portfolio-tab">
+      <section id="tab-instruments" class="portfolio-tab">
+        <h2>Detail</h2>
+        <div class="mobile-sort">
+          <label for="inst-sort">Řadit podle</label>
+          <select id="inst-sort">
+            <option value="type">Typ</option>
+            <option value="name">Název</option>
+            <option value="quantity">Počet kusů</option>
+            <option value="value">Hodnota</option>
+          </select>
+          <button id="inst-sort-dir">↑</button>
+        </div>
+        <table class="fund-table" id="instruments-table">
+          <thead><tr>
+            <th data-key="type">Typ</th>
+            <th data-key="name">Název</th>
+            <th data-key="quantity">Počet kusů</th>
+            <th data-key="value">Hodnota</th>
+          </tr></thead>
+          <tbody id="portfolio-instruments"></tbody>
+        </table>
+      </section>
 
-    <div class="mobile-sort">
-      <label for="inst-sort">Řadit podle</label>
-      <select id="inst-sort">
-        <option value="type">Typ</option>
-        <option value="name">Název</option>
-        <option value="quantity">Počet kusů</option>
-    </select>
-    <button id="inst-sort-dir">↑</button>
-    </div>
-
-    <table class="fund-table" id="instruments-table">
-      <thead>
-        <tr>
-          <th data-key="type">Typ</th>
-          <th data-key="name">Název</th>
-          <th data-key="quantity">Počet kusů</th>
-        </tr>
-      </thead>
-      <tbody id="portfolio-instruments"></tbody>
-    </table>
-    </section>
-
-    <section id="tab-transactions" class="portfolio-tab">
+      <section id="tab-transactions" class="portfolio-tab">
         <div class="toolbar" style="justify-content:space-between">
           <span class="muted">Transakce</span>
-          <button
-            id="btn-add-transaction"
-            class="button pill-button"
-            data-portfolio-id="${portfolioId}">
-            Přidat transakci
-          </button>
+          <button id="btn-add-transaction" class="button pill-button" data-portfolio-id="${portfolioId}">Přidat transakci</button>
         </div>
+        <div class="mobile-sort">
+          <label for="tx-sort">Řadit podle</label>
+          <select id="tx-sort">
+            <option value="date">Datum</option>
+            <option value="instrument">Typ</option>
+            <option value="type">Směr</option>
+            <option value="quantity">Počet kusů</option>
+          </select>
+          <button id="tx-sort-dir">↑</button>
+        </div>
+        <table class="fund-table" id="transactions-table">
+          <thead><tr>
+            <th data-key="date">Datum</th>
+            <th data-key="instrument">Typ</th>
+            <th data-key="type">Směr</th>
+            <th data-key="quantity">Počet kusů</th>
+          </tr></thead>
+          <tbody id="portfolio-transactions"></tbody>
+        </table>
+      </section>
 
-       
-    <div class="mobile-sort">
-      <label for="tx-sort">Řadit podle</label>
-      <select id="tx-sort">
-        <option value="date">Datum</option>
-        <option value="instrument">Typ</option>
-        <option value="type">Směr</option>
-        <option value="quantity">Počet kusů</option>
-        
-      </select>
-      <button id="tx-sort-dir">↑</button>
-    </div>
-
-    <table class="fund-table" id="transactions-table">
-      <thead>
-        <tr>
-          <th data-key="date">Datum</th>
-          <th data-key="instrument">Typ</th>
-          <th data-key="type">Směr</th>
-          <th data-key="quantity">Počet kusů</th>
-          
-        </tr>
-      </thead>
-    <tbody id="portfolio-transactions"></tbody>
-    </table>
-    </section>
-
-     <section id="tab-settings" class="portfolio-tab">
+      <section id="tab-settings" class="portfolio-tab">
         <div class="card" style="max-width:420px">
-          <label class="stack">
-            <span class="muted">E‑mail</span>
-            <input class="input" type="email">
-          </label>
-          <label class="stack">
-            <span class="muted">Zasílání přehledu</span>
-            <select class="select">
-              <option value="off">Vypnuto</option>
-              <option value="daily">Denně</option>
-              <option value="weekly">Týdně</option>
-            </select>
-          </label>
+          <label class="stack"><span class="muted">E‑mail</span><input class="input" type="email"></label>
+          <label class="stack"><span class="muted">Zasílání přehledu</span><select class="select"><option value="off">Vypnuto</option><option value="daily">Denně</option><option value="weekly">Týdně</option></select></label>
           <button class="button">Uložit</button>
         </div>
       </section>
-
       <button class="back-btn">← Zpět</button>
     `;
 
-
-    document.getElementById("btn-create-portfolio").onclick =
-    openCreatePortfolioModal;
-
-
+    document.getElementById("btn-create-portfolio-overview").onclick = openCreatePortfolioModal;
     initPortfolioTabs();
     document.querySelector('.back-btn').onclick = () => history.back();
-    document.getElementById('btn-add-transaction').onclick =
-      () => openTransactionModal(portfolioId);
+    document.getElementById('btn-add-transaction').onclick = () => openTransactionModal(portfolioId);
+
+    const portfolios = await fetchUserPortfolios();
+    renderPortfolioList(portfolios, 'portfolio-overview-list');
 
     const detail = await fetchPortfolioDetail(portfolioId);
+    const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
+    setPortfolioTitle(detail, currentPortfolio, portfolioId);
     renderPortfolioOverview(detail);
 
-    if (Array.isArray(detail?.positions)) {
-      renderPortfolioInstruments(detail.positions);
-    }
+    if (Array.isArray(detail?.positions)) renderPortfolioInstruments(detail.positions);
 
-    
-    // ✅ NOVĚ – z valuation detail (backend)
-  const raw = detail.valuation_by_asset_type || [];
+    const raw = detail.valuation_by_asset_type || [];
+    const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
+    const allocation = raw.map(x => {
+      const value = Number(x.value) || 0;
+      return {
+        label: x.asset_type === 'ETF' ? 'ETF' : x.asset_type === 'STOCK' ? 'Akcie' : x.asset_type === 'FUND' ? 'Fondy' : x.asset_type === 'DPS' ? 'Penze' : x.asset_type,
+        value,
+        pct: total > 0 ? value / total : 0
+      };
+    });
+    renderAllocationDonut(allocation, 'portfolio-allocation-chart', detail?.valuation?.gross_value_base);
 
-const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
-
-const allocation = raw.map(x => {
-  const value = Number(x.value) || 0;
-
-  return {
-    label:
-      x.asset_type === 'ETF'   ? 'ETF' :
-      x.asset_type === 'STOCK' ? 'Akcie' :
-      x.asset_type === 'FUND'  ? 'Fondy' :
-      x.asset_type === 'DPS'   ? 'Penze' :
-      x.asset_type,
-
-    value: value,
-
-    pct: total > 0 ? value / total : 0   // ✅ KLÍČOVÝ FIX
-  };
-});
-
-renderAllocationDonut(
-  allocation,
-  'portfolio-allocation-chart',
-  detail?.valuation?.gross_value_base
-);
-
-
-    if (!portfolioId || isNaN(Number(portfolioId))) {
-  alert('Chyba: neplatné portfolio ID.');
-  return;
-}
     const trades = await fetchPortfolioTransactions(portfolioId);
     renderPortfolioTransactions(trades);
   }
@@ -746,15 +695,50 @@ async function loadAssetsByType(assetType) {
 // ===================================================
 // RENDER
 // ===================================================
-function renderPortfolioList(portfolios) {
-  const grid = document.getElementById('portfolioList');
+function portfolioDisplayName(portfolio) {
+  return portfolio?.name || portfolio?.portfolio_name || `Portfolio ${portfolio?.portfolio_id || ''}`.trim();
+}
+
+function positionDisplayName(position) {
+  return position?.asset_name ||
+    position?.instrument_name ||
+    position?.name ||
+    position?.security_name ||
+    position?.fund_name ||
+    position?.ticker ||
+    position?.asset_id ||
+    '—';
+}
+
+function positionCurrentValue(position) {
+  return Number(
+    position?.value_base ??
+    position?.market_value_base ??
+    position?.market_value_czk ??
+    position?.current_value ??
+    position?.value ??
+    position?.book_value ??
+    0
+  ) || 0;
+}
+
+function setPortfolioTitle(detail, portfolio, portfolioId) {
+  const title = document.getElementById('pf-detail-title');
+  if (!title) return;
+  const name = detail?.portfolio?.name || detail?.portfolio_name || detail?.name || portfolioDisplayName(portfolio) || `Portfolio ${portfolioId}`;
+  title.textContent = name;
+}
+
+function renderPortfolioList(portfolios, containerId = 'portfolioList') {
+  const grid = document.getElementById(containerId);
+  if (!grid) return;
   grid.innerHTML = '';
 
   portfolios.forEach(p => {
     const card = document.createElement('div');
     card.className = 'fund-card';
     card.innerHTML = `
-      <h3>Portfolio ${p.name || 'Portfolio ' + p.portfolio_id}</h3>
+      <h3>${portfolioDisplayName(p)}</h3>
       <small>${p.base_ccy}</small>
     `;
     card.onclick = () => {
@@ -799,9 +783,11 @@ function renderPortfolioInstruments(positions) {
       case 'type':
         return (typeLabel[p.asset_type] || p.asset_type).toLowerCase();
       case 'name':
-        return (p.asset_name || p.asset_id).toLowerCase();
+        return positionDisplayName(p).toLowerCase();
       case 'quantity':
         return p.quantity || 0;
+      case 'value':
+        return positionCurrentValue(p);
       default:
         return '';
     }
@@ -823,12 +809,16 @@ function renderPortfolioInstruments(positions) {
     data.forEach(p => {
       const tr = document.createElement('tr');
       tr.className = 'clickable';
+      const instrumentValue = positionCurrentValue(p);
 
       tr.innerHTML = `
         <td data-label="Typ">${typeLabel[p.asset_type] || p.asset_type}</td>
-        <td data-label="Název">${p.asset_name || p.asset_id}</td>
+        <td data-label="Název">${positionDisplayName(p)}</td>
         <td data-label="Počet kusů">
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
+        </td>
+        <td data-label="Hodnota">
+          ${instrumentValue ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
         </td>
       `;
 
@@ -877,9 +867,8 @@ function renderPortfolioInstruments(positions) {
   }
 
   render();
-
-  
 }
+
 
 function renderPortfolioTransactions(trades) {
   const tbody = document.getElementById('portfolio-transactions');
@@ -891,7 +880,7 @@ function renderPortfolioTransactions(trades) {
   function getValue(t, key) {
     switch (key) {
       case 'date': return new Date(t.trade_date);
-      case 'instrument': return `${t.asset_type} · ${t.asset_name}`.toLowerCase();
+      case 'instrument': return `${t.asset_type} · ${positionDisplayName(t)}`.toLowerCase();
       case 'type': return t.trade_type;
       case 'quantity': return t.quantity;
       case 'price': return t.price;
@@ -920,7 +909,7 @@ function renderPortfolioTransactions(trades) {
           ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
         </td>
         <td data-label="Typ">
-          ${t.asset_type} · ${t.asset_name}
+          ${t.asset_type} · ${positionDisplayName(t)}
         </td>
         <td data-label="Směr">
           ${t.trade_type}
