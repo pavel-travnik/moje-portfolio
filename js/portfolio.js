@@ -60,11 +60,17 @@ window.loadPortfolioPage = async function (page) {
   if (page === 'portfolio') {
     const portfolios = await fetchUserPortfolios();
 
-    // ✅ pokud existuje portfolio → rovnou otevři první
-    if (portfolios.length > 0) {
-        const firstId = portfolios[0].portfolio_id;
-        history.replaceState({}, '', `/portfolio/${firstId}`);
-        return loadPortfolioPage(`portfolio/${firstId}`);
+    
+  // ✅ VŽDY zobraz seznam
+  main.innerHTML = ` 
+  <h2>Moje portfolia</h2>
+  <button id="btn-create-portfolio">+ Nové portfolio</button>
+  <div id="portfolioList"></div>
+  `;
+
+  document.getElementById("btn-create-portfolio").onclick = openCreatePortfolioModal;
+  renderPortfolioList(portfolios);
+
     }
 
     // ❗ jinak zobraz seznam (a možnost vytvořit)
@@ -746,7 +752,7 @@ function renderPortfolioList(portfolios) {
     const card = document.createElement('div');
     card.className = 'fund-card';
     card.innerHTML = `
-      <h3>Portfolio ${p.portfolio_id}</h3>
+      <h3>Portfolio ${p.name || 'Portfolio ' + p.portfolio_id}</h3>
       <small>${p.base_ccy}</small>
     `;
     card.onclick = () => {
