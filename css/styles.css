@@ -985,7 +985,7 @@ MOBILE
 
     
     .site-title {
-    font-size: 36px; /* ✅ 2x větší */
+    font-size: 46px; /* ✅ 2x větší */
     font-weight: 600;
     }
 
@@ -1412,4 +1412,112 @@ input, select {
 .tooltip.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+
+/* ===== LAYOUT WRAPPER ===== */
+.landing {
+    max-width: 1000px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+/* ===== HERO ===== */
+.hero {
+    padding: 80px 0 40px;
+}
+
+.hero h1 {
+    font-size: 42px;
+    margin-bottom: 12px;
+}
+
+.hero p {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-bottom: 26px;
+    max-width: 500px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ===== BUTTONY ===== */
+.btn-primary {
+    background: var(--gold);
+    color: #111;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 12px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+/* ===== SEKCE ===== */
+.section {
+    padding: 60px 0;
+}
+
+.section h2 {
+    font-size: 28px;
+    margin-bottom: 24px;
+}
+
+/* ===== KARTY ===== */
+.cards {
+    display: grid;
+    gap: 18px;
+}
+
+.card-clean {
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 20px;
+    background: white;
+    transition: .2s;
+}
+
+.card-clean:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+/* ===== BENEFITY ===== */
+.benefits {
+    display: grid;
+    gap: 16px;
+}
+
+.benefit {
+    display: flex;
+    gap: 12px;
+}
+
+/* ===== CTA ===== */
+.cta {
+    margin-top: 40px;
+    padding: 40px;
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    background: var(--gold-light);
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+    font-size: 13px;
+    color: var(--text-muted);
 }
