@@ -673,6 +673,31 @@ async function fetchPortfolioTransactions(portfolioId) {
   }
 }
 
+async function createPortfolio(name) {
+    const payload = {
+        user_id: getCurrentUserId(),
+        name: name,
+        base_ccy: "CZK"
+    };
+
+    const res = await fetch(`${PORTFOLIO_API}/create_portfolio`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        console.error("CREATE PORTFOLIO ERROR:", data);
+        throw new Error(data.error || "Create failed");
+    }
+
+    return data;
+}
+
 // ===================================================
 // LOAD ASSETS BY TYPE – PRO MODAL
 // ===================================================
