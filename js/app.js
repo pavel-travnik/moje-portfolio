@@ -383,20 +383,38 @@ const main = document.getElementById('mainContent');
 // PENZE preHLED
 // ===================================================
 
-async function ensureFundsMeta() {
-  if (apiCache.dpsFundsMeta) return;
 
-  const res = await fetch(DPS_API);
-  apiCache.dpsFundsMeta = await res.json();
-}
-
-function ensureDpsMobileTableStyle() {
-  if (document.getElementById('dps-mobile-table-style')) return;
+// ===================================================
+// OVERVIEW TABLE HELPERS – mobile/table view
+// ===================================================
+function ensureOverviewTableStyle() {
+  if (document.getElementById('overview-table-style')) return;
 
   const style = document.createElement('style');
-  style.id = 'dps-mobile-table-style';
+  style.id = 'overview-table-style';
   style.textContent = `
+    .overview-view-switch {
+      display: flex;
+      gap: .5rem;
+      justify-content: flex-end;
+      margin: 0 0 1rem;
+    }
+
+    .overview-view-switch .pill-button.active {
+      background: #111;
+      color: #C9A646;
+    }
+
     @media (max-width: 767px) {
+      .overview-view-switch {
+        justify-content: stretch;
+      }
+
+      .overview-view-switch .pill-button {
+        flex: 1;
+      }
+
+      .overview-table,
       #fundTable .dps-overview-table {
         display: table !important;
         width: 100% !important;
@@ -405,18 +423,23 @@ function ensureDpsMobileTableStyle() {
         border-spacing: 0;
       }
 
+      .overview-table thead,
       #fundTable .dps-overview-table thead {
         display: table-header-group !important;
       }
 
+      .overview-table tbody,
       #fundTable .dps-overview-table tbody {
         display: table-row-group !important;
       }
 
+      .overview-table tr,
       #fundTable .dps-overview-table tr {
         display: table-row !important;
       }
 
+      .overview-table th,
+      .overview-table td,
       #fundTable .dps-overview-table th,
       #fundTable .dps-overview-table td {
         display: table-cell !important;
@@ -425,22 +448,29 @@ function ensureDpsMobileTableStyle() {
         vertical-align: middle;
       }
 
+      .overview-table td::before,
       #fundTable .dps-overview-table td::before {
         content: none !important;
         display: none !important;
       }
 
+      .overview-table th:nth-child(1),
+      .overview-table td:nth-child(1),
       #fundTable .dps-overview-table th:nth-child(1),
       #fundTable .dps-overview-table td:nth-child(1) {
         width: 54%;
       }
 
+      .overview-table th:nth-child(2),
+      .overview-table td:nth-child(2),
       #fundTable .dps-overview-table th:nth-child(2),
       #fundTable .dps-overview-table td:nth-child(2) {
         width: 28%;
         text-align: right;
       }
 
+      .overview-table th:nth-child(3),
+      .overview-table td:nth-child(3),
       #fundTable .dps-overview-table th:nth-child(3),
       #fundTable .dps-overview-table td:nth-child(3) {
         width: 18%;
@@ -451,12 +481,85 @@ function ensureDpsMobileTableStyle() {
   document.head.appendChild(style);
 }
 
+function ensureOverviewViewShell(grid, prefix) {
+  ensureOverviewTableStyle();
+
+  let switchEl = document.getElementById(`${prefix}-view-switch`);
+  if (!switchEl) {
+    switchEl = document.createElement('div');
+    switchEl.id = `${prefix}-view-switch`;
+    switchEl.className = 'overview-view-switch';
+    switchEl.innerHTML = `
+      <button id="${prefix}-view-grid" class="pill-button">Karty</button>
+      <button id="${prefix}-view-table" class="pill-button">Tabulka</button>
+    `;
+    grid.parentNode.insertBefore(switchEl, grid);
+  }
+
+  let table = document.getElementById(`${prefix}Table`);
+  if (!table) {
+    table = document.createElement('div');
+    table.id = `${prefix}Table`;
+    grid.insertAdjacentElement('afterend', table);
+  }
+
+  return {
+    table,
+    gridBtn: document.getElementById(`${prefix}-view-grid`),
+    tableBtn: document.getElementById(`${prefix}-view-table`)
+  };
+}
+
+function renderThreeColumnOverviewTable({ table, data, getName, getRisk, getId, onSelect }) {
+  table.innerHTML = `
+    <table class="fund-table overview-table">
+      <thead>
+        <tr>
+          <th data-key="name">Název</th>
+          <th data-key="perf3Y">Výnos 3 roky</th>
+          <th data-key="risk">Riziko</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(item => `
+          <tr data-id="${getId(item)}">
+            <td data-label="Název">${getName(item) || ''}</td>
+            <td data-label="Výnos 3 roky"></td>
+            <td data-label="Riziko">${getRisk(item) || ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(tr => {
+    tr.addEventListener('mouseenter', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+    });
+
+    tr.addEventListener('click', () => {
+      rows.forEach(r => r.classList.remove('active'));
+      tr.classList.add('active');
+      onSelect(tr.dataset.id);
+    });
+  });
+}
+
+async function ensureFundsMeta() {
+  if (apiCache.dpsFundsMeta) return;
+
+  const res = await fetch(DPS_API);
+  apiCache.dpsFundsMeta = await res.json();
+}
+
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   const table = document.getElementById('fundTable');
   if (!grid || !table) return;
 
-  ensureDpsMobileTableStyle();
+  ensureOverviewTableStyle();
 
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
   let viewMode = isMobile ? 'table' : 'grid';
@@ -846,30 +949,81 @@ function loadPodiloveFondy() {
   const grid = document.getElementById('podilovyFondGrid');
   if (!grid) return;
 
+  const { table, gridBtn, tableBtn } = ensureOverviewViewShell(grid, 'podiloveFondy');
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
+
+  const selectFund = isin => {
+    history.pushState(
+      { page: `podilove-fondy/${isin}` },
+      '',
+      `/podilove-fondy/${isin}`
+    );
+    loadPodilovyFondDetail(isin);
+  };
+
+  gridBtn.onclick = () => {
+    viewMode = 'grid';
+    updateView();
+  };
+
+  tableBtn.onclick = () => {
+    viewMode = 'table';
+    updateView();
+  };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    gridBtn.classList.toggle('active', viewMode === 'grid');
+    tableBtn.classList.toggle('active', viewMode === 'table');
+
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+
+    apiCache.podiloveFondyList.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
+      card.innerHTML = `
+        <h3>${f.name}</h3>
+        <small>${f.manager || ''} · ${f.currency || ''}</small>
+      `;
+      card.onclick = () => selectFund(f.isin);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable() {
+    const data = [...apiCache.podiloveFondyList]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+
+    renderThreeColumnOverviewTable({
+      table,
+      data,
+      getName: f => f.name,
+      getRisk: f => f.riskCategory != null ? `${f.riskCategory} / 7` : '',
+      getId: f => f.isin,
+      onSelect: selectFund
+    });
+  }
+
   grid.innerHTML = '<p>Načítám fondy…</p>';
+  table.innerHTML = '';
 
   fetch(PODILOVE_FONDY_API)
     .then(r => r.json())
     .then(funds => {
-      grid.innerHTML = '';
-      funds.forEach(f => {
-        const card = document.createElement('div');
-        card.className = 'fund-card';
-        card.innerHTML = `
-          <h3>${f.name}</h3>
-          <small>${f.manager} · ${f.currency}</small>
-        `;
-        card.onclick = () => {
-          history.pushState(
-            { page: `podilove-fondy/${f.isin}` },
-            '',
-            `/podilove-fondy/${f.isin}`
-          );
-          loadPodilovyFondDetail(f.isin);
-          apiCache.podiloveFondyList = funds;
-        };
-        grid.appendChild(card);
-      });
+      apiCache.podiloveFondyList = Array.isArray(funds) ? funds : [];
+      updateView();
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání fondů</p>';
+      table.innerHTML = '<p>Chyba načítání fondů</p>';
     });
 }
 
@@ -1001,69 +1155,157 @@ function loadStocks() {
   const grid = document.getElementById('stockGrid');
   if (!grid) return;
 
+  const { table, gridBtn, tableBtn } = ensureOverviewViewShell(grid, 'stocks');
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
+
+  const selectStock = ticker => {
+    history.pushState({ page: `akcie/${ticker}` }, '', `/akcie/${ticker}`);
+    loadStockDetail(ticker);
+  };
+
+  gridBtn.onclick = () => {
+    viewMode = 'grid';
+    updateView();
+  };
+
+  tableBtn.onclick = () => {
+    viewMode = 'table';
+    updateView();
+  };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    gridBtn.classList.toggle('active', viewMode === 'grid');
+    tableBtn.classList.toggle('active', viewMode === 'table');
+
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+
+    apiCache.stocksList.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
+      card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
+      card.onclick = () => selectStock(s.ticker);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable() {
+    const data = [...apiCache.stocksList]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+
+    renderThreeColumnOverviewTable({
+      table,
+      data,
+      getName: s => s.name,
+      getRisk: s => s.riskCategory != null ? `${s.riskCategory} / 7` : '',
+      getId: s => s.ticker,
+      onSelect: selectStock
+    });
+  }
+
   grid.innerHTML = '<p>Načítám akcie ...</p>';
+  table.innerHTML = '';
 
   fetch(STOCK_LIST_API)
     .then(r => r.json())
     .then(stocks => {
-      grid.innerHTML = '';
-      
-     stocks
-      .filter(s => s.sector !== 'ETF')
-      .forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'fund-card';
-        card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
-        card.onclick = () => {
-          history.pushState({ page: `etf/${s.ticker}` }, '', `/etf/${s.ticker}`);
-          loadStockDetail(s.ticker);
-        };
-        grid.appendChild(card);
-      });
+      apiCache.stocksList = (Array.isArray(stocks) ? stocks : [])
+        .filter(s => s.sector !== 'ETF');
+      updateView();
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání akcií</p>';
+      table.innerHTML = '<p>Chyba načítání akcií</p>';
     });
 }
-
 
 function loadEtfs() {
   const grid = document.getElementById('etfGrid');
   if (!grid) return;
 
+  const { table, gridBtn, tableBtn } = ensureOverviewViewShell(grid, 'etfs');
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
+
+  const selectEtf = ticker => {
+    history.pushState({ page: `etf/${ticker}` }, '', `/etf/${ticker}`);
+    loadStockDetail(ticker);
+  };
+
+  gridBtn.onclick = () => {
+    viewMode = 'grid';
+    updateView();
+  };
+
+  tableBtn.onclick = () => {
+    viewMode = 'table';
+    updateView();
+  };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    gridBtn.classList.toggle('active', viewMode === 'grid');
+    tableBtn.classList.toggle('active', viewMode === 'table');
+
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+
+    apiCache.etfsList.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
+      card.innerHTML = `
+        <h3>${s.name}</h3>
+        <small>${s.ticker}</small>
+      `;
+      card.onclick = () => selectEtf(s.ticker);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable() {
+    const data = [...apiCache.etfsList]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+
+    renderThreeColumnOverviewTable({
+      table,
+      data,
+      getName: s => s.name,
+      getRisk: s => s.riskCategory != null ? `${s.riskCategory} / 7` : '',
+      getId: s => s.ticker,
+      onSelect: selectEtf
+    });
+  }
+
   grid.innerHTML = '<p>Načítám ETF…</p>';
+  table.innerHTML = '';
 
   fetch(STOCK_LIST_API)
     .then(r => r.json())
     .then(stocks => {
-      grid.innerHTML = '';
-
-      stocks
-        .filter(s => s.sector === 'ETF')
-        .forEach(s => {
-          const card = document.createElement('div');
-          card.className = 'fund-card';
-
-          // STEJNa STRUKTURA JAKO PENZE
-          card.innerHTML = `
-            <h3>${s.name}</h3>
-            <small>${s.ticker}</small>
-          `;
-
-          card.onclick = () => {
-            history.pushState(
-              { page: `etf/${s.ticker}` },
-              '',
-              `/etf/${s.ticker}`
-            );
-            loadStockDetail(s.ticker);
-          };
-
-          grid.appendChild(card);
-        });
+      apiCache.etfsList = (Array.isArray(stocks) ? stocks : [])
+        .filter(s => s.sector === 'ETF');
+      updateView();
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání ETF</p>';
+      table.innerHTML = '<p>Chyba načítání ETF</p>';
     });
 }
 
-// ===================================================
-// DETAIL AKCIE
-// ===================================================
 function loadStockDetail(ticker) {
 
   
