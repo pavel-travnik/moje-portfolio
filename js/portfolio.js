@@ -5,10 +5,10 @@
 const PORTFOLIO_API =
   'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
 
+  window.PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
+
 function getCurrentUserId() {
     return Number(localStorage.getItem("user_id"));
-
-window.PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
 
 }
 
@@ -71,10 +71,10 @@ window.loadPortfolioPage = async function (page) {
   <div id="portfolioList"></div>
   `;
 
-  document.getElementById("btn-create-portfolio").onclick = openCreatePortfolioModal;
-  renderPortfolioList(portfolios);
-
-    }
+      document.getElementById("btn-create-portfolio").onclick = openCreatePortfolioModal;
+      renderPortfolioList(portfolios);
+      
+    
 
     // ❗ jinak zobraz seznam (a možnost vytvořit)
     main.innerHTML = `
@@ -139,7 +139,7 @@ function openCreatePortfolioModal() {
     }
     };
 
-}
+    }
 
   // ===============================
   // /portfolio/{id} – detail
