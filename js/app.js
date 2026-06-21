@@ -390,12 +390,76 @@ async function ensureFundsMeta() {
   apiCache.dpsFundsMeta = await res.json();
 }
 
+function ensureDpsMobileTableStyle() {
+  if (document.getElementById('dps-mobile-table-style')) return;
+
+  const style = document.createElement('style');
+  style.id = 'dps-mobile-table-style';
+  style.textContent = `
+    @media (max-width: 767px) {
+      #fundTable .dps-overview-table {
+        display: table !important;
+        width: 100% !important;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      #fundTable .dps-overview-table thead {
+        display: table-header-group !important;
+      }
+
+      #fundTable .dps-overview-table tbody {
+        display: table-row-group !important;
+      }
+
+      #fundTable .dps-overview-table tr {
+        display: table-row !important;
+      }
+
+      #fundTable .dps-overview-table th,
+      #fundTable .dps-overview-table td {
+        display: table-cell !important;
+        padding: 10px 8px !important;
+        font-size: 12px !important;
+        vertical-align: middle;
+      }
+
+      #fundTable .dps-overview-table td::before {
+        content: none !important;
+        display: none !important;
+      }
+
+      #fundTable .dps-overview-table th:nth-child(1),
+      #fundTable .dps-overview-table td:nth-child(1) {
+        width: 54%;
+      }
+
+      #fundTable .dps-overview-table th:nth-child(2),
+      #fundTable .dps-overview-table td:nth-child(2) {
+        width: 28%;
+        text-align: right;
+      }
+
+      #fundTable .dps-overview-table th:nth-child(3),
+      #fundTable .dps-overview-table td:nth-child(3) {
+        width: 18%;
+        text-align: right;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function loadPensionFunds() {
   const grid = document.getElementById('fundGrid');
   const table = document.getElementById('fundTable');
   if (!grid || !table) return;
 
-  let viewMode = 'grid';
+  ensureDpsMobileTableStyle();
+
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
   let sort = { key: 'name', asc: true };
 
   const selectFund = isin => {
@@ -405,160 +469,159 @@ function loadPensionFunds() {
 
   // ---------- VIEW SWITCH ----------
   const gridBtn = document.getElementById('view-grid');
-const tableBtn = document.getElementById('view-table');
+  const tableBtn = document.getElementById('view-table');
 
-gridBtn.onclick = () => {
-  viewMode = 'grid';
-  gridBtn.classList.add('active');
-  tableBtn.classList.remove('active');
-  updateView();
-};
-
-tableBtn.onclick = () => {
-  viewMode = 'table';
-  tableBtn.classList.add('active');
-  gridBtn.classList.remove('active');
-  updateView();
-};
-
-  function updateView() {
-  grid.classList.toggle('hidden', viewMode !== 'grid');
-  table.classList.toggle('hidden', viewMode !== 'table');
-
-  const mobileSort = document.querySelector('.mobile-sort');
-  if (mobileSort) {
-    mobileSort.classList.toggle('hidden', viewMode !== 'table');
+  if (gridBtn) {
+    gridBtn.onclick = () => {
+      viewMode = 'grid';
+      updateView();
+    };
   }
 
-  if (viewMode === 'grid') renderGrid();
-  else renderTable();
-}
+  if (tableBtn) {
+    tableBtn.onclick = () => {
+      viewMode = 'table';
+      updateView();
+    };
+  }
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+
+    if (gridBtn) gridBtn.classList.toggle('active', viewMode === 'grid');
+    if (tableBtn) tableBtn.classList.toggle('active', viewMode === 'table');
+
+    const mobileSort = document.querySelector('.mobile-sort');
+    if (mobileSort) {
+      mobileSort.classList.toggle('hidden', viewMode !== 'table');
+    }
+
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
 
   // ---------- GRID ----------
   function renderGrid() {
-  grid.innerHTML = '';
+    grid.innerHTML = '';
 
-  apiCache.dpsFundsOverview.forEach(f => {
-    const card = document.createElement('div');
-    card.className = 'fund-card';
+    apiCache.dpsFundsOverview.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
 
-    const perf = f.perf3Y != null
-      ? `${f.perf3Y.toFixed(2)} %`
-      : '—';
+      const perf = f.perf3Y != null
+        ? `${f.perf3Y.toFixed(2)} %`
+        : '—';
 
-    card.innerHTML = `
-      <h3>${f.name}</h3>
-      <small>${f.provider}</small>
-      <div class="fund-perf ${f.perf3Y >= 0 ? 'pos' : 'neg'}">
-        3 roky: <strong>${perf}</strong>
-      </div>
-    `;
+      card.innerHTML = `
+        <h3>${f.name}</h3>
+        <small>${f.provider || ''}</small>
+        <div class="fund-perf ${f.perf3Y >= 0 ? 'pos' : 'neg'}">
+          3 roky: <strong>${perf}</strong>
+        </div>
+      `;
 
-    card.onclick = () => selectFund(f.isin);
-    grid.appendChild(card);
-  });
-}
+      card.onclick = () => selectFund(f.isin);
+      grid.appendChild(card);
+    });
+  }
 
   // ---------- TABLE ----------
   function renderTable() {
-  const data = [...apiCache.dpsFundsOverview];
+    const data = [...apiCache.dpsFundsOverview];
 
-  // ---------- SORT ----------
-  data.sort((a, b) => {
-    let A = a[sort.key];
-    let B = b[sort.key];
+    // ---------- SORT ----------
+    data.sort((a, b) => {
+      let A = a[sort.key];
+      let B = b[sort.key];
 
-    if (A == null) A = '';
-    if (B == null) B = '';
+      if (A == null) A = '';
+      if (B == null) B = '';
 
-    if (typeof A === 'string') A = A.toLowerCase();
-    if (typeof B === 'string') B = B.toLowerCase();
+      if (typeof A === 'string') A = A.toLowerCase();
+      if (typeof B === 'string') B = B.toLowerCase();
 
-    return sort.asc ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
-  });
+      if (A < B) return sort.asc ? -1 : 1;
+      if (A > B) return sort.asc ? 1 : -1;
+      return 0;
+    });
 
-  const mobileSortSelect = document.getElementById('mobile-sort-select');
-  const mobileSortDir = document.getElementById('mobile-sort-dir');
+    const mobileSortSelect = document.getElementById('mobile-sort-select');
+    const mobileSortDir = document.getElementById('mobile-sort-dir');
 
-if (mobileSortSelect && mobileSortDir) {
-  mobileSortSelect.value = sort.key;
+    if (mobileSortSelect && mobileSortDir) {
+      mobileSortSelect.innerHTML = `
+        <option value="name">Název</option>
+        <option value="perf3Y">Výnos 3 roky</option>
+        <option value="riskCategory">Riziko</option>
+      `;
+      mobileSortSelect.value = sort.key;
 
-  mobileSortSelect.onchange = () => {
-    sort.key = mobileSortSelect.value;
-    renderTable();
-  };
+      mobileSortSelect.onchange = () => {
+        sort.key = mobileSortSelect.value;
+        renderTable();
+      };
 
-  mobileSortDir.onclick = () => {
-    sort.asc = !sort.asc;
-    mobileSortDir.textContent = sort.asc ? '↑' : '↓';
-    mobileSortDir.classList.toggle('active', !sort.asc);
-    renderTable();
-  };
-}
+      mobileSortDir.onclick = () => {
+        sort.asc = !sort.asc;
+        mobileSortDir.textContent = sort.asc ? '↑' : '↓';
+        mobileSortDir.classList.toggle('active', !sort.asc);
+        renderTable();
+      };
+    }
 
-
-  // ---------- RENDER ----------
-  table.innerHTML = `
-    <table class="fund-table">
-      <thead>
-        <tr>
-          <th data-key="name">Název</th>
-          <th data-key="provider">Společnost</th>
-          <th data-key="lastValuationDate">Ocenění</th>
-          <th data-key="perf3Y">3 roky</th>
-          <th data-key="riskCategory">Riziko</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.map(f => `
-          <tr data-isin="${f.isin}">
-            <td data-label="Fond">${f.name}</td>
-            <td data-label="Společnost" class="hide-mobile">${f.provider}</td>
-            <td data-label="Ocenění">
-              ${f.lastValuationDate
-                ? new Date(f.lastValuationDate).toLocaleDateString('cs-CZ')
-                : '—'}
-            </td>
-            <td data-label="3 roky"
-                class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
-              ${f.perf3Y != null ? f.perf3Y.toFixed(2) + ' %' : '—'}
-            </td>
-            <td data-label="Riziko">${f.riskCategory} / 7</td>
+    // ---------- RENDER ----------
+    table.innerHTML = `
+      <table class="fund-table dps-overview-table">
+        <thead>
+          <tr>
+            <th data-key="name">Název</th>
+            <th data-key="perf3Y">Výnos 3 roky</th>
+            <th data-key="riskCategory">Riziko</th>
           </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
+        </thead>
+        <tbody>
+          ${data.map(f => `
+            <tr data-isin="${f.isin}">
+              <td data-label="Název">${f.name}</td>
+              <td data-label="Výnos 3 roky" class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
+                ${f.perf3Y != null ? f.perf3Y.toFixed(2) + ' %' : '—'}
+              </td>
+              <td data-label="Riziko">${f.riskCategory != null ? f.riskCategory + ' / 7' : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
 
-  // ---------- SORT HANDLERS ----------
-  table.querySelectorAll('th').forEach(th => {
-    th.onclick = e => {
-      e.stopPropagation();
-      const key = th.dataset.key;
-      sort.asc = sort.key === key ? !sort.asc : true;
-      sort.key = key;
-      renderTable();
-    };
-  });
+    // ---------- SORT HANDLERS ----------
+    table.querySelectorAll('th').forEach(th => {
+      th.onclick = e => {
+        e.stopPropagation();
+        const key = th.dataset.key;
+        if (!key) return;
 
-  // ---------- ROW INTERACTION ----------
-  const rows = table.querySelectorAll('tbody tr');
-
-  rows.forEach(tr => {
-    // hover = aktivace (desktop)
-    tr.addEventListener('mouseenter', () => {
-      rows.forEach(r => r.classList.remove('active'));
-      tr.classList.add('active');
+        sort.asc = sort.key === key ? !sort.asc : true;
+        sort.key = key;
+        renderTable();
+      };
     });
 
-    // klik = aktivace + detail
-    tr.addEventListener('click', () => {
-      rows.forEach(r => r.classList.remove('active'));
-      tr.classList.add('active');
-      selectFund(tr.dataset.isin);
+    // ---------- ROW INTERACTION ----------
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(tr => {
+      tr.addEventListener('mouseenter', () => {
+        rows.forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+      });
+
+      tr.addEventListener('click', () => {
+        rows.forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+        selectFund(tr.dataset.isin);
+      });
     });
-  });
-}
+  }
 
   // ---------- INIT ----------
   grid.innerHTML = '<p>Načítám fondy…</p>';
@@ -567,16 +630,15 @@ if (mobileSortSelect && mobileSortDir) {
   fetch(DPS_FUNDS_OVERVIEW_API)
     .then(r => r.json())
     .then(data => {
-      apiCache.dpsFundsOverview = data;
+      apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       updateView();
     })
     .catch(err => {
       console.error(err);
       grid.innerHTML = '<p>Chyba načítání fondů</p>';
+      table.innerHTML = '<p>Chyba načítání fondů</p>';
     });
 }
-
-
 
 function renderFundMeta(isin) {
   if (!apiCache.dpsFundsMeta) return;
