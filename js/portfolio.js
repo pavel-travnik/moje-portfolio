@@ -231,13 +231,31 @@ function openCreatePortfolioModal() {
         </table>
       </section>
 
-      <section id="tab-settings" class="portfolio-tab">
-        <div class="card" style="max-width:420px">
-          <label class="stack"><span class="muted">E‑mail</span><input class="input" type="email"></label>
-          <label class="stack"><span class="muted">Zasílání přehledu</span><select class="select"><option value="off">Vypnuto</option><option value="daily">Denně</option><option value="weekly">Týdně</option></select></label>
-          <button class="button">Uložit</button>
+    <section id="tab-settings" class="portfolio-tab">
+      <div class="tx-modal" style="max-width:420px;position:relative;transform:none;left:auto;top:auto;margin:0;box-shadow:none">
+        <h3>Nastavení zasílání přehledu</h3>
+
+        <label>E-mail</label>
+        <input id="pf-settings-email" class="tx-input" type="email" placeholder="např. pavel@email.cz">
+
+        <label>Zasílání přehledu</label>
+          <select id="pf-settings-frequency" class="tx-input">
+          <option value="off">Vypnuto</option>
+          <option value="daily">Denně</option>
+          <option value="weekly">Týdně</option>
+          <option value="monthly">Měsíčně</option>
+        </select>
+
+        <p class="muted" id="pf-settings-info" style="margin-top:.75rem">
+          Přehled se odesílá vždy poslední den zvoleného období v 18:00.
+        </p>
+
+        <div class="tx-actions">
+          <button id="btn-save-portfolio-settings" class="pill-button">Uložit</button>
         </div>
-      </section>
+      </div>
+    </section>
+
       <button class="back-btn">← Zpět</button>
     `;
 
@@ -253,6 +271,7 @@ function openCreatePortfolioModal() {
     const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
     setPortfolioTitle(detail, currentPortfolio, portfolioId);
     renderPortfolioOverview(detail);
+    renderPortfolioSettings(detail, portfolioId);
 
     if (Array.isArray(detail?.positions)) renderPortfolioInstruments(detail.positions);
 
@@ -653,6 +672,82 @@ async function createPortfolio(name) {
     }
 
     return data;
+}
+
+function renderPortfolioSettings(detail, portfolioId) {
+  const settings = detail?.settings || {};
+  const emailEl = document.getElementById('pf-settings-email');
+  const frequencyEl = document.getElementById('pf-settings-frequency');
+  const infoEl = document.getElementById('pf-settings-info');
+  const saveBtn = document.getElementById('btn-save-portfolio-settings');
+
+  if (!emailEl || !frequencyEl || !saveBtn) return;
+
+  emailEl.value = settings.email || '';
+  frequencyEl.value = settings.frequency || 'off';
+
+  if (infoEl) {
+    const next = settings.next_send_at
+      ? new Date(settings.next_send_at).toLocaleString('cs-CZ')
+      : '—';
+
+    infoEl.textContent =
+      `Přehled se odesílá vždy poslední den zvoleného období v 18:00. Další odeslání: ${next}`;
+  }
+
+  saveBtn.onclick = async () => {
+    const email = emailEl.value.trim();
+    const frequency = frequencyEl.value;
+
+    if (frequency !== 'off' && !email) {
+      alert('Zadej e-mail pro zasílání přehledu.');
+      return;
+    }
+
+    try {
+      const result = await savePortfolioSettings(portfolioId, email, frequency);
+
+      if (infoEl) {
+        const next = result?.settings?.next_send_at
+          ? new Date(result.settings.next_send_at).toLocaleString('cs-CZ')
+          : '—';
+        infoEl.textContent =
+          `Přehled se odesílá vždy poslední den zvoleného období v 18:00. Další odeslání: ${next}`;
+      }
+
+      alert('Nastavení bylo uloženo.');
+    } catch (e) {
+      console.error(e);
+      alert(e.message || 'Nastavení se nepodařilo uložit.');
+    }
+  };
+}
+
+async function savePortfolioSettings(portfolioId, email, frequency) {
+  const res = await fetch(`${PORTFOLIO_API}/save_portfolio_settings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      portfolio_id: Number(portfolioId),
+      user_id: getCurrentUserId(),
+      email,
+      frequency
+    })
+  });
+
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = { error: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Save portfolio settings failed');
+  }
+
+  return data;
 }
 
 // ===================================================
