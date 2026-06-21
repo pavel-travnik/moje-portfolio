@@ -7,6 +7,9 @@ const PORTFOLIO_API =
 
 function getCurrentUserId() {
     return Number(localStorage.getItem("user_id"));
+
+window.PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
+
 }
 
 // ===================================================
@@ -116,27 +119,26 @@ function openCreatePortfolioModal() {
     };
 
     document.getElementById("pf-save").onclick = async () => {
-        const name = document.getElementById("pf-name").value;
+    const name = document.getElementById("pf-name").value;
 
-        if (!name) {
-            alert("Zadej název");
-            return;
-        }
+    if (!name) {
+        alert("Zadej název");
+        return;
+    }
 
-        try {
-            const pf = await createPortfolio(name);
+    try {
+        const pf = await createPortfolio(name);
+        modal.remove();
+        document.body.style.overflow = '';
 
-            modal.remove();
-            document.body.style.overflow = '';
+        history.pushState({}, '', `/portfolio/${pf.portfolio_id}`);
+        loadPortfolioPage(`portfolio/${pf.portfolio_id}`);
 
-            // ✅ přesměrování na nové portfolio
-            history.pushState({}, '', `/portfolio/${pf.portfolio_id}`);
-            loadPortfolioPage(`portfolio/${pf.portfolio_id}`);
-
-        } catch (e) {
-            alert("Nepodařilo se vytvořit portfolio");
-        }
+    } catch (e) {
+        alert(e.message || "Nepodařilo se vytvořit portfolio");
+    }
     };
+
 }
 
   // ===============================

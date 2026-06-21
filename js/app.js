@@ -277,7 +277,9 @@ function openLoginModal() {
 
 function loadPage(page, pushState = true) {
 
-  
+if (!page || page === "undefined") {
+    page = "uvod";
+}  
  const main = document.getElementById('mainContent'); // ✅ přesun sem
 
  if (!main) {
@@ -370,9 +372,12 @@ const main = document.getElementById('mainContent');
             }
         })
         .catch(() => {
-            main.innerHTML = '<h3>404</h3><p>Stránka nenalezena</p>';
-        });
-}
+    console.warn("Page not found, redirect to uvod:", page);
+
+    history.replaceState({ page: "uvod" }, "", "/uvod");
+    loadPage("uvod", false);
+      });
+    }
 
 // ===================================================
 // PENZE preHLED
