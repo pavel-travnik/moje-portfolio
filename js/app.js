@@ -510,22 +510,30 @@ function ensureOverviewViewShell(grid, prefix) {
   };
 }
 
-function renderThreeColumnOverviewTable({ table, data, getName, getRisk, getId, onSelect }) {
+function renderThreeColumnOverviewTable({
+  table,
+  data,
+  getName,
+  getMetric,
+  getId,
+  onSelect,
+  metricLabel = 'Měna'
+}) {
   table.innerHTML = `
     <table class="fund-table overview-table">
       <thead>
         <tr>
           <th data-key="name">Název</th>
+          <th data-key="metric">${metricLabel}</th>
           <th data-key="perf3Y">Výnos 3 roky</th>
-          <th data-key="risk">Riziko</th>
         </tr>
       </thead>
       <tbody>
         ${data.map(item => `
           <tr data-id="${getId(item)}">
             <td data-label="Název">${getName(item) || ''}</td>
+            <td data-label="${metricLabel}">${getMetric(item) || ''}</td>
             <td data-label="Výnos 3 roky"></td>
-            <td data-label="Riziko">${getRisk(item) || ''}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -655,8 +663,8 @@ function loadPensionFunds() {
     if (mobileSortSelect && mobileSortDir) {
       mobileSortSelect.innerHTML = `
         <option value="name">Název</option>
-        <option value="perf3Y">Výnos 3 roky</option>
         <option value="riskCategory">Riziko</option>
+        <option value="perf3Y">Výnos 3 roky</option>
       `;
       mobileSortSelect.value = sort.key;
 
@@ -679,18 +687,18 @@ function loadPensionFunds() {
         <thead>
           <tr>
             <th data-key="name">Název</th>
-            <th data-key="perf3Y">Výnos 3 roky</th>
             <th data-key="riskCategory">Riziko</th>
+            <th data-key="perf3Y">Výnos 3 roky</th>
           </tr>
         </thead>
         <tbody>
           ${data.map(f => `
             <tr data-isin="${f.isin}">
               <td data-label="Název">${f.name}</td>
+              <td data-label="Riziko">${f.riskCategory != null ? f.riskCategory + ' / 7' : '—'}</td>
               <td data-label="Výnos 3 roky" class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
                 ${f.perf3Y != null ? f.perf3Y.toFixed(2) + ' %' : '—'}
               </td>
-              <td data-label="Riziko">${f.riskCategory != null ? f.riskCategory + ' / 7' : '—'}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1005,7 +1013,8 @@ function loadPodiloveFondy() {
       table,
       data,
       getName: f => f.name,
-      getRisk: f => f.riskCategory != null ? `${f.riskCategory} / 7` : '',
+      getMetric: f => f.currency || f.mena || f.Mena || '',
+      metricLabel: 'Měna',
       getId: f => f.isin,
       onSelect: selectFund
     });
@@ -1204,7 +1213,8 @@ function loadStocks() {
       table,
       data,
       getName: s => s.name,
-      getRisk: s => s.riskCategory != null ? `${s.riskCategory} / 7` : '',
+      getMetric: s => s.currency || s.mena || s.Mena || '',
+      metricLabel: 'Měna',
       getId: s => s.ticker,
       onSelect: selectStock
     });
@@ -1283,7 +1293,8 @@ function loadEtfs() {
       table,
       data,
       getName: s => s.name,
-      getRisk: s => s.riskCategory != null ? `${s.riskCategory} / 7` : '',
+      getMetric: s => s.currency || s.mena || s.Mena || '',
+      metricLabel: 'Měna',
       getId: s => s.ticker,
       onSelect: selectEtf
     });
