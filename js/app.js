@@ -510,11 +510,51 @@ function ensureOverviewViewShell(grid, prefix) {
   };
 }
 
+
+function formatPerf3Y(value) {
+  return value != null && !isNaN(Number(value))
+    ? `${Number(value).toFixed(2)} %`
+    : '—';
+}
+
+function perfClass(value) {
+  return value == null || isNaN(Number(value))
+    ? ''
+    : Number(value) >= 0 ? 'pos' : 'neg';
+}
+
+function formatLastValuation(item) {
+  if (!item) return '';
+  const date = item.lastValuationDate
+    ? new Date(item.lastValuationDate).toLocaleDateString('cs-CZ')
+    : '';
+  const value = item.lastValue ?? item.lastValuationValue;
+  const valueText = value != null && !isNaN(Number(value))
+    ? Number(value).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+    : '';
+
+  if (date && valueText) return `${valueText} · ${date}`;
+  if (date) return date;
+  if (valueText) return valueText;
+  return '';
+}
+
+function renderOverviewCardMetric(item) {
+  const last = formatLastValuation(item);
+  return `
+    <div class="fund-perf ${perfClass(item?.perf3Y)}">
+      3 roky: <strong>${formatPerf3Y(item?.perf3Y)}</strong>
+    </div>
+    ${last ? `<small>Poslední ocenění: ${last}</small>` : ''}
+  `;
+}
+
 function renderThreeColumnOverviewTable({
   table,
   data,
   getName,
   getMetric,
+  getPerf3Y = item => item?.perf3Y,
   getId,
   onSelect,
   metricLabel = 'Měna'
@@ -529,13 +569,17 @@ function renderThreeColumnOverviewTable({
         </tr>
       </thead>
       <tbody>
-        ${data.map(item => `
-          <tr data-id="${getId(item)}">
-            <td data-label="Název">${getName(item) || ''}</td>
-            <td data-label="${metricLabel}">${getMetric(item) || ''}</td>
-            <td data-label="Výnos 3 roky"></td>
-          </tr>
-        `).join('')}
+        ${data.map(item => {
+          const p3y = getPerf3Y(item);
+          const last = formatLastValuation(item);
+          return `
+            <tr data-id="${getId(item)}" ${last ? `title="Poslední ocenění: ${last}"` : ''}>
+              <td data-label="Název">${getName(item) || ''}</td>
+              <td data-label="${metricLabel}">${getMetric(item) || ''}</td>
+              <td data-label="Výnos 3 roky" class="${perfClass(p3y)}">${formatPerf3Y(p3y)}</td>
+            </tr>
+          `;
+        }).join('')}
       </tbody>
     </table>
   `;
@@ -693,11 +737,11 @@ function loadPensionFunds() {
         </thead>
         <tbody>
           ${data.map(f => `
-            <tr data-isin="${f.isin}">
+            <tr data-isin="${f.isin}" ${formatLastValuation(f) ? `title="Poslední ocenění: ${formatLastValuation(f)}"` : ''}>
               <td data-label="Název">${f.name}</td>
               <td data-label="Riziko">${f.riskCategory != null ? f.riskCategory + ' / 7' : '—'}</td>
-              <td data-label="Výnos 3 roky" class="${f.perf3Y >= 0 ? 'pos' : 'neg'}">
-                ${f.perf3Y != null ? f.perf3Y.toFixed(2) + ' %' : '—'}
+              <td data-label="Výnos 3 roky" class="${perfClass(f.perf3Y)}">
+                ${formatPerf3Y(f.perf3Y)}
               </td>
             </tr>
           `).join('')}
@@ -738,7 +782,7 @@ function loadPensionFunds() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  fetch(DPS_FUNDS_OVERVIEW_API)
+  fetch(DPS_API)
     .then(r => r.json())
     .then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
@@ -999,6 +1043,7 @@ function loadPodiloveFondy() {
       card.innerHTML = `
         <h3>${f.name}</h3>
         <small>${f.manager || ''} · ${f.currency || ''}</small>
+        ${renderOverviewCardMetric(f)}
       `;
       card.onclick = () => selectFund(f.isin);
       grid.appendChild(card);
@@ -1015,6 +1060,7 @@ function loadPodiloveFondy() {
       getName: f => f.name,
       getMetric: f => f.currency || f.mena || f.Mena || '',
       metricLabel: 'Měna',
+      getPerf3Y: f => f.perf3Y,
       getId: f => f.isin,
       onSelect: selectFund
     });
@@ -1199,7 +1245,11 @@ function loadStocks() {
     apiCache.stocksList.forEach(s => {
       const card = document.createElement('div');
       card.className = 'fund-card';
-      card.innerHTML = `<h3>${s.name}</h3><small>${s.ticker}</small>`;
+      card.innerHTML = `
+        <h3>${s.name}</h3>
+        <small>${s.ticker} · ${s.currency || s.mena || s.Mena || ''}</small>
+        ${renderOverviewCardMetric(s)}
+      `;
       card.onclick = () => selectStock(s.ticker);
       grid.appendChild(card);
     });
@@ -1215,6 +1265,7 @@ function loadStocks() {
       getName: s => s.name,
       getMetric: s => s.currency || s.mena || s.Mena || '',
       metricLabel: 'Měna',
+      getPerf3Y: s => s.perf3Y,
       getId: s => s.ticker,
       onSelect: selectStock
     });
@@ -1278,7 +1329,8 @@ function loadEtfs() {
       card.className = 'fund-card';
       card.innerHTML = `
         <h3>${s.name}</h3>
-        <small>${s.ticker}</small>
+        <small>${s.ticker} · ${s.currency || s.mena || s.Mena || ''}</small>
+        ${renderOverviewCardMetric(s)}
       `;
       card.onclick = () => selectEtf(s.ticker);
       grid.appendChild(card);
@@ -1295,6 +1347,7 @@ function loadEtfs() {
       getName: s => s.name,
       getMetric: s => s.currency || s.mena || s.Mena || '',
       metricLabel: 'Měna',
+      getPerf3Y: s => s.perf3Y,
       getId: s => s.ticker,
       onSelect: selectEtf
     });
