@@ -490,8 +490,8 @@ function ensureOverviewViewShell(grid, prefix) {
     switchEl.id = `${prefix}-view-switch`;
     switchEl.className = 'overview-view-switch';
     switchEl.innerHTML = `
-      <button id="${prefix}-view-grid" class="pill-button">Karty</button>
-      <button id="${prefix}-view-table" class="pill-button">Tabulka</button>
+      <button id="${prefix}-view-grid" class="pill-button">Dlaždice</button>
+      <button id="${prefix}-view-table" class="pill-button">Řádky</button>
     `;
     grid.parentNode.insertBefore(switchEl, grid);
   }
@@ -525,15 +525,20 @@ function perfClass(value) {
 
 function formatLastValuation(item) {
   if (!item) return '';
+
   const date = item.lastValuationDate
     ? new Date(item.lastValuationDate).toLocaleDateString('cs-CZ')
     : '';
+
   const value = item.lastValue ?? item.lastValuationValue;
   const valueText = value != null && !isNaN(Number(value))
-    ? Number(value).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+    ? Number(value).toLocaleString('cs-CZ', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 4
+      })
     : '';
 
-  if (date && valueText) return `${valueText} · ${date}`;
+  if (valueText && date) return `${valueText} · ${date}`;
   if (date) return date;
   if (valueText) return valueText;
   return '';
@@ -541,6 +546,7 @@ function formatLastValuation(item) {
 
 function renderOverviewCardMetric(item) {
   const last = formatLastValuation(item);
+
   return `
     <div class="fund-perf ${perfClass(item?.perf3Y)}">
       3 roky: <strong>${formatPerf3Y(item?.perf3Y)}</strong>
@@ -549,6 +555,10 @@ function renderOverviewCardMetric(item) {
   `;
 }
 
+function normalizeOverviewSortValue(value) {
+  if (value == null || value === '—') return '';
+  return typeof value === 'string' ? value.toLowerCase() : value;
+}
 function renderThreeColumnOverviewTable({
   table,
   data,
@@ -559,19 +569,39 @@ function renderThreeColumnOverviewTable({
   onSelect,
   metricLabel = 'Měna'
 }) {
+  const sortKey = table.dataset.sortKey || 'name';
+  const sortAsc = table.dataset.sortAsc !== 'false';
+
+  const getters = {
+    name: getName,
+    metric: getMetric,
+    perf3Y: getPerf3Y
+  };
+
+  const sortedData = [...data].sort((a, b) => {
+    const getter = getters[sortKey] || getName;
+    const A = normalizeOverviewSortValue(getter(a));
+    const B = normalizeOverviewSortValue(getter(b));
+
+    if (A < B) return sortAsc ? -1 : 1;
+    if (A > B) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
   table.innerHTML = `
     <table class="fund-table overview-table">
       <thead>
         <tr>
-          <th data-key="name">Název</th>
-          <th data-key="metric">${metricLabel}</th>
-          <th data-key="perf3Y">Výnos 3 roky</th>
+          <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
+          <th data-key="metric" class="${sortKey === 'metric' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">${metricLabel}</th>
+          <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 3 roky</th>
         </tr>
       </thead>
       <tbody>
-        ${data.map(item => {
+        ${sortedData.map(item => {
           const p3y = getPerf3Y(item);
           const last = formatLastValuation(item);
+
           return `
             <tr data-id="${getId(item)}" ${last ? `title="Poslední ocenění: ${last}"` : ''}>
               <td data-label="Název">${getName(item) || ''}</td>
@@ -583,6 +613,32 @@ function renderThreeColumnOverviewTable({
       </tbody>
     </table>
   `;
+
+  // řazení klikem na hlavičku – stejné chování jako v penzích
+  table.querySelectorAll('th').forEach(th => {
+    th.onclick = e => {
+      e.stopPropagation();
+      const key = th.dataset.key;
+      if (!key) return;
+
+      const currentKey = table.dataset.sortKey || 'name';
+      const currentAsc = table.dataset.sortAsc !== 'false';
+
+      table.dataset.sortKey = key;
+      table.dataset.sortAsc = currentKey === key ? String(!currentAsc) : 'true';
+
+      renderThreeColumnOverviewTable({
+        table,
+        data,
+        getName,
+        getMetric,
+        getPerf3Y,
+        getId,
+        onSelect,
+        metricLabel
+      });
+    };
+  });
 
   const rows = table.querySelectorAll('tbody tr');
   rows.forEach(tr => {
@@ -737,7 +793,7 @@ function loadPensionFunds() {
         </thead>
         <tbody>
           ${data.map(f => `
-            <tr data-isin="${f.isin}" ${formatLastValuation(f) ? `title="Poslední ocenění: ${formatLastValuation(f)}"` : ''}>
+            <tr data-isin="${f.isin}">
               <td data-label="Název">${f.name}</td>
               <td data-label="Riziko">${f.riskCategory != null ? f.riskCategory + ' / 7' : '—'}</td>
               <td data-label="Výnos 3 roky" class="${perfClass(f.perf3Y)}">
@@ -1051,6 +1107,7 @@ function loadPodiloveFondy() {
   }
 
   function renderTable() {
+    if (!table.dataset.sortKey) { table.dataset.sortKey = 'name'; table.dataset.sortAsc = 'true'; }
     const data = [...apiCache.podiloveFondyList]
       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
 
@@ -1256,6 +1313,7 @@ function loadStocks() {
   }
 
   function renderTable() {
+    if (!table.dataset.sortKey) { table.dataset.sortKey = 'name'; table.dataset.sortAsc = 'true'; }
     const data = [...apiCache.stocksList]
       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
 
@@ -1338,6 +1396,7 @@ function loadEtfs() {
   }
 
   function renderTable() {
+    if (!table.dataset.sortKey) { table.dataset.sortKey = 'name'; table.dataset.sortAsc = 'true'; }
     const data = [...apiCache.etfsList]
       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
 
