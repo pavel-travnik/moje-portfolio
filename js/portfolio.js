@@ -30,6 +30,95 @@ const GOLD_PALETTE = [
   '#A8872F'
 ];
 
+function ensurePortfolioUiStyles() {
+  if (document.getElementById('portfolio-ui-styles')) return;
+
+  const style = document.createElement('style');
+  style.id = 'portfolio-ui-styles';
+  style.textContent = `
+    .portfolio-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      align-items: center;
+    }
+
+    .portfolio-tabs .tab,
+    .portfolio-tabs .portfolio-switch-btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+      .portfolio-tabs {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+      }
+
+      .portfolio-tabs .tab,
+      .portfolio-tabs .portfolio-switch-btn {
+        width: 100%;
+        min-width: 0;
+        text-align: center;
+        justify-content: center;
+      }
+    }
+
+    .sort-dir-btn {
+      width: 38px;
+      min-width: 38px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .sort-dir-btn::before,
+    .fund-table th.sort-asc::after,
+    .fund-table th.sort-desc::after {
+      content: '';
+      display: inline-block;
+      margin-left: 6px;
+      width: 0;
+      height: 0;
+      vertical-align: middle;
+    }
+
+    .sort-dir-btn.sort-asc::before,
+    .fund-table th.sort-asc::after {
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 8px solid currentColor;
+    }
+
+    .sort-dir-btn.sort-desc::before,
+    .fund-table th.sort-desc::after {
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 8px solid currentColor;
+    }
+
+    .portfolio-switch-list {
+      display: grid;
+      gap: .75rem;
+      margin-top: 1rem;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function setSortDirectionButton(btn, asc) {
+  if (!btn) return;
+  btn.textContent = '';
+  btn.setAttribute('aria-label', asc ? 'Řadit vzestupně' : 'Řadit sestupně');
+  btn.title = asc ? 'Řadit vzestupně' : 'Řadit sestupně';
+  btn.classList.toggle('sort-asc', asc);
+  btn.classList.toggle('sort-desc', !asc);
+}
+
+
 
 // ===================================================
 // TABLE ROW BEHAVIOUR (GLOBAL)
@@ -54,6 +143,7 @@ function bindAppTableRows(tableEl) {
 // ROUTER ENTRY (volá app.js)
 // ===================================================
 window.loadPortfolioPage = async function (page) {
+  ensurePortfolioUiStyles();
   const main = document.getElementById('mainContent');
   page = page.replace(/^\/+/, '').replace(/\/$/, '');
 
@@ -141,6 +231,67 @@ function openCreatePortfolioModal() {
 
     }
 
+
+
+    async function openPortfolioSwitcherModal(prefetchedPortfolios = null) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-backdrop';
+      modal.innerHTML = `
+        <div class="modal">
+          <div class="toolbar" style="justify-content:space-between;margin-bottom:1rem">
+            <h3 style="margin:0">Přehled portfolií</h3>
+            <button id="pf-switch-close" class="pill-button" type="button">Zavřít</button>
+          </div>
+          <button id="pf-switch-create" class="pill-button" type="button">+ Nové portfolio</button>
+          <div id="pf-switch-list" class="portfolio-switch-list"></div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      document.body.style.overflow = 'hidden';
+
+      const close = () => {
+        modal.remove();
+        document.body.style.overflow = '';
+      };
+
+      document.getElementById('pf-switch-close').onclick = close;
+      document.getElementById('pf-switch-create').onclick = () => {
+        close();
+        openCreatePortfolioModal();
+      };
+
+      const listEl = document.getElementById('pf-switch-list');
+      listEl.innerHTML = '<p class="muted">Načítám portfolia…</p>';
+
+      try {
+        const portfolios = prefetchedPortfolios || await fetchUserPortfolios();
+        listEl.innerHTML = '';
+
+        portfolios.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'fund-card';
+          card.innerHTML = `
+            <h4>${portfolioDisplayName(p)}</h4>
+            <p>${p.base_ccy || 'CZK'}</p>
+          `;
+          card.onclick = () => {
+            close();
+            history.pushState({}, '', `/portfolio/${p.portfolio_id}`);
+            loadPortfolioPage(`portfolio/${p.portfolio_id}`);
+          };
+          listEl.appendChild(card);
+        });
+
+        if (!portfolios.length) {
+          listEl.innerHTML = '<p class="muted">Zatím nemáš vytvořené žádné portfolio.</p>';
+        }
+      } catch (e) {
+        console.error(e);
+        listEl.innerHTML = '<p class="muted">Přehled portfolií se nepodařilo načíst.</p>';
+      }
+    }
+
   // ===============================
   // /portfolio/{id} – detail
   // ===============================
@@ -154,22 +305,14 @@ function openCreatePortfolioModal() {
 
     main.innerHTML = `
       <div class="toolbar portfolio-tabs" style="gap:.5rem;margin-bottom:1rem">
-        <button class="button tab active" data-tab="overview">Přehled</button>
-        <button class="button tab" data-tab="value">Hodnota</button>
+        <button class="button tab active" data-tab="value">Hodnota</button>
         <button class="button tab" data-tab="instruments">Detail</button>
         <button class="button tab" data-tab="transactions">Transakce</button>
         <button class="button tab" data-tab="settings">Nastavení</button>
+        <button id="btn-other-portfolio" class="button pill-button portfolio-switch-btn" type="button">Jiné portfolio</button>
       </div>
 
       <h1 id="pf-detail-title">Portfolio</h1>
-
-      <section id="tab-overview" class="portfolio-tab">
-        <div class="toolbar" style="justify-content:space-between;margin-bottom:1rem">
-          <h2 style="margin:0">Přehled portfolií</h2>
-          <button id="btn-create-portfolio-overview" class="pill-button">+ Nové portfolio</button>
-        </div>
-        <div id="portfolio-overview-list"></div>
-      </section>
 
       <section id="tab-value" class="portfolio-tab">
         <div class="kpi-row">
@@ -192,7 +335,7 @@ function openCreatePortfolioModal() {
             <option value="quantity">Počet kusů</option>
             <option value="value">Hodnota</option>
           </select>
-          <button id="inst-sort-dir">↑</button>
+          <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
         <table class="fund-table" id="instruments-table">
           <thead><tr>
@@ -218,7 +361,7 @@ function openCreatePortfolioModal() {
             <option value="type">Směr</option>
             <option value="quantity">Počet kusů</option>
           </select>
-          <button id="tx-sort-dir">↑</button>
+          <button id="tx-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
         <table class="fund-table" id="transactions-table">
           <thead><tr>
@@ -259,13 +402,12 @@ function openCreatePortfolioModal() {
       <button class="back-btn">← Zpět</button>
     `;
 
-    document.getElementById("btn-create-portfolio-overview").onclick = openCreatePortfolioModal;
     initPortfolioTabs();
     document.querySelector('.back-btn').onclick = () => history.back();
     document.getElementById('btn-add-transaction').onclick = () => openTransactionModal(portfolioId);
 
     const portfolios = await fetchUserPortfolios();
-    renderPortfolioList(portfolios, 'portfolio-overview-list');
+    document.getElementById('btn-other-portfolio').onclick = () => openPortfolioSwitcherModal(portfolios);
 
     const detail = await fetchPortfolioDetail(portfolioId);
     const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
@@ -821,7 +963,7 @@ function setPortfolioTitle(detail, portfolio, portfolioId) {
   const title = document.getElementById('pf-detail-title');
   if (!title) return;
   const name = detail?.portfolio?.name || detail?.portfolio_name || detail?.name || portfolioDisplayName(portfolio) || `Portfolio ${portfolioId}`;
-  title.textContent = name;
+  title.textContent = `Portfolio: ${name}`;
 }
 
 function renderPortfolioList(portfolios, containerId = 'portfolioList') {
@@ -948,6 +1090,7 @@ function renderPortfolioInstruments(positions) {
   const mobileDir = document.getElementById('inst-sort-dir');
 
   if (mobileSelect && mobileDir) {
+    setSortDirectionButton(mobileDir, sort.asc);
     mobileSelect.onchange = () => {
       sort.key = mobileSelect.value;
       render();
@@ -955,7 +1098,7 @@ function renderPortfolioInstruments(positions) {
 
     mobileDir.onclick = () => {
       sort.asc = !sort.asc;
-      mobileDir.textContent = sort.asc ? '↑' : '↓';
+      setSortDirectionButton(mobileDir, sort.asc);
       mobileDir.classList.toggle('active', sort.asc);
       render();
     };
@@ -1043,6 +1186,7 @@ function renderPortfolioTransactions(trades) {
   const mobileDir = document.getElementById('tx-sort-dir');
 
   if (mobileSelect && mobileDir) {
+    setSortDirectionButton(mobileDir, sort.asc);
     mobileSelect.onchange = () => {
       sort.key = mobileSelect.value;
       render();
@@ -1050,7 +1194,7 @@ function renderPortfolioTransactions(trades) {
 
     mobileDir.onclick = () => {
       sort.asc = !sort.asc;
-      mobileDir.textContent = sort.asc ? '↑' : '↓';
+      setSortDirectionButton(mobileDir, sort.asc);
       mobileDir.classList.toggle('active', sort.asc);
       render();
     };
@@ -1062,12 +1206,59 @@ function renderPortfolioTransactions(trades) {
 // ===================================================
 // TRANSACTION MODAL – CREATE / SAVE
 // ===================================================
+function ensurePortfolioSavingStyles() {
+  if (document.getElementById('portfolio-saving-styles')) return;
+
+  const style = document.createElement('style');
+  style.id = 'portfolio-saving-styles';
+  style.textContent = `
+    .tx-saving-status {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(201, 166, 70, 0.12);
+      color: #111;
+      font-weight: 600;
+    }
+
+    .tx-saving-status.active {
+      display: flex;
+    }
+
+    .tx-spinner {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid rgba(201, 166, 70, 0.30);
+      border-top-color: #C9A646;
+      animation: tx-spin 0.8s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes tx-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .modal-backdrop.tx-busy button,
+    .modal-backdrop.tx-busy input,
+    .modal-backdrop.tx-busy select {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function openTransactionModal(portfolioId) {
+  ensurePortfolioSavingStyles();
+
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
 
- modal.innerHTML = `
-
+  modal.innerHTML = `
 <div class="modal">
   <h3>Nová transakce</h3>
 
@@ -1083,7 +1274,9 @@ function openTransactionModal(portfolioId) {
     </select>
 
     <label class="full">Typ</label>
-    <select id="tx-asset-id" disabled class="full"></select>
+    <select id="tx-asset-id" disabled class="full">
+      <option value="">Nejprve vyber typ aktiva</option>
+    </select>
 
     <label>Směr</label>
     <select id="tx-direction">
@@ -1100,9 +1293,14 @@ function openTransactionModal(portfolioId) {
     <label>Měna</label>
     <input id="tx-currency" disabled>
 
+    <div id="tx-saving-status" class="full tx-saving-status" role="status" aria-live="polite">
+      <span class="tx-spinner" aria-hidden="true"></span>
+      <span>Probíhá ukládání dat a přepočet portfolia…</span>
+    </div>
+
     <div class="full tx-actions">
-      <button id="tx-cancel" class="pill-button">Zrušit</button>
-      <button id="tx-save" class="pill-button">Uložit</button>
+      <button id="tx-cancel" class="pill-button" type="button">Zrušit</button>
+      <button id="tx-save" class="pill-button" type="button">Uložit</button>
     </div>
 
   </div>
@@ -1112,118 +1310,132 @@ function openTransactionModal(portfolioId) {
   document.body.appendChild(modal);
   document.body.style.overflow = 'hidden';
 
-  // ===== Dynamické načtení instrumentů =====
-  document.getElementById('tx-asset-type').onchange = async e => {
-  const type = e.target.value;
-  const sel = document.getElementById('tx-asset-id');
+  const assetTypeEl = document.getElementById('tx-asset-type');
+  const assetIdEl = document.getElementById('tx-asset-id');
+  const directionEl = document.getElementById('tx-direction');
+  const dateEl = document.getElementById('tx-date');
+  const quantityEl = document.getElementById('tx-quantity');
+  const currencyEl = document.getElementById('tx-currency');
+  const cancelBtn = document.getElementById('tx-cancel');
+  const saveBtn = document.getElementById('tx-save');
+  const savingStatus = document.getElementById('tx-saving-status');
 
-  if (!type) {
-    sel.innerHTML = `<option>Nejprve vyber typ aktiva</option>`;
-    sel.disabled = true;
-    return;
+  let isSaving = false;
+
+  function closeModal() {
+    if (isSaving) return;
+    modal.remove();
+    document.body.style.overflow = '';
   }
 
-  sel.disabled = false;
-  sel.innerHTML = `<option>Načítám…</option>`;
+  function setSavingState(saving) {
+    isSaving = saving;
+    modal.classList.toggle('tx-busy', saving);
+    savingStatus.classList.toggle('active', saving);
 
-  try {
-    const list = await loadAssetsByType(type);
-
-    sel.innerHTML = `<option value="">— vyber —</option>`;
-
-    list.forEach(a => {
-      const id = a.isin || a.ticker;
-      if (!id) return;
-
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = a.name || id;
-      opt.dataset.currency = a.currency || '';
-      sel.appendChild(opt);
+    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, cancelBtn, saveBtn].forEach(el => {
+      if (el) el.disabled = saving;
     });
 
-    sel.onchange = e => {
-      const selected = e.target.selectedOptions[0];
-      const currency = selected?.dataset?.currency || '';
-      document.getElementById('tx-currency').value = currency || 'CZK';
-    };
-
-  } catch {
-    sel.innerHTML = `<option>Chyba načítání</option>`;
+    saveBtn.textContent = saving ? 'Ukládám…' : 'Uložit';
   }
 
   // ===== Zrušit =====
-  document.getElementById('tx-cancel').onclick = () => {
-    modal.remove();
-    document.body.style.overflow = '';
+  cancelBtn.onclick = closeModal;
+
+  // ===== Dynamické načtení instrumentů =====
+  assetTypeEl.onchange = async e => {
+    const type = e.target.value;
+
+    if (!type) {
+      assetIdEl.innerHTML = `<option value="">Nejprve vyber typ aktiva</option>`;
+      assetIdEl.disabled = true;
+      currencyEl.value = '';
+      return;
+    }
+
+    assetIdEl.disabled = false;
+    assetIdEl.innerHTML = `<option value="">Načítám…</option>`;
+    currencyEl.value = '';
+
+    try {
+      const list = await loadAssetsByType(type);
+      assetIdEl.innerHTML = `<option value="">— vyber —</option>`;
+
+      list.forEach(a => {
+        const id = a.isin || a.ticker;
+        if (!id) return;
+
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = a.name || id;
+        opt.dataset.currency = a.currency || '';
+        assetIdEl.appendChild(opt);
+      });
+    } catch (e) {
+      console.error('Chyba načítání instrumentů:', e);
+      assetIdEl.innerHTML = `<option value="">Chyba načítání</option>`;
+    }
+  };
+
+  assetIdEl.onchange = e => {
+    const selected = e.target.selectedOptions[0];
+    const currency = selected?.dataset?.currency || '';
+    currencyEl.value = currency || 'CZK';
   };
 
   // ===== Uložit =====
-  document.getElementById('tx-save').onclick = async () => {
+  saveBtn.onclick = async () => {
+    if (isSaving) return; // ochrana proti dvojkliku / opakovanému submitu
+
     const trade = {
-      asset_type: document.getElementById('tx-asset-type').value,
-      asset_id: document.getElementById('tx-asset-id').value,
-      trade_type: document.getElementById('tx-direction').value,
-      quantity: Number(document.getElementById('tx-quantity').value),
-      price: 0, // ✅ důležité
-      currency: document.getElementById('tx-currency').value,
-      trade_date: document.getElementById('tx-date').value
+      asset_type: assetTypeEl.value,
+      asset_id: assetIdEl.value,
+      trade_type: directionEl.value,
+      quantity: Number(quantityEl.value),
+      price: 0,
+      currency: currencyEl.value || 'CZK',
+      trade_date: dateEl.value
     };
 
-    if (!trade.asset_type || !trade.asset_id || !trade.quantity) {
+    if (!trade.asset_type || !trade.asset_id || !trade.quantity || !trade.trade_date) {
       alert('Vyplň prosím všechna povinná pole.');
       return;
     }
 
-    if (!trade.asset_type || !trade.asset_id) {
-      alert('Vyber typ aktiva a konkrétní instrument.');
-      return;
-    }
-
-
     try {
-    await savePortfolioTrade(portfolioId, trade);
+      setSavingState(true);
 
-    
-    // ✅ NOVÉ – přepočet
-    await fetch(`${PORTFOLIO_API}/recalculate_portfolio`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ portfolio_id: Number(portfolioId) })
-    });
+      // DŮLEŽITÉ: ukládáme pouze jednou.
+      // Endpoint save_portfolio_trades už na backendu spouští rebuild pozic i přepočet valuace.
+      await savePortfolioTrade(portfolioId, trade);
 
-    await savePortfolioTrade(portfolioId, trade);
+      // Načti nová data až po dokončení uložení + backendového přepočtu.
+      const detail = await fetchPortfolioDetail(portfolioId);
+      renderPortfolioOverview(detail);
 
+      if (Array.isArray(detail?.positions)) {
+        renderPortfolioInstruments(detail.positions);
+      }
 
-    // ✅ TEPRVE TEĎ načti NOVÁ data
-    const detail = await fetchPortfolioDetail(portfolioId);
+      const allocation = calculateAllocationByType(detail?.positions || []);
+      renderAllocationDonut(
+        allocation,
+        'portfolio-allocation-chart',
+        detail?.valuation?.gross_value_base
+      );
 
-    // ✅ překresli UI
-    renderPortfolioOverview(detail);
-
-    if (Array.isArray(detail?.positions)) {
-      renderPortfolioInstruments(detail.positions);
-    }
-
-    const allocation = calculateAllocationByType(detail.positions);
-
-    renderAllocationDonut(
-      allocation,
-      'portfolio-allocation-chart',
-    detail?.valuation?.gross_value_base
-    );
-
-
-    modal.remove();
-    document.body.style.overflow = '';
-    await loadPortfolioPage(`portfolio/${portfolioId}`);
+      modal.remove();
+      document.body.style.overflow = '';
+      await loadPortfolioPage(`portfolio/${portfolioId}`);
     } catch (e) {
-    alert('Uložení transakce selhalo');
-    console.error(e);
+      console.error(e);
+      alert(e.message || 'Uložení transakce selhalo');
+      setSavingState(false);
     }
   };
 }
-}
+
 
 async function savePortfolioTrade(portfolioId, trade) {
   const payload = {
@@ -1263,8 +1475,8 @@ function initPortfolioTabs() {
   sections.forEach(s => s.classList.remove('active'));
 
   // ✅ výchozí tab = Přehled
-  const defaultTab = document.querySelector('.portfolio-tabs .tab[data-tab="overview"]');
-  const defaultSection = document.getElementById('tab-overview');
+  const defaultTab = document.querySelector('.portfolio-tabs .tab[data-tab="value"]');
+  const defaultSection = document.getElementById('tab-value');
 
   if (defaultTab && defaultSection) {
     defaultTab.classList.add('active');
