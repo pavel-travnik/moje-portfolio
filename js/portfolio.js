@@ -30,6 +30,19 @@ const GOLD_PALETTE = [
   '#A8872F'
 ];
 
+let CURRENT_PORTFOLIO_POSITIONS = [];
+let portfolioInstrumentFilter = null;
+
+function assetTypeLabel(assetType) {
+  const map = {
+    ETF: 'ETF',
+    STOCK: 'Akcie',
+    FUND: 'Fondy',
+    DPS: 'Penze'
+  };
+  return map[assetType] || assetType || 'Ostatní';
+}
+
 function ensurePortfolioUiStyles() {
   if (document.getElementById('portfolio-ui-styles')) return;
 
@@ -100,6 +113,30 @@ function ensurePortfolioUiStyles() {
       border-top: 8px solid currentColor;
     }
 
+    .portfolio-instruments-filter {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      margin: 0 0 .75rem;
+      padding: .75rem 1rem;
+      border-radius: 14px;
+      background: rgba(201, 166, 70, 0.12);
+      color: #111;
+      font-weight: 600;
+    }
+    .portfolio-instruments-filter.active {
+      display: flex;
+    }
+    .portfolio-instruments-filter .clear-filter-btn {
+      border: 1px solid rgba(201, 166, 70, .55);
+      background: transparent;
+      color: inherit;
+      border-radius: 999px;
+      padding: .35rem .7rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
     .portfolio-switch-list {
       display: grid;
       gap: .75rem;
@@ -321,12 +358,12 @@ function openCreatePortfolioModal() {
         </div>
         <div class="overview-right">
           <div id="portfolio-allocation-chart"></div>
-          <div id="portfolio-allocation-drill"></div>
         </div>
       </section>
 
       <section id="tab-instruments" class="portfolio-tab">
         <h2>Detail</h2>
+        <div id="portfolio-instruments-filter" class="portfolio-instruments-filter"></div>
         <div class="mobile-sort">
           <label for="inst-sort">Řadit podle</label>
           <select id="inst-sort">
@@ -415,7 +452,9 @@ function openCreatePortfolioModal() {
     renderPortfolioOverview(detail);
     renderPortfolioSettings(detail, portfolioId);
 
-    if (Array.isArray(detail?.positions)) renderPortfolioInstruments(detail.positions);
+    CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
+    portfolioInstrumentFilter = null;
+    renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS);
 
     const raw = detail.valuation_by_asset_type || [];
     const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
@@ -435,18 +474,11 @@ function openCreatePortfolioModal() {
 };
 
 function calculateAllocationByType(positions) {
-  const map = {
-    ETF: 'ETF',
-    STOCK: 'Akcie',
-    FUND: 'Fondy',
-    DPS: 'Penze'
-  };
-
   const totals = {};
   let sum = 0;
 
   positions.forEach(p => {
-    const key = map[p.asset_type] ?? 'Ostatní';
+    const key = assetTypeLabel(p.asset_type);
     const val = Number(p.book_value) || 0;
     totals[key] = (totals[key] || 0) + val;
     sum += val;
@@ -621,6 +653,7 @@ else {
   // mimo donut
   if (dist < rInner || dist > rOuter + 10) {
     activeIndex = null;
+    if (!isDrilldown) clearPortfolioInstrumentFilter();
     draw();
     return;
   }
@@ -634,8 +667,8 @@ else {
     if (ang >= d._start && ang < d._end) {
       activeIndex = i;
   
-      // ✅ NOVÁ AKCE – drilldown
-      showDrilldownDonut(d);
+      // ✅ Klik na donut filtruje tabulku v záložce Detail
+      applyPortfolioInstrumentFilter(d.label);
 
     }
   });
@@ -688,44 +721,36 @@ canvas.onmouseleave = () => {
 };
 }
 
-function showDrilldownDonut(segment) {
-  const container = document.getElementById('portfolio-allocation-drill');
+function activatePortfolioTab(tabName) {
+  const tabs = document.querySelectorAll('.portfolio-tabs .tab');
+  const sections = document.querySelectorAll('.portfolio-tab');
 
-  if (!container) return;
+  tabs.forEach(t => t.classList.remove('active'));
+  sections.forEach(s => s.classList.remove('active'));
 
-  // mock / nebo reálná data podle typu
-  let detailData;
+  document
+    .querySelector(`.portfolio-tabs .tab[data-tab="${tabName}"]`)
+    ?.classList.add('active');
 
-  if (segment.label === 'ETF') {
-    detailData = [
-      { label: 'USA', value: 50 },
-      { label: 'Evropa', value: 30 },
-      { label: 'Emerging', value: 20 }
-    ];
-  } else if (segment.label === 'Akcie') {
-    detailData = [
-      { label: 'Technologie', value: 60 },
-      { label: 'Finance', value: 25 },
-      { label: 'Ostatní', value: 15 }
-    ];
-  } else {
-    detailData = [
-      { label: 'Detail 1', value: 70 },
-      { label: 'Detail 2', value: 30 }
-    ];
-  }
+  document
+    .getElementById(`tab-${tabName}`)
+    ?.classList.add('active');
+}
 
-  // přepočet %
-  const sum = detailData.reduce((s, d) => s + d.value, 0);
-  detailData.forEach(d => d.pct = d.value / sum);
+function applyPortfolioInstrumentFilter(label) {
+  portfolioInstrumentFilter = label;
+  activatePortfolioTab('instruments');
+  renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS, { filterLabel: label });
 
-  // reuse stejné funkce
-  renderAllocationDonut(detailData,
-    'portfolio-allocation-drill',
-    null,
-    { drilldown: true }
-  );
+  document.getElementById('tab-instruments')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
 
+function clearPortfolioInstrumentFilter() {
+  portfolioInstrumentFilter = null;
+  renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS);
 }
 
 function openAssetDetail(assetType, assetId) {
@@ -1001,24 +1026,44 @@ function renderPortfolioOverview(data) {
   el.className = diff >= 0 ? 'pos' : 'neg';
 }
 
-function renderPortfolioInstruments(positions) {
+function renderPortfolioInstrumentFilterBar(filterLabel, visibleCount, totalCount) {
+  const filterEl = document.getElementById('portfolio-instruments-filter');
+  if (!filterEl) return;
+
+  if (!filterLabel) {
+    filterEl.classList.remove('active');
+    filterEl.innerHTML = '';
+    return;
+  }
+
+  filterEl.classList.add('active');
+  filterEl.innerHTML = `
+    <span>Zobrazuji: ${filterLabel} (${visibleCount} z ${totalCount} pozic)</span>
+    <button id="clear-portfolio-instrument-filter" class="clear-filter-btn" type="button">Zrušit filtr</button>
+  `;
+
+  document.getElementById('clear-portfolio-instrument-filter').onclick = clearPortfolioInstrumentFilter;
+}
+
+function renderPortfolioInstruments(positions, options = {}) {
   const tbody = document.getElementById('portfolio-instruments');
   const table = document.getElementById('instruments-table');
   if (!tbody || !table) return;
 
-  let sort = { key: 'type', asc: true };
+  const allPositions = Array.isArray(positions) ? positions : [];
+  const filterLabel = options.filterLabel || portfolioInstrumentFilter;
+  const visiblePositions = filterLabel
+    ? allPositions.filter(p => assetTypeLabel(p.asset_type) === filterLabel)
+    : allPositions;
 
-  const typeLabel = {
-    ETF: 'ETF',
-    STOCK: 'Akcie',
-    FUND: 'Fondy',
-    DPS: 'Penze'
-  };
+  renderPortfolioInstrumentFilterBar(filterLabel, visiblePositions.length, allPositions.length);
+
+  let sort = { key: 'type', asc: true };
 
   function getValue(p, key) {
     switch (key) {
       case 'type':
-        return (typeLabel[p.asset_type] || p.asset_type).toLowerCase();
+        return assetTypeLabel(p.asset_type).toLowerCase();
       case 'name':
         return positionDisplayName(p).toLowerCase();
       case 'quantity':
@@ -1031,7 +1076,7 @@ function renderPortfolioInstruments(positions) {
   }
 
   function render() {
-    const data = [...positions];
+    const data = [...visiblePositions];
 
     data.sort((a, b) => {
       const A = getValue(a, sort.key);
@@ -1049,7 +1094,7 @@ function renderPortfolioInstruments(positions) {
       const instrumentValue = positionCurrentValue(p);
 
       tr.innerHTML = `
-        <td data-label="Typ">${typeLabel[p.asset_type] || p.asset_type}</td>
+        <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
         <td data-label="Název">${positionDisplayName(p)}</td>
         <td data-label="Počet kusů">
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
@@ -1414,9 +1459,9 @@ function openTransactionModal(portfolioId) {
       const detail = await fetchPortfolioDetail(portfolioId);
       renderPortfolioOverview(detail);
 
-      if (Array.isArray(detail?.positions)) {
-        renderPortfolioInstruments(detail.positions);
-      }
+      CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
+      portfolioInstrumentFilter = null;
+      renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS);
 
       const allocation = calculateAllocationByType(detail?.positions || []);
       renderAllocationDonut(
