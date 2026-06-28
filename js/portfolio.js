@@ -150,7 +150,7 @@ function ensurePortfolioUiStyles() {
     .fund-table th.sort-asc::after {
       border-left: 5px solid transparent !important;
       border-right: 5px solid transparent !important;
-      border-bottom: 8px solid currentColor !important;
+      border-bottom: 8px solid #C9A646 !important;
       border-top: 0 !important;
     }
 
@@ -158,7 +158,7 @@ function ensurePortfolioUiStyles() {
     .fund-table th.sort-desc::after {
       border-left: 5px solid transparent !important;
       border-right: 5px solid transparent !important;
-      border-top: 8px solid currentColor !important;
+      border-top: 8px solid #C9A646 !important;
       border-bottom: 0 !important;
     }
 
