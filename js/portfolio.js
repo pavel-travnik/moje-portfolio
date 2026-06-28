@@ -76,6 +76,51 @@ function ensurePortfolioUiStyles() {
         text-align: center;
         justify-content: center;
       }
+
+      /* Mobil: v detailu portfolia preferuj hodnotu, ne počet kusů */
+      #instruments-table th[data-key="quantity"],
+      #instruments-table td[data-label="Počet kusů"] {
+        display: none !important;
+      }
+
+      #inst-sort option[value="quantity"] {
+        display: none;
+      }
+
+      /* Mobil: nastavení portfolia jako karta přes celou dostupnou šířku */
+      #tab-settings .tx-modal {
+        width: 100% !important;
+        max-width: none !important;
+        box-sizing: border-box;
+        margin: 0 !important;
+        padding: 1rem !important;
+        border-radius: 18px;
+      }
+
+      #tab-settings .tx-modal label {
+        display: block;
+        margin-top: .85rem;
+      }
+
+      #tab-settings .tx-input,
+      #tab-settings select.tx-input {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 44px;
+        font-size: 16px;
+      }
+
+      #tab-settings .tx-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .5rem;
+        margin-top: 1rem;
+      }
+
+      #tab-settings .tx-actions .pill-button {
+        width: 100%;
+        min-height: 44px;
+      }
     }
 
     .sort-dir-btn {
@@ -91,26 +136,35 @@ function ensurePortfolioUiStyles() {
     .sort-dir-btn::before,
     .fund-table th.sort-asc::after,
     .fund-table th.sort-desc::after {
-      content: '';
+      content: '' !important;
       display: inline-block;
       margin-left: 6px;
       width: 0;
       height: 0;
       vertical-align: middle;
+      font-size: 0;
+      line-height: 0;
     }
 
     .sort-dir-btn.sort-asc::before,
     .fund-table th.sort-asc::after {
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-bottom: 8px solid currentColor;
+      border-left: 5px solid transparent !important;
+      border-right: 5px solid transparent !important;
+      border-bottom: 8px solid currentColor !important;
+      border-top: 0 !important;
     }
 
     .sort-dir-btn.sort-desc::before,
     .fund-table th.sort-desc::after {
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-top: 8px solid currentColor;
+      border-left: 5px solid transparent !important;
+      border-right: 5px solid transparent !important;
+      border-top: 8px solid currentColor !important;
+      border-bottom: 0 !important;
+    }
+
+    .fund-table th[data-key] {
+      cursor: pointer;
+      white-space: nowrap;
     }
 
     .portfolio-instruments-filter {
@@ -367,10 +421,9 @@ function openCreatePortfolioModal() {
         <div class="mobile-sort">
           <label for="inst-sort">Řadit podle</label>
           <select id="inst-sort">
+            <option value="value" selected>Hodnota</option>
             <option value="type">Typ</option>
             <option value="name">Název</option>
-            <option value="quantity">Počet kusů</option>
-            <option value="value">Hodnota</option>
           </select>
           <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
@@ -416,7 +469,7 @@ function openCreatePortfolioModal() {
         <h3>Nastavení zasílání přehledu</h3>
 
         <label>E-mail</label>
-        <input id="pf-settings-email" class="tx-input" type="email" placeholder="např. pavel@email.cz">
+        <input id="pf-settings-email" class="tx-input" type="email" inputmode="email" autocomplete="email" placeholder="např. pavel@email.cz">
 
         <label>Zasílání přehledu</label>
           <select id="pf-settings-frequency" class="tx-input">
@@ -737,20 +790,33 @@ function activatePortfolioTab(tabName) {
     ?.classList.add('active');
 }
 
+function scrollPortfolioPageToTop() {
+  const main = document.getElementById('mainContent');
+
+  if (main && main.scrollHeight > main.clientHeight) {
+    main.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function applyPortfolioInstrumentFilter(label) {
   portfolioInstrumentFilter = label;
   activatePortfolioTab('instruments');
   renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS, { filterLabel: label });
-
-  document.getElementById('tab-instruments')?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start'
-  });
+  scrollPortfolioPageToTop();
 }
 
 function clearPortfolioInstrumentFilter() {
   portfolioInstrumentFilter = null;
   renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS);
+}
+
+function backToPortfolioDonut() {
+  portfolioInstrumentFilter = null;
+  renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS);
+  activatePortfolioTab('value');
+  scrollPortfolioPageToTop();
 }
 
 function openAssetDetail(assetType, assetId) {
@@ -1039,10 +1105,14 @@ function renderPortfolioInstrumentFilterBar(filterLabel, visibleCount, totalCoun
   filterEl.classList.add('active');
   filterEl.innerHTML = `
     <span>Zobrazuji: ${filterLabel} (${visibleCount} z ${totalCount} pozic)</span>
-    <button id="clear-portfolio-instrument-filter" class="clear-filter-btn" type="button">Zrušit filtr</button>
+    <span style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end">
+      <button id="clear-portfolio-instrument-filter" class="clear-filter-btn" type="button">Zrušit filtr</button>
+      <button id="back-to-portfolio-donut" class="clear-filter-btn" type="button">Zpět na graf</button>
+    </span>
   `;
 
   document.getElementById('clear-portfolio-instrument-filter').onclick = clearPortfolioInstrumentFilter;
+  document.getElementById('back-to-portfolio-donut').onclick = backToPortfolioDonut;
 }
 
 function renderPortfolioInstruments(positions, options = {}) {
@@ -1058,7 +1128,7 @@ function renderPortfolioInstruments(positions, options = {}) {
 
   renderPortfolioInstrumentFilterBar(filterLabel, visiblePositions.length, allPositions.length);
 
-  let sort = { key: 'type', asc: true };
+  let sort = { key: 'value', asc: false };
 
   function getValue(p, key) {
     switch (key) {
@@ -1076,6 +1146,13 @@ function renderPortfolioInstruments(positions, options = {}) {
   }
 
   function render() {
+    table.querySelectorAll('th').forEach(th => {
+      th.classList.remove('sort-asc', 'sort-desc');
+      if (th.dataset.key === sort.key) {
+        th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
+      }
+    });
+
     const data = [...visiblePositions];
 
     data.sort((a, b) => {
@@ -1172,6 +1249,13 @@ function renderPortfolioTransactions(trades) {
   }
 
   function render() {
+    table.querySelectorAll('th').forEach(th => {
+      th.classList.remove('sort-asc', 'sort-desc');
+      if (th.dataset.key === sort.key) {
+        th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
+      }
+    });
+
     const data = [...trades];
 
     data.sort((a, b) => {
