@@ -323,33 +323,38 @@ if (!page || page === "undefined") {
     // ===============================
     if (page.startsWith('penze/')) {
         loadFundDetail(page.split('/')[1]);
+        if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('podilove-fondy/')) {
         loadPodilovyFondDetail(page.split('/')[1]);
+        if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('akcie/')) {
         loadStockDetail(page.split('/')[1]);
+        if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('etf/')) {
         loadStockDetail(page.split('/')[1]);
+        if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('meny/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadCurrencyDetail(page.split('/')[1]);
+        if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`pages/${page}.html`)
+    fetch(`/pages/${page}.html`)
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
