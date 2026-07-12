@@ -1,3 +1,6 @@
+// ===================================================
+// HLAVNi KONTEJNER
+// ===================================================
 
 // ===================================================
 // PAGE INTRO TEXTS – fallback pro datové podstránky
@@ -6,29 +9,19 @@ function ensurePageIntro(page) {
   const main = document.getElementById('mainContent');
   if (!main || main.querySelector('.section-intro')) return;
   const intros = {
-    'penze': { icon: '♧', title: 'Penze', text: 'Zde najdete přehled vybraných penzijních fondů a jejich základních parametrů. Kliknutím na konkrétní fond otevřete detail s historickým vývojem hodnoty, rizikovostí a posledním dostupným oceněním. Data jsou aktualizována z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční, penzijní ani jiné finanční poradenství.' },
-    'podilove-fondy': { icon: '◈', title: 'Podílové fondy', text: 'Zobrazen je přehled podílových fondů s možností otevřít detail konkrétního fondu. Detail fondu obsahuje historický vývoj kurzu, poslední dostupnou hodnotu a základní údaje pro rychlou orientaci. Data jsou průběžně aktualizována z veřejných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' },
-    'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných akciových titulů včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. Uvedené informace vycházejí z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
-    'etf': { icon: '◎', title: 'ETF', text: 'Přehled ETF zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. Data jsou aktualizována z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' }
+    'penze': { icon: '♧', title: 'Penze', text: 'Zde najdete přehled vybraných <a href="/info-penze" data-page="info-penze">penzijních fondů</a> a jejich základních parametrů. Kliknutím na konkrétní fond otevřete detail s historickým vývojem hodnoty, rizikovostí a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční, penzijní ani jiné finanční poradenství.' },
+    'podilove-fondy': { icon: '◈', title: 'Podílové fondy', text: 'Zobrazen je přehled <a href="/info-podilove-fondy" data-page="info-podilove-fondy">podílových fondů</a> s možností otevřít detail konkrétního fondu. Detail fondu obsahuje historický vývoj kurzu, poslední dostupnou hodnotu a základní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou průběžně aktualizována</a> z veřejných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' },
+    'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných <a href="/info-akcie" data-page="info-akcie">akciových titulů</a> včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. <a href="/aktualizace" data-page="aktualizace">Uvedené informace jsou aktualizovány</a> z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
+    'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
+    'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' }
   };
   const intro = intros[page];
   if (!intro) return;
-  main.insertAdjacentHTML('afterbegin', `
-    <section class="section-intro">
-      <div class="intro-heading">
-        <span class="icon-badge" aria-hidden="true">${intro.icon}</span>
-        <div><h2>${intro.title}</h2><p class="intro-lead">${intro.text}</p></div>
-      </div>
-    </section>
-  `);
+  main.insertAdjacentHTML('afterbegin', `<section class="section-intro"><div class="intro-heading"><span class="icon-badge" aria-hidden="true">${intro.icon}</span><div><h2>${intro.title}</h2><p class="intro-lead">${intro.text}</p></div></div></section>`);
   if (!main.querySelector('.disclaimer')) {
     main.insertAdjacentHTML('beforeend', `<p class="disclaimer">Informace na této stránce mají pouze informativní charakter. Nejedná se o doporučení, nabídku ani poradenství. Minulá výkonnost není zárukou budoucích výsledků.</p>`);
   }
 }
-
-// ===================================================
-// HLAVNi KONTEJNER
-// ===================================================
 
 const apiCache = {
   dps: {},
@@ -208,6 +201,16 @@ function hideTooltip() {
 // INIT
 // ===================================================
 
+
+function decorateSideCards() {
+  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'meny':'¤', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-meny':'¤' };
+  document.querySelectorAll('.side-card').forEach(card => {
+    if (card.querySelector('.side-card-icon')) return;
+    const icon = icons[card.dataset.page] || '›';
+    card.insertAdjacentHTML('afterbegin', `<span class="side-card-icon" aria-hidden="true">${icon}</span>`);
+  });
+}
+
 (function init() {
  let path = location.pathname.replace(/^\/+/, '');
 
@@ -220,7 +223,8 @@ if (!path || path === 'index.html') {
 
 
 
- updateMenu();   // ✅ přidat
+ updateMenu();
+ decorateSideCards();   // ✅ přidat
 
  loadPage(path, false);
 
@@ -396,6 +400,8 @@ const main = document.getElementById('mainContent');
 
             
             ensurePageIntro(page);
+
+            decorateSideCards();
 if (page === 'penze') loadPensionFunds();
             if (page === 'podilove-fondy') loadPodiloveFondy();
             if (page === 'akcie') loadStocks();
