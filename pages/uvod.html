@@ -1,70 +1,57 @@
 <div class="landing">
-
   <section class="hero">
-    <h1 class="gold-text">
-      Měj své investice pod kontrolou
-    </h1>
-
+    <h1 class="gold-text">Mějte své investice pod kontrolou</h1>
     <p>
-      Jednoduchý přehled investic, portfolio i tržní data na jednom místě.
+      Přehled penzí, podílových fondů, akcií a ETF v jednoduchém a srozumitelném prostředí.
+      Sledujte historický vývoj, poslední dostupné hodnoty a základní informace na jednom místě.
     </p>
-
     <div class="hero-actions">
-      <button class="btn-primary">Začít</button>
-      <button class="btn-secondary">Ukázka</button>
+      <button class="btn-primary" data-page="portfolio">Vytvořit portfolio</button>
+      <button class="btn-secondary" data-page="penze">Zobrazit přehled</button>
     </div>
   </section>
 
-  <section class="section">
+  <section class="section compact-section">
     <h2>Co zde najdete</h2>
+    <div class="cards cards-four">
+      <a class="card-clean feature-card" href="/penze" data-page="penze">
+        <span class="icon-badge" aria-hidden="true">♧</span>
+        <h3>Penze</h3>
+        <p>Přehled vybraných penzijních fondů včetně detailu, historického vývoje a základních parametrů.</p>
+      </a>
 
-    <div class="cards">
-      <div class="card-clean">
-        <h3>📊 Aktuální data z trhů</h3>
-        <p>Penzijní fondy, podílové fondy, ETF, akcie i měny přehledně na jednom místě.</p>
-      </div>
+      <a class="card-clean feature-card" href="/podilove-fondy" data-page="podilove-fondy">
+        <span class="icon-badge" aria-hidden="true">◈</span>
+        <h3>Podílové fondy</h3>
+        <p>Přehled podílových fondů s možností otevřít detail konkrétního fondu a sledovat jeho vývoj v čase.</p>
+      </a>
 
-      <div class="card-clean">
-        <h3>📈 Portfolio</h3>
-        <p>Sestavte si vlastní investice a sledujte jejich vývoj v čase.</p>
-      </div>
+      <a class="card-clean feature-card" href="/akcie" data-page="akcie">
+        <span class="icon-badge" aria-hidden="true">↗</span>
+        <h3>Akcie</h3>
+        <p>Vybrané akciové tituly, jejich poslední ceny, měna, obor a historický vývoj na jednom místě.</p>
+      </a>
 
-      <div class="card-clean">
-        <h3>🧠 Srozumitelnost</h3>
-        <p>Žádné složitosti – jen přehled, který dává smysl.</p>
-      </div>
+      <a class="card-clean feature-card" href="/etf" data-page="etf">
+        <span class="icon-badge" aria-hidden="true">◎</span>
+        <h3>ETF</h3>
+        <p>Přehled burzovně obchodovaných fondů odděleně od jednotlivých akcií s možností detailního zobrazení.</p>
+      </a>
     </div>
   </section>
 
-  <section class="section">
-    <h2>Proč to používat</h2>
-
+  <section class="section compact-section">
+    <h2>Jak s daty pracujeme</h2>
     <div class="benefits">
-      <div class="benefit">
-        <div>✔</div>
-        <div>Všechny investice na jednom místě</div>
-      </div>
-
-      <div class="benefit">
-        <div>✔</div>
-        <div>Přehled bez zbytečného chaosu</div>
-      </div>
-
-      <div class="benefit">
-        <div>✔</div>
-        <div>Moderní minimalistické prostředí</div>
-      </div>
+      <div class="benefit"><div>✔</div><div>Data jsou průběžně aktualizována z veřejně dostupných zdrojů.</div></div>
+      <div class="benefit"><div>✔</div><div>Každý instrument má vlastní detail s historickým vývojem a základními údaji.</div></div>
+      <div class="benefit"><div>✔</div><div>Cílem je poskytnout přehled a orientaci, nikoliv investiční ani jiné finanční poradenství.</div></div>
     </div>
   </section>
 
   <section class="cta">
-    <h2>Začni ještě dnes</h2>
-
-    <p style="margin-bottom:16px;">
-      Vytvoř si vlastní portfolio a získej okamžitý přehled o svých investicích.
-    </p>
-
-    <button class="btn-primary">Vytvořit portfolio</button>
+    <h2>Vytvořte si vlastní přehled</h2>
+    <p style="margin-bottom:16px;">Sledujte své portfolio, porovnávejte vývoj a mějte základní informace vždy po ruce.</p>
+    <button class="btn-primary" data-page="portfolio">Vytvořit portfolio</button>
   </section>
-
 </div>

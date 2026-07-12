@@ -1,24 +1,24 @@
-<h1>Penzijní fondy</h1>
+<section class="section-intro">
+  <div class="intro-heading">
+    <span class="icon-badge" aria-hidden="true">♧</span>
+    <div>
+      <h2>Penze</h2>
+      <p class="intro-lead">Zde najdete přehled vybraných penzijních fondů a jejich základních parametrů. Kliknutím na konkrétní fond otevřete detail s historickým vývojem hodnoty, rizikovostí a posledním dostupným oceněním. Data jsou aktualizována z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční, penzijní ani jiné finanční poradenství.</p>
+    </div>
+  </div>
+</section>
 
 <div class="view-switch">
-  <button id="view-grid" class="active">Dlaždice</button>
-  <button id="view-table">Řádky</button>
+  <button id="view-grid" class="pill-button">Dlaždice</button>
+  <button id="view-table" class="pill-button">Řádky</button>
 </div>
-
+<div class="mobile-sort hidden">
+  <label for="mobile-sort-select">Řadit podle</label>
+  <select id="mobile-sort-select"></select>
+  <button id="mobile-sort-dir" type="button">↑</button>
+</div>
 <div id="fundGrid" class="fund-grid"></div>
-
-<div class="mobile-sort">
-  <label for="mobile-sort-select">Seřadit podle</label>
-  <select id="mobile-sort-select">
-    <option value="name">Názvu</option>
-    <option value="perf3Y">Výnosu 3 roky</option>
-    <option value="lastValuationDate">Data ocenění</option>
-    <option value="riskCategory">Rizikovosti</option>
-  </select>
-
-  <button id="mobile-sort-dir" aria-label="Změnit směr">
-    ↑
-  </button>
-</div>
-
 <div id="fundTable" class="hidden"></div>
+<p class="disclaimer">
+  Informace na této stránce mají pouze informativní charakter. Nejedná se o doporučení, nabídku ani poradenství. Minulá výkonnost není zárukou budoucích výsledků.
+</p>
