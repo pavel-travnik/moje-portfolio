@@ -1,3 +1,31 @@
+
+// ===================================================
+// PAGE INTRO TEXTS – fallback pro datové podstránky
+// ===================================================
+function ensurePageIntro(page) {
+  const main = document.getElementById('mainContent');
+  if (!main || main.querySelector('.section-intro')) return;
+  const intros = {
+    'penze': { icon: '♧', title: 'Penze', text: 'Zde najdete přehled vybraných penzijních fondů a jejich základních parametrů. Kliknutím na konkrétní fond otevřete detail s historickým vývojem hodnoty, rizikovostí a posledním dostupným oceněním. Data jsou aktualizována z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční, penzijní ani jiné finanční poradenství.' },
+    'podilove-fondy': { icon: '◈', title: 'Podílové fondy', text: 'Zobrazen je přehled podílových fondů s možností otevřít detail konkrétního fondu. Detail fondu obsahuje historický vývoj kurzu, poslední dostupnou hodnotu a základní údaje pro rychlou orientaci. Data jsou průběžně aktualizována z veřejných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' },
+    'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných akciových titulů včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. Uvedené informace vycházejí z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
+    'etf': { icon: '◎', title: 'ETF', text: 'Přehled ETF zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. Data jsou aktualizována z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' }
+  };
+  const intro = intros[page];
+  if (!intro) return;
+  main.insertAdjacentHTML('afterbegin', `
+    <section class="section-intro">
+      <div class="intro-heading">
+        <span class="icon-badge" aria-hidden="true">${intro.icon}</span>
+        <div><h2>${intro.title}</h2><p class="intro-lead">${intro.text}</p></div>
+      </div>
+    </section>
+  `);
+  if (!main.querySelector('.disclaimer')) {
+    main.insertAdjacentHTML('beforeend', `<p class="disclaimer">Informace na této stránce mají pouze informativní charakter. Nejedná se o doporučení, nabídku ani poradenství. Minulá výkonnost není zárukou budoucích výsledků.</p>`);
+  }
+}
+
 // ===================================================
 // HLAVNi KONTEJNER
 // ===================================================
@@ -78,7 +106,7 @@ document.addEventListener('click', e => {
 // SPA NAVIGATION
 // ===================================================
 document.addEventListener('click', e => {
- const link = e.target.closest('a[data-page]');
+ const link = e.target.closest('[data-page]');
  if (!link) return;
 
  e.preventDefault();
@@ -366,7 +394,9 @@ const main = document.getElementById('mainContent');
 
             main.innerHTML = html;
 
-            if (page === 'penze') loadPensionFunds();
+            
+            ensurePageIntro(page);
+if (page === 'penze') loadPensionFunds();
             if (page === 'podilove-fondy') loadPodiloveFondy();
             if (page === 'akcie') loadStocks();
             if (page === 'etf') loadEtfs();
