@@ -56,41 +56,32 @@ const PODILOVE_FONDY_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeur
 const PODILOVY_FOND_DATA_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_podilovy_fond_data';
 
 // ===================================================
-// DROPDOWN – MOBILE SAFE
+// DROPDOWN - MOBILE SAFE
 // ===================================================
 document.addEventListener('click', e => {
- const toggle = e.target.closest('.dropdown-toggle');
- const menu = document.querySelector('.dropdown-menu');
+  const toggle = e.target.closest('.dropdown-toggle');
+  const dropdown = e.target.closest('.dropdown');
+  const menu = document.querySelector('.dropdown-menu');
 
- if (!menu) return;
+  if (!menu) return;
 
- // ✅ toggle
- if (toggle) {
-  e.preventDefault();
-  e.stopPropagation();
-  menu.classList.toggle('open');
-  return;
- }
-
- // ✅ klik NA LINK → neřešit (router to vezme)
- if (e.target.closest('a[data-page]')) {
-  return;
- }
-
- // ✅ klik mimo → zavřít
- if (menu.classList.contains('open')) {
-  menu.classList.remove('open');
- }
-
-
+  // Toggle dropdown - stop other document click handlers on the same tap.
+  // This prevents the SPA router from immediately closing / overriding the mobile menu.
   if (toggle) {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     menu.classList.toggle('open');
     return;
   }
 
-  if (menu && menu.classList.contains('open')) {
+  // Click on a menu item: let the SPA router handle navigation, just close the menu.
+  if (e.target.closest('.dropdown-menu [data-page]')) {
+    menu.classList.remove('open');
+    return;
+  }
+
+  // Click outside dropdown: close the menu.
+  if (!dropdown && menu.classList.contains('open')) {
     menu.classList.remove('open');
   }
 });
@@ -99,6 +90,7 @@ document.addEventListener('click', e => {
 // SPA NAVIGATION
 // ===================================================
 document.addEventListener('click', e => {
+ if (e.target.closest('.dropdown-toggle')) return;
  const link = e.target.closest('[data-page]');
  if (!link) return;
 
