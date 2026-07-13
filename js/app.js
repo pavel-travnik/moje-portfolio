@@ -56,35 +56,75 @@ const PODILOVE_FONDY_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeur
 const PODILOVY_FOND_DATA_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_podilovy_fond_data';
 
 // ===================================================
-// DROPDOWN - MOBILE SAFE
+// DROPDOWN - MOBILE SAFE / POINTER SAFE
 // ===================================================
+let dropdownPointerHandled = false;
+
+function getDropdownMenu() {
+  return document.querySelector('.dropdown-menu');
+}
+
+function toggleDropdownMenu(e, forceState) {
+  const menu = getDropdownMenu();
+  if (!menu) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  if (typeof e.stopImmediatePropagation === 'function') {
+    e.stopImmediatePropagation();
+  }
+
+  if (typeof forceState === 'boolean') {
+    menu.classList.toggle('open', forceState);
+  } else {
+    menu.classList.toggle('open');
+  }
+}
+
+// On mobile browsers pointerdown is more reliable than click for menu buttons.
+document.addEventListener('pointerdown', e => {
+  const toggle = e.target.closest('.dropdown-toggle');
+  if (!toggle) return;
+
+  dropdownPointerHandled = true;
+  toggleDropdownMenu(e);
+}, true);
+
 document.addEventListener('click', e => {
   const toggle = e.target.closest('.dropdown-toggle');
   const dropdown = e.target.closest('.dropdown');
-  const menu = document.querySelector('.dropdown-menu');
+  const menu = getDropdownMenu();
 
   if (!menu) return;
 
-  // Toggle dropdown - stop other document click handlers on the same tap.
-  // This prevents the SPA router from immediately closing / overriding the mobile menu.
-  if (toggle) {
+  // If pointerdown already handled this tap, swallow the follow-up click.
+  if (toggle && dropdownPointerHandled) {
+    dropdownPointerHandled = false;
     e.preventDefault();
-    e.stopImmediatePropagation();
-    menu.classList.toggle('open');
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') {
+      e.stopImmediatePropagation();
+    }
     return;
   }
 
-  // Click on a menu item: let the SPA router handle navigation, just close the menu.
+  // Desktop / keyboard click fallback.
+  if (toggle) {
+    toggleDropdownMenu(e);
+    return;
+  }
+
+  // Click on dropdown item: close menu, router will handle navigation.
   if (e.target.closest('.dropdown-menu [data-page]')) {
     menu.classList.remove('open');
     return;
   }
 
-  // Click outside dropdown: close the menu.
-  if (!dropdown && menu.classList.contains('open')) {
+  // Click outside dropdown: close menu.
+  if (!dropdown) {
     menu.classList.remove('open');
   }
-});
+}, true);
 
 // ===================================================
 // SPA NAVIGATION
@@ -216,6 +256,7 @@ if (!path || path === 'index.html') {
 
 
  updateMenu();
+ decoratePortfolioLabel();
  decorateSideCards();   // ✅ přidat
 
  loadPage(path, false);
@@ -227,6 +268,20 @@ if (!path || path === 'index.html') {
 // ===================================================
 // ROUTER
 // ===================================================
+
+function decoratePortfolioLabel() {
+  const el = document.getElementById('menu-portfolio');
+  if (!el || el.querySelector('.mp-label')) return;
+
+  el.setAttribute('aria-label', 'Moje portfolio');
+  el.innerHTML = `
+    <span class="mp-label" aria-hidden="true">
+      <span class="mp-word-small">moje</span>
+      <span class="mp-word-main">portfolio</span>
+    </span>
+  `;
+}
+
 function updateMenu() {
     const portfolioLink = document.getElementById("menu-portfolio");
     const btnLogin = document.getElementById("btn-login");
@@ -235,7 +290,8 @@ function updateMenu() {
     const logged = !!localStorage.getItem("user_id");
 
     if (portfolioLink) {
-        portfolioLink.style.display = logged ? "block" : "none";
+        portfolioLink.style.display = logged ? "inline-flex" : "none";
+        decoratePortfolioLabel();
     }
 
     if (btnLogin) {
