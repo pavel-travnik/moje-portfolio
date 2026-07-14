@@ -1987,3 +1987,28 @@ body {
     padding: 5px 5px !important;
   }
 }
+
+/* FORCE WORDMARK TWO LINES - FINAL */
+.header-center .site-wordmark {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  line-height: .9 !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  color: var(--gold, #c9a646) !important;
+}
+.header-center .site-wordmark .wordmark-small,
+.header-center .site-wordmark .wordmark-main {
+  display: block !important;
+  color: var(--gold, #c9a646) !important;
+  -webkit-text-fill-color: var(--gold, #c9a646) !important;
+  background: none !important;
+  white-space: nowrap !important;
+}
+.header-center .site-wordmark .wordmark-small { font-size: 10px !important; font-weight: 500 !important; opacity: .9 !important; }
+.header-center .site-wordmark .wordmark-main { font-size: 17px !important; font-weight: 750 !important; }
+@media (max-width:768px){
+  .header-center .site-wordmark .wordmark-small { font-size: 9px !important; }
+  .header-center .site-wordmark .wordmark-main { font-size: 14px !important; }
+}
