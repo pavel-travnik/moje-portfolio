@@ -1787,3 +1787,203 @@ MOBILE DROPDOWN + PORTFOLIO LABEL FIX v2
     font-size: 12px !important;
   }
 }
+
+
+/* =====================================
+FINAL FIX - MOBILE DROPDOWN + SIDEBAR CLIP
+===================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.main-header,
+.dropdown,
+.header-right,
+.main-nav {
+  overflow: visible !important;
+}
+
+.dropdown-menu.open,
+.dropdown.open .dropdown-menu {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.dropdown-toggle {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.site-wordmark,
+#menu-portfolio {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 0.92;
+  text-decoration: none !important;
+}
+
+.site-wordmark .wordmark-small,
+#menu-portfolio .mp-word-small {
+  font-size: 0.72em;
+  font-weight: 500;
+  opacity: 0.9;
+  letter-spacing: 0.02em;
+}
+
+.site-wordmark .wordmark-main,
+#menu-portfolio .mp-word-main {
+  font-size: 1.2em;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
+.layout {
+  grid-template-columns: minmax(0, 1fr) 260px !important;
+  gap: 14px !important;
+  padding-right: 18px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.sidebar {
+  width: 100% !important;
+  max-width: 260px !important;
+  padding: 16px !important;
+  margin: 16px 0 16px 0 !important;
+  overflow: visible !important;
+  justify-self: start !important;
+}
+
+.side-grid {
+  width: 100% !important;
+  align-items: stretch !important;
+}
+
+.side-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 7px 8px !important;
+    min-height: 46px !important;
+    overflow: visible !important;
+  }
+
+  .header-left {
+    display: none !important;
+  }
+
+  .header-center {
+    min-width: 0 !important;
+    justify-self: start !important;
+  }
+
+  .site-title {
+    margin: 0 !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+  }
+
+  .site-wordmark .wordmark-small {
+    font-size: 9px !important;
+  }
+
+  .site-wordmark .wordmark-main {
+    font-size: 14px !important;
+  }
+
+  .header-right {
+    justify-self: end !important;
+    min-width: 0 !important;
+  }
+
+  .main-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    width: auto !important;
+  }
+
+  .dropdown-toggle,
+  #btn-login,
+  #btn-logout {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    font-size: 11.5px !important;
+    line-height: 1.05 !important;
+    padding: 6px 7px !important;
+    min-height: 34px !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+
+  /* Fixed positioning avoids clipping by header/layout on mobile. */
+  .dropdown-menu {
+    position: fixed !important;
+    top: 50px !important;
+    right: 8px !important;
+    left: auto !important;
+    min-width: 218px !important;
+    max-width: calc(100vw - 16px) !important;
+    z-index: 99999 !important;
+  }
+
+  .dropdown-menu a {
+    padding: 13px 16px !important;
+    font-size: 14px !important;
+  }
+
+  .layout {
+    display: block !important;
+    padding-right: 0 !important;
+  }
+
+  .sidebar {
+    max-width: none !important;
+    width: calc(100% - 24px) !important;
+    margin: 16px 12px 20px !important;
+    padding: 14px !important;
+    position: static !important;
+  }
+
+  .side-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .site-wordmark .wordmark-main {
+    font-size: 13px !important;
+  }
+
+  .dropdown-toggle,
+  #btn-login,
+  #btn-logout {
+    font-size: 10.5px !important;
+    padding: 5px 5px !important;
+  }
+}
