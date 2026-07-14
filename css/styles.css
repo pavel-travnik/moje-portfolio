@@ -1813,3 +1813,83 @@ MOBILE DROPDOWN + PORTFOLIO LABEL FIX v2
   .header-center .site-wordmark .wordmark-small { font-size: 9px !important; }
   .header-center .site-wordmark .wordmark-main { font-size: 14px !important; }
 }
+
+
+/* =====================================
+WORDMARK SIZE + MOBILE LEFT ALIGN
+===================================== */
+/* Desktop: roughly 2x larger than previous wordmark */
+.header-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.header-center .site-title {
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+.header-center .site-wordmark {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  text-align: left !important;
+  line-height: 0.9 !important;
+}
+
+.header-center .site-wordmark .wordmark-small {
+  display: block !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  opacity: 0.9 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--gold, #c9a646) !important;
+  -webkit-text-fill-color: var(--gold, #c9a646) !important;
+}
+
+.header-center .site-wordmark .wordmark-main {
+  display: block !important;
+  font-size: 34px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--gold, #c9a646) !important;
+  -webkit-text-fill-color: var(--gold, #c9a646) !important;
+}
+
+@media (max-width: 768px) {
+  /* mobile: keep it compact and align it clearly to the left */
+  .main-header {
+    grid-template-columns: 1fr auto !important;
+    justify-items: start !important;
+  }
+
+  .header-center {
+    grid-column: 1 !important;
+    justify-self: start !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin-right: auto !important;
+  }
+
+  .header-right {
+    grid-column: 2 !important;
+    justify-self: end !important;
+  }
+
+  .header-center .site-wordmark {
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+
+  .header-center .site-wordmark .wordmark-small {
+    font-size: 9px !important;
+  }
+
+  .header-center .site-wordmark .wordmark-main {
+    font-size: 14px !important;
+  }
+}
