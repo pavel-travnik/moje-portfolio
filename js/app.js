@@ -56,75 +56,61 @@ const PODILOVE_FONDY_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeur
 const PODILOVY_FOND_DATA_API =  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api/get_podilovy_fond_data';
 
 // ===================================================
-// DROPDOWN - MOBILE SAFE / POINTER SAFE
+// DROPDOWN - MOBILE SAFE / DIRECT BINDING
 // ===================================================
-let dropdownPointerHandled = false;
+function initDropdownControls() {
+  if (window.__dropdownControlsReady) return;
+  window.__dropdownControlsReady = true;
 
-function getDropdownMenu() {
-  return document.querySelector('.dropdown-menu');
-}
+  const dropdown = document.querySelector('.dropdown');
+  const toggle = document.querySelector('.dropdown-toggle');
+  const menu = document.querySelector('.dropdown-menu');
 
-function toggleDropdownMenu(e, forceState) {
-  const menu = getDropdownMenu();
-  if (!menu) return;
+  if (!dropdown || !toggle || !menu) return;
 
-  e.preventDefault();
-  e.stopPropagation();
-  if (typeof e.stopImmediatePropagation === 'function') {
-    e.stopImmediatePropagation();
+  let lastTouch = 0;
+
+  function setMenu(open) {
+    menu.classList.toggle('open', open);
+    dropdown.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
-  if (typeof forceState === 'boolean') {
-    menu.classList.toggle('open', forceState);
-  } else {
-    menu.classList.toggle('open');
-  }
-}
+  function handleToggle(e) {
+    if (e.type === 'click' && Date.now() - lastTouch < 500) return;
+    if (e.type === 'touchstart') lastTouch = Date.now();
 
-// On mobile browsers pointerdown is more reliable than click for menu buttons.
-document.addEventListener('pointerdown', e => {
-  const toggle = e.target.closest('.dropdown-toggle');
-  if (!toggle) return;
-
-  dropdownPointerHandled = true;
-  toggleDropdownMenu(e);
-}, true);
-
-document.addEventListener('click', e => {
-  const toggle = e.target.closest('.dropdown-toggle');
-  const dropdown = e.target.closest('.dropdown');
-  const menu = getDropdownMenu();
-
-  if (!menu) return;
-
-  // If pointerdown already handled this tap, swallow the follow-up click.
-  if (toggle && dropdownPointerHandled) {
-    dropdownPointerHandled = false;
     e.preventDefault();
     e.stopPropagation();
     if (typeof e.stopImmediatePropagation === 'function') {
       e.stopImmediatePropagation();
     }
-    return;
+
+    setMenu(!menu.classList.contains('open'));
   }
 
-  // Desktop / keyboard click fallback.
-  if (toggle) {
-    toggleDropdownMenu(e);
-    return;
-  }
+  // touchstart is the most reliable on mobile; click keeps desktop/keyboard support.
+  toggle.addEventListener('touchstart', handleToggle, { passive: false });
+  toggle.addEventListener('click', handleToggle);
 
-  // Click on dropdown item: close menu, router will handle navigation.
-  if (e.target.closest('.dropdown-menu [data-page]')) {
-    menu.classList.remove('open');
-    return;
-  }
+  menu.addEventListener('click', e => {
+    if (e.target.closest('[data-page]')) {
+      setMenu(false);
+    }
+  });
 
-  // Click outside dropdown: close menu.
-  if (!dropdown) {
-    menu.classList.remove('open');
-  }
-}, true);
+  document.addEventListener('click', e => {
+    if (!dropdown.contains(e.target)) {
+      setMenu(false);
+    }
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDropdownControls);
+} else {
+  initDropdownControls();
+}
 
 // ===================================================
 // SPA NAVIGATION
@@ -256,6 +242,7 @@ if (!path || path === 'index.html') {
 
 
  updateMenu();
+ initDropdownControls();
  decoratePortfolioLabel();
  decorateSideCards();   // ✅ přidat
 
