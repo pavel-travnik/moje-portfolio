@@ -1,128 +1,70 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>Moje portfolio</title>
-
-    <!-- ✅ OPRAVA MIME CHYBY -->
-    <link rel="stylesheet" href="/css/styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moje portfolio</title>
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
-
 <body>
 
-<!-- ================= HEADER ================= -->
 <header class="main-header">
+  <div class="header-left">
+    <img src="img/logo.png" class="logo" alt="Logo">
+  </div>
 
-    <!-- LEVÁ část -->
-    <div class="header-left">
-        <img src="img/logo.png" class="logo" alt="Logo">
-    </div>
+  <div class="header-center">
+    <h1 class="site-title">
+      <a href="#" class="gold-text site-wordmark" data-page="uvod" aria-label="Moje portfolio">
+        <span class="wordmark-small">moje</span>
+        <span class="wordmark-main">portfolio</span>
+      </a>
+    </h1>
+  </div>
 
-    <!-- STŘED -->
-    <div class="header-center">
-        <h1 class="site-title">
-            <a href="#" class="gold-text" data-page="uvod">
-                Moje‑portfolio
-            </a>
-        </h1>
-    </div>
-
-    <!-- PRAVÁ část -->
-    <div class="header-right">
-        <nav class="main-nav">
-            <div class="dropdown">
-                <button class="dropdown-toggle">Výběr ▾</button>
-                <div class="dropdown-menu">
-                    <a href="#" data-page="penze">Penzijní fondy</a>
-                    <a href="#" data-page="podilove-fondy">Podílové fondy</a>
-                    <a href="#" data-page="akcie">Akcie</a>
-                    <a href="#" data-page="etf">ETF</a>
-                    <a href="#" data-page="meny">Měny</a>
-                    <a href="#" data-page="portfolio" id="menu-portfolio" style="display:none;">Moje portfolio</a>
-                </div>
-            </div>
-
-            <button id="btn-login" class="pill-button" onclick="openLoginModal()">Přihlásit</button>
-            <button id="btn-logout" class="pill-button" onclick="logout()" style="display:none;">Odhlásit</button>
-        </nav>
-    </div>
-
+  <div class="header-right">
+    <nav class="main-nav" aria-label="Hlavní navigace">
+      <div class="dropdown">
+        <button class="dropdown-toggle" type="button" aria-expanded="false" aria-haspopup="true">Výběr ▾</button>
+        <div class="dropdown-menu">
+          <a href="#" data-page="penze">Penzijní fondy</a>
+          <a href="#" data-page="podilove-fondy">Podílové fondy</a>
+          <a href="#" data-page="akcie">Akcie</a>
+          <a href="#" data-page="etf">ETF</a>
+          <a href="#" data-page="meny">Měny</a>
+          <a href="#" data-page="portfolio" id="menu-portfolio" style="display:none;">Moje portfolio</a>
+        </div>
+      </div>
+      <button id="btn-login" class="pill-button" type="button" onclick="openLoginModal()">Přihlásit</button>
+      <button id="btn-logout" class="pill-button" type="button" onclick="logout()" style="display:none;">Odhlásit</button>
+    </nav>
+  </div>
 </header>
 
-
-<!-- ================= LAYOUT ================= -->
 <div class="layout">
-
-    <!-- ===== MAIN ===== -->
-    <main id="mainContent" class="content">
-
-        <!-- ✅ HERO -->
-        <div class="home-hero">
-            <img src="img/fondy.png" alt="Fondy" class="hero-img">
-        </div>
-
-        <!-- ✅ GRID -->
-        <div class="home-grid">
-            <div class="home-card" data-page="penze">Penzijní fondy</div>
-            <div class="home-card" data-page="podilove-fondy">Podílové fondy</div>
-            <div class="home-card" data-page="akcie">Akcie</div>
-            <div class="home-card" data-page="etf">ETF</div>
-            <div class="home-card" data-page="meny">Měny</div>
-        </div>
-
-    </main>
-
-
-    <div class="layout">
   <main id="mainContent" class="content"></main>
 
-  <!-- ✅ PRAVÝ BLOK (sidebar) -->
   <aside class="sidebar">
-  
-  <div class="side-grid">
-    <div class="side-card" data-page="penze">
-      <h4>Penzijní fondy</h4>
+    <div class="side-grid">
+      <div class="side-card" data-page="penze"><h4>Penzijní fondy</h4></div>
+      <div class="side-card" data-page="podilove-fondy"><h4>Podílové fondy</h4></div>
+      <div class="side-card" data-page="akcie"><h4>Akcie</h4></div>
+      <div class="side-card" data-page="etf"><h4>ETF</h4></div>
+      <div class="side-card" data-page="meny"><h4>Měny</h4></div>
     </div>
-
-    <div class="side-card" data-page="podilove-fondy">
-      <h4>Podílové fondy</h4>
-    </div>
-
-    <div class="side-card" data-page="akcie">
-      <h4>Akcie</h4>
-    </div>
-
-    <div class="side-card" data-page="etf">
-      <h4>ETF</h4>
-    </div>
-
-    <div class="side-card" data-page="meny">
-      <h4>Měny</h4>
-    </div>
-  </div>
-</aside>
+  </aside>
 </div>
 
-
-</div>
-
-
-<!-- ================= FOOTER ================= -->
 <footer class="footer">
-    <div class="footer-content">
-        <a href="#" data-page="gdpr">GDPR</a>
-        <a href="#" data-page="upozorneni">Investiční upozornění</a>
-        <a href="#" data-page="slovnik">Slovníček</a>
-    </div>
- Investování je spojeno s rizikem. Hodnota investice může kolísat.
+  <div class="footer-content">
+    <a href="#" data-page="gdpr">GDPR</a>
+    <a href="#" data-page="upozorneni">Investiční upozornění</a>
+    <a href="#" data-page="slovnik">Slovníček</a>
+  </div>
+  Investování je spojeno s rizikem. Hodnota investice může kolísat.
 </footer>
 
-
-<!-- ================= SCRIPTS ================= -->
 <script src="/js/portfolio.js"></script>
 <script src="/js/app.js"></script>
-
 </body>
 </html>
