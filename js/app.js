@@ -357,6 +357,7 @@ if (!page || page === "undefined") {
 
 
  main.innerHTML = ''; // bezpečné
+     if (typeof hideTooltip === 'function') hideTooltip();
 
 
     
@@ -1046,14 +1047,14 @@ const main = document.getElementById('mainContent');
 
     <div id="chart-portfolio"></div>
     
-<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+<button class="back-btn">
   ← Zpět
 </button>
 
   `;
 
   // ✅ BACK
-  document.querySelector('.back-btn').onclick = () => history.back();
+  document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
 
   // ✅ PERIOD SWITCH
   document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -1257,14 +1258,14 @@ function loadPodilovyFondDetail(isin) {
   <div id="chart-podilovy-fond"></div>
 
   
-<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+<button class="back-btn">
   ← Zpět
 </button>
 
   `;
 
   // ✅ BACK
-  document.querySelector('.back-btn').onclick = () => history.back();
+  document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
 
   // ✅ PERIOD SWITCH
   document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -1569,7 +1570,7 @@ const main = document.getElementById('mainContent');
 
     <div id="chart-stock"></div>
     
-<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+<button class="back-btn">
   ← Zpět
 </button>
 
@@ -1577,7 +1578,7 @@ const main = document.getElementById('mainContent');
 
   
 
-document.querySelector('.back-btn').onclick = () => history.back();
+document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
 
 
 
@@ -1906,21 +1907,29 @@ window.addEventListener('resize', () => {
 // FILTRACE OBDOBi
 // ===================================================
 function filterPeriod(data, period) {
-  if (period === 'MAX') return data;
+  if (!Array.isArray(data) || !data.length || period === 'MAX') return data || [];
 
-  const from = new Date();
+  const sorted = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const lastDate = new Date(sorted.at(-1).date);
+  const target = new Date(lastDate);
 
   if (period === '1M') {
-    from.setMonth(from.getMonth() - 1);
+    target.setMonth(target.getMonth() - 1);
   } else if (period === '6M') {
-    from.setMonth(from.getMonth() - 6);
+    target.setMonth(target.getMonth() - 6);
   } else if (period === '1Y') {
-    from.setFullYear(from.getFullYear() - 1);
+    target.setFullYear(target.getFullYear() - 1);
   } else if (period === '3Y') {
-    from.setFullYear(from.getFullYear() - 3);
+    target.setFullYear(target.getFullYear() - 3);
+  } else {
+    return sorted;
   }
 
-  return data.filter(d => new Date(d.date) >= from);
+  // Přesné období počítáme od posledního dostupného data. Pokud přesné datum v datech není
+  // (víkend, svátek, chybějící ocenění), vezme se nejbližší vyšší datum po cílovém datu.
+  let startIndex = sorted.findIndex(d => new Date(d.date) >= target);
+  if (startIndex < 0) startIndex = 0;
+  return sorted.slice(startIndex);
 }
 
 
@@ -2001,7 +2010,7 @@ const main = document.getElementById('mainContent');
 
     <div id="chart-currency"></div>
     
-<button class="back-btn" data-tooltip="Zpět na předchozí stránku">
+<button class="back-btn">
   ← Zpět
 </button>
 
@@ -2009,7 +2018,7 @@ const main = document.getElementById('mainContent');
 
   
 
-document.querySelector('.back-btn').onclick = () => history.back();
+document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
 
 
 
