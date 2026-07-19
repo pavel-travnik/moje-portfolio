@@ -1807,11 +1807,29 @@ function renderStockKPI(data) {
 // ===================================================
 let lastChartData = null;
 
+function downsampleHistory(history, maxPoints = 700) {
+  if (!Array.isArray(history) || history.length <= maxPoints) return history || [];
+
+  const result = [];
+  const step = (history.length - 1) / (maxPoints - 1);
+
+  for (let i = 0; i < maxPoints; i++) {
+    result.push(history[Math.round(i * step)]);
+  }
+
+  return result;
+}
+
 function renderPortfolioChart(history, containerId) {
+ history = Array.isArray(history) ? history : [];
  lastChartData = { history, containerId };
 
  const div = document.getElementById(containerId);
- if (!div || history.length < 2) return;
+ if (!div) return;
+ if (history.length < 2) {
+  div.innerHTML = '<p>Není dostatek dat pro vykreslení grafu.</p>';
+  return;
+ }
 
  div.innerHTML = '';
  div.style.position = 'relative';
