@@ -196,6 +196,32 @@ function ensurePortfolioUiStyles() {
       gap: .75rem;
       margin-top: 1rem;
     }
+
+    .portfolio-value-intro {
+      margin-bottom: 1rem;
+    }
+    .portfolio-value-intro .icon-badge {
+      background: rgba(201, 166, 70, 0.14);
+      color: #C9A646;
+    }
+    .portfolio-switch-modal {
+      width: min(720px, calc(100vw - 2rem));
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    .portfolio-switch-modal .portfolio-switch-list {
+      max-height: min(58vh, 520px);
+      overflow-y: auto;
+      padding-right: .25rem;
+    }
+    @media (max-width: 640px) {
+      .portfolio-switch-modal {
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 1rem);
+        padding: 1rem !important;
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -328,7 +354,7 @@ function openCreatePortfolioModal() {
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop';
       modal.innerHTML = `
-        <div class="modal">
+        <div class="modal portfolio-switch-modal">
           <div class="toolbar" style="justify-content:space-between;margin-bottom:1rem">
             <h3 style="margin:0">Přehled portfolií</h3>
             <button id="pf-switch-close" class="pill-button" type="button">Zavřít</button>
@@ -406,9 +432,29 @@ function openCreatePortfolioModal() {
       <h1 id="pf-detail-title">Portfolio</h1>
 
       <section id="tab-value" class="portfolio-tab">
+        <div class="section-intro portfolio-value-intro">
+          <div class="intro-heading">
+            <span class="icon-badge" aria-hidden="true">◌</span>
+            <div>
+              <h2>Moje portfolio</h2>
+              <p class="intro-lead">
+                Zde si můžete zadat údaje o svém portfoliu a sledovat jeho vývoj v detailu.
+                Můžete si vytvořit více portfolií a doplnit do nich jednotlivé instrumenty
+                pomocí transakcí. Hodnota portfolia je přepočítávána každý den a přehled
+                si můžete nechat zasílat e-mailem. Kliknutím na konkrétní instrument
+                otevřete jeho detail s historickým vývojem hodnoty, rizikovostí a posledním
+                dostupným oceněním.
+                <a href="https://icy-sea-053d99203.4.azurestaticapps.net/aktualizace" target="_blank" rel="noopener noreferrer">Data jsou aktualizována</a>
+                z veřejně dostupných zdrojů a slouží pouze pro informativní přehled.
+                Neposkytujeme investiční, penzijní ani jiné finanční poradenství.
+              </p>
+            </div>
+          </div>
+        </div>
         <div class="kpi-row">
           <div class="kpi"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
           <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
+          <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
         </div>
         <div class="overview-right">
           <div id="portfolio-allocation-chart"></div>
@@ -424,6 +470,7 @@ function openCreatePortfolioModal() {
             <option value="value" selected>Hodnota</option>
             <option value="type">Typ</option>
             <option value="name">Název</option>
+            <option value="lastValuation">Poslední ocenění</option>
           </select>
           <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
@@ -433,6 +480,7 @@ function openCreatePortfolioModal() {
             <th data-key="name">Název</th>
             <th data-key="quantity">Počet kusů</th>
             <th data-key="value">Hodnota</th>
+            <th data-key="lastValuation">Poslední ocenění</th>
           </tr></thead>
           <tbody id="portfolio-instruments"></tbody>
         </table>
@@ -1050,6 +1098,47 @@ function positionCurrentValue(position) {
   ) || 0;
 }
 
+function formatPortfolioDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('cs-CZ');
+}
+
+function positionLastValuationDate(position) {
+  return position?.last_valuation_date ??
+    position?.valuation_date ??
+    position?.price_date ??
+    position?.as_of_date ??
+    position?.date ??
+    position?.last_date ??
+    position?.updated_at ??
+    null;
+}
+
+function portfolioLastValuationDate(detail) {
+  const val = detail?.valuation || {};
+  const direct = val.last_valuation_date ??
+    val.valuation_date ??
+    val.as_of_date ??
+    val.price_date ??
+    val.date ??
+    val.updated_at ??
+    detail?.last_valuation_date ??
+    detail?.valuation_date ??
+    detail?.as_of_date ??
+    detail?.updated_at ??
+    null;
+  if (direct) return direct;
+  const dates = (Array.isArray(detail?.positions) ? detail.positions : [])
+    .map(positionLastValuationDate)
+    .filter(Boolean)
+    .map(x => new Date(x))
+    .filter(d => !Number.isNaN(d.getTime()));
+  if (!dates.length) return null;
+  return new Date(Math.max(...dates.map(d => d.getTime()))).toISOString();
+}
+
 function setPortfolioTitle(detail, portfolio, portfolioId) {
   const title = document.getElementById('pf-detail-title');
   if (!title) return;
@@ -1090,6 +1179,11 @@ function renderPortfolioOverview(data) {
 
   el.textContent = `${fmtNumber(diff)} (${fmtNumber(pct)} %)`;
   el.className = diff >= 0 ? 'pos' : 'neg';
+
+  const lastValuationEl = document.getElementById('pf-kpi-last-valuation');
+  if (lastValuationEl) {
+    lastValuationEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
+  }
 }
 
 function renderPortfolioInstrumentFilterBar(filterLabel, visibleCount, totalCount) {
@@ -1140,6 +1234,10 @@ function renderPortfolioInstruments(positions, options = {}) {
         return p.quantity || 0;
       case 'value':
         return positionCurrentValue(p);
+      case 'lastValuation': {
+        const d = new Date(positionLastValuationDate(p));
+        return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+      }
       default:
         return '';
     }
@@ -1178,6 +1276,9 @@ function renderPortfolioInstruments(positions, options = {}) {
         </td>
         <td data-label="Hodnota">
           ${instrumentValue ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
+        </td>
+        <td data-label="Poslední ocenění">
+          ${formatPortfolioDate(positionLastValuationDate(p))}
         </td>
       `;
 
