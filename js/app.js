@@ -535,14 +535,14 @@ function ensureOverviewTableStyle() {
       .overview-table td:nth-child(1),
       #fundTable .dps-overview-table th:nth-child(1),
       #fundTable .dps-overview-table td:nth-child(1) {
-        width: 54%;
+        width: 43%;
       }
 
       .overview-table th:nth-child(2),
       .overview-table td:nth-child(2),
       #fundTable .dps-overview-table th:nth-child(2),
       #fundTable .dps-overview-table td:nth-child(2) {
-        width: 28%;
+        width: 17%;
         text-align: right;
       }
 
@@ -550,7 +550,15 @@ function ensureOverviewTableStyle() {
       .overview-table td:nth-child(3),
       #fundTable .dps-overview-table th:nth-child(3),
       #fundTable .dps-overview-table td:nth-child(3) {
-        width: 18%;
+        width: 20%;
+        text-align: right;
+      }
+
+      .overview-table th:nth-child(4),
+      .overview-table td:nth-child(4),
+      #fundTable .dps-overview-table th:nth-child(4),
+      #fundTable .dps-overview-table td:nth-child(4) {
+        width: 20%;
         text-align: right;
       }
     }
@@ -588,10 +596,18 @@ function ensureOverviewViewShell(grid, prefix) {
 }
 
 
-function formatPerf3Y(value) {
+function formatPerf(value) {
   return value != null && !isNaN(Number(value))
     ? `${Number(value).toFixed(2)} %`
     : '—';
+}
+
+function formatPerf3Y(value) {
+  return formatPerf(value);
+}
+
+function formatPerf5Y(value) {
+  return formatPerf(value);
 }
 
 function perfClass(value) {
@@ -628,6 +644,9 @@ function renderOverviewCardMetric(item) {
     <div class="fund-perf ${perfClass(item?.perf3Y)}">
       3 roky: <strong>${formatPerf3Y(item?.perf3Y)}</strong>
     </div>
+    <div class="fund-perf ${perfClass(item?.perf5Y)}">
+      5 let: <strong>${formatPerf5Y(item?.perf5Y)}</strong>
+    </div>
     ${last ? `<small>Poslední ocenění: ${last}</small>` : ''}
   `;
 }
@@ -642,6 +661,7 @@ function renderThreeColumnOverviewTable({
   getName,
   getMetric,
   getPerf3Y = item => item?.perf3Y,
+  getPerf5Y = item => item?.perf5Y,
   getId,
   onSelect,
   metricLabel = 'Měna'
@@ -652,7 +672,8 @@ function renderThreeColumnOverviewTable({
   const getters = {
     name: getName,
     metric: getMetric,
-    perf3Y: getPerf3Y
+    perf3Y: getPerf3Y,
+    perf5Y: getPerf5Y
   };
 
   const sortedData = [...data].sort((a, b) => {
@@ -672,11 +693,13 @@ function renderThreeColumnOverviewTable({
           <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
           <th data-key="metric" class="${sortKey === 'metric' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">${metricLabel}</th>
           <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 3 roky</th>
+          <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 5 let</th>
         </tr>
       </thead>
       <tbody>
         ${sortedData.map(item => {
           const p3y = getPerf3Y(item);
+          const p5y = getPerf5Y(item);
           const last = formatLastValuation(item);
 
           return `
@@ -684,6 +707,7 @@ function renderThreeColumnOverviewTable({
               <td data-label="Název">${getName(item) || ''}</td>
               <td data-label="${metricLabel}">${getMetric(item) || ''}</td>
               <td data-label="Výnos 3 roky" class="${perfClass(p3y)}">${formatPerf3Y(p3y)}</td>
+              <td data-label="Výnos 5 let" class="${perfClass(p5y)}">${formatPerf5Y(p5y)}</td>
             </tr>
           `;
         }).join('')}
@@ -710,6 +734,7 @@ function renderThreeColumnOverviewTable({
         getName,
         getMetric,
         getPerf3Y,
+        getPerf5Y,
         getId,
         onSelect,
         metricLabel
@@ -797,15 +822,14 @@ function loadPensionFunds() {
       const card = document.createElement('div');
       card.className = 'fund-card';
 
-      const perf = f.perf3Y != null
-        ? `${f.perf3Y.toFixed(2)} %`
-        : '—';
-
       card.innerHTML = `
         <h3>${f.name}</h3>
         <small>${f.provider || ''}</small>
-        <div class="fund-perf ${f.perf3Y >= 0 ? 'pos' : 'neg'}">
-          3 roky: <strong>${perf}</strong>
+        <div class="fund-perf ${perfClass(f.perf3Y)}">
+          3 roky: <strong>${formatPerf3Y(f.perf3Y)}</strong>
+        </div>
+        <div class="fund-perf ${perfClass(f.perf5Y)}">
+          5 let: <strong>${formatPerf5Y(f.perf5Y)}</strong>
         </div>
       `;
 
@@ -842,6 +866,7 @@ function loadPensionFunds() {
         <option value="name">Název</option>
         <option value="riskCategory">Riziko</option>
         <option value="perf3Y">Výnos 3 roky</option>
+        <option value="perf5Y">Výnos 5 let</option>
       `;
       mobileSortSelect.value = sort.key;
 
@@ -866,6 +891,7 @@ function loadPensionFunds() {
             <th data-key="name">Název</th>
             <th data-key="riskCategory">Riziko</th>
             <th data-key="perf3Y">Výnos 3 roky</th>
+            <th data-key="perf5Y">Výnos 5 let</th>
           </tr>
         </thead>
         <tbody>
@@ -875,6 +901,9 @@ function loadPensionFunds() {
               <td data-label="Riziko">${f.riskCategory != null ? f.riskCategory + ' / 7' : '—'}</td>
               <td data-label="Výnos 3 roky" class="${perfClass(f.perf3Y)}">
                 ${formatPerf3Y(f.perf3Y)}
+              </td>
+              <td data-label="Výnos 5 let" class="${perfClass(f.perf5Y)}">
+                ${formatPerf5Y(f.perf5Y)}
               </td>
             </tr>
           `).join('')}
@@ -1039,6 +1068,7 @@ const main = document.getElementById('mainContent');
       <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
       <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
       <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
       <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
 
       </div>
@@ -1195,6 +1225,7 @@ function loadPodiloveFondy() {
       getMetric: f => f.currency || f.mena || f.Mena || '',
       metricLabel: 'Měna',
       getPerf3Y: f => f.perf3Y,
+      getPerf5Y: f => f.perf5Y,
       getId: f => f.isin,
       onSelect: selectFund
     });
@@ -1249,6 +1280,7 @@ function loadPodilovyFondDetail(isin) {
       <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
       <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
       <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
       <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
 
     </div>
@@ -1401,6 +1433,7 @@ function loadStocks() {
       getMetric: s => s.currency || s.mena || s.Mena || '',
       metricLabel: 'Měna',
       getPerf3Y: s => s.perf3Y,
+      getPerf5Y: s => s.perf5Y,
       getId: s => s.ticker,
       onSelect: selectStock
     });
@@ -1484,6 +1517,7 @@ function loadEtfs() {
       getMetric: s => s.currency || s.mena || s.Mena || '',
       metricLabel: 'Měna',
       getPerf3Y: s => s.perf3Y,
+      getPerf5Y: s => s.perf5Y,
       getId: s => s.ticker,
       onSelect: selectEtf
     });
@@ -1557,6 +1591,7 @@ const main = document.getElementById('mainContent');
       <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
       <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
       <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
       <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
 
   </div>
@@ -1921,6 +1956,8 @@ function filterPeriod(data, period) {
     target.setFullYear(target.getFullYear() - 1);
   } else if (period === '3Y') {
     target.setFullYear(target.getFullYear() - 3);
+  } else if (period === '5Y') {
+    target.setFullYear(target.getFullYear() - 5);
   } else {
     return sorted;
   }
@@ -1998,6 +2035,7 @@ const main = document.getElementById('mainContent');
       <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
       <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
       <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+      <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
       <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
 
   </div>
