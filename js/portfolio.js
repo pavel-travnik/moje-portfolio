@@ -204,6 +204,35 @@ function ensurePortfolioUiStyles() {
       background: rgba(201, 166, 70, 0.14);
       color: #C9A646;
     }
+    #instruments-table {
+      table-layout: fixed;
+      width: 100%;
+    }
+    #instruments-table th[data-key="type"],
+    #instruments-table td[data-label="Typ"] {
+      width: 9%;
+      white-space: nowrap;
+    }
+    #instruments-table th[data-key="name"],
+    #instruments-table td[data-label="Název"] {
+      width: 34%;
+    }
+    #instruments-table th[data-key="quantity"],
+    #instruments-table td[data-label="Počet kusů"] {
+      width: 12%;
+      text-align: right;
+    }
+    #instruments-table th[data-key="value"],
+    #instruments-table td[data-label="Hodnota"] {
+      width: 27%;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #instruments-table th[data-key="lastValuation"],
+    #instruments-table td[data-label="Poslední ocenění"] {
+      width: 18%;
+      white-space: nowrap;
+    }
     .portfolio-switch-modal {
       width: min(720px, calc(100vw - 2rem));
       max-height: calc(100vh - 2rem);
@@ -220,6 +249,16 @@ function ensurePortfolioUiStyles() {
         width: calc(100vw - 1rem);
         max-height: calc(100vh - 1rem);
         padding: 1rem !important;
+      }
+      #instruments-table th[data-key="type"],
+      #instruments-table td[data-label="Typ"],
+      #instruments-table th[data-key="name"],
+      #instruments-table td[data-label="Název"],
+      #instruments-table th[data-key="value"],
+      #instruments-table td[data-label="Hodnota"],
+      #instruments-table th[data-key="lastValuation"],
+      #instruments-table td[data-label="Poslední ocenění"] {
+        width: auto;
       }
     }
   `;
@@ -1106,7 +1145,9 @@ function formatPortfolioDate(value) {
 }
 
 function positionLastValuationDate(position) {
-  return position?.last_valuation_date ??
+  return position?.LastValuationDate ??
+    position?.lastValuationDate ??
+    position?.last_valuation_date ??
     position?.valuation_date ??
     position?.price_date ??
     position?.as_of_date ??
@@ -1118,12 +1159,16 @@ function positionLastValuationDate(position) {
 
 function portfolioLastValuationDate(detail) {
   const val = detail?.valuation || {};
-  const direct = val.last_valuation_date ??
+  const direct = val.LastValuationDate ??
+    val.lastValuationDate ??
+    val.last_valuation_date ??
     val.valuation_date ??
     val.as_of_date ??
     val.price_date ??
     val.date ??
     val.updated_at ??
+    detail?.LastValuationDate ??
+    detail?.lastValuationDate ??
     detail?.last_valuation_date ??
     detail?.valuation_date ??
     detail?.as_of_date ??
@@ -1169,23 +1214,18 @@ function renderPortfolioList(portfolios, containerId = 'portfolioList') {
 function renderPortfolioOverview(data) {
   if (!data?.valuation) return;
   const val = data.valuation;
-
   document.getElementById('pf-kpi-value').textContent =
     `${fmtNumber(val.gross_value_base)} CZK`;
-
   const el = document.getElementById('pf-kpi-daily');
   const diff = val.pnl_day_czk;
   const pct = val.pnl_day_pct * 100;
-
   el.textContent = `${fmtNumber(diff)} (${fmtNumber(pct)} %)`;
   el.className = diff >= 0 ? 'pos' : 'neg';
-
   const lastValuationEl = document.getElementById('pf-kpi-last-valuation');
   if (lastValuationEl) {
     lastValuationEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
   }
 }
-
 function renderPortfolioInstrumentFilterBar(filterLabel, visibleCount, totalCount) {
   const filterEl = document.getElementById('portfolio-instruments-filter');
   if (!filterEl) return;
@@ -1276,9 +1316,6 @@ function renderPortfolioInstruments(positions, options = {}) {
         </td>
         <td data-label="Hodnota">
           ${instrumentValue ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
-        </td>
-        <td data-label="Poslední ocenění">
-          ${formatPortfolioDate(positionLastValuationDate(p))}
         </td>
       `;
 
