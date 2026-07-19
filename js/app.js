@@ -1821,15 +1821,10 @@ function downsampleHistory(history, maxPoints = 700) {
 }
 
 function renderPortfolioChart(history, containerId) {
- history = Array.isArray(history) ? history : [];
  lastChartData = { history, containerId };
 
  const div = document.getElementById(containerId);
- if (!div) return;
- if (history.length < 2) {
-  div.innerHTML = '<p>Není dostatek dat pro vykreslení grafu.</p>';
-  return;
- }
+ if (!div || history.length < 2) return;
 
  div.innerHTML = '';
  div.style.position = 'relative';
@@ -2036,6 +2031,21 @@ window.addEventListener('resize', () => {
 // ===================================================
 // FILTRACE OBDOBi
 // ===================================================
+function findClosestIndexWithinTolerance(sorted, targetDate, toleranceDays = 30) {
+  let bestIndex = -1;
+  let bestDiff = Infinity;
+
+  sorted.forEach((item, index) => {
+    const diffDays = Math.abs((new Date(item.date) - targetDate) / 86400000);
+    if (diffDays <= toleranceDays && diffDays < bestDiff) {
+      bestDiff = diffDays;
+      bestIndex = index;
+    }
+  });
+
+  return bestIndex;
+}
+
 function filterPeriod(data, period) {
   if (!Array.isArray(data) || !data.length || period === 'MAX') return data || [];
 
@@ -2057,8 +2067,14 @@ function filterPeriod(data, period) {
     return sorted;
   }
 
-  // Přesné období počítáme od posledního dostupného data. Pokud přesné datum v datech není
-  // (víkend, svátek, chybějící ocenění), vezme se nejbližší vyšší datum po cílovém datu.
+  // Pro 3Y a 5Y sjednoceno s procedurou RefreshInstrumentOverviewMetrics:
+  // vybírá se datum nejbližší cílovému datu v toleranci +/- 30 dní.
+  if (period === '3Y' || period === '5Y') {
+    const closestIndex = findClosestIndexWithinTolerance(sorted, target, 30);
+    return closestIndex >= 0 ? sorted.slice(closestIndex) : [];
+  }
+
+  // Kratší období necháváme jako dosud: první dostupné datum po cílovém datu.
   let startIndex = sorted.findIndex(d => new Date(d.date) >= target);
   if (startIndex < 0) startIndex = 0;
   return sorted.slice(startIndex);
