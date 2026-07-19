@@ -33,6 +33,8 @@ const apiCache = {
 apiCache.dpsFundsMeta = null;
 apiCache.dpsTableMetrics = {};
 apiCache.dpsFundsOverview = null;
+apiCache.dpsPromises = {};
+apiCache.dpsMetaPromise = null;
 
 
 
@@ -758,10 +760,31 @@ function renderThreeColumnOverviewTable({
 }
 
 async function ensureFundsMeta() {
-  if (apiCache.dpsFundsMeta) return;
+  if (apiCache.dpsFundsMeta) return apiCache.dpsFundsMeta;
 
-  const res = await fetch(DPS_API);
-  apiCache.dpsFundsMeta = await res.json();
+  // Pokud už byl načten přehled penzí, použij ho i jako metadata pro detail.
+  // Tím se při otevření detailu z přehledu nevolá zbytečně znovu get_dps_funds.
+  if (Array.isArray(apiCache.dpsFundsOverview)) {
+    apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
+    return apiCache.dpsFundsMeta;
+  }
+
+  if (!apiCache.dpsMetaPromise) {
+    apiCache.dpsMetaPromise = fetch(DPS_API)
+      .then(res => {
+        if (!res.ok) throw new Error(`DPS metadata HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        apiCache.dpsFundsMeta = Array.isArray(data) ? data : [];
+        return apiCache.dpsFundsMeta;
+      })
+      .finally(() => {
+        apiCache.dpsMetaPromise = null;
+      });
+  }
+
+  return apiCache.dpsMetaPromise;
 }
 
 function loadPensionFunds() {
@@ -948,6 +971,7 @@ function loadPensionFunds() {
     .then(r => r.json())
     .then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
+      apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
       updateView();
     })
     .catch(err => {
@@ -960,7 +984,8 @@ function loadPensionFunds() {
 function renderFundMeta(isin) {
   if (!apiCache.dpsFundsMeta) return;
 
-  const fund = apiCache.dpsFundsMeta.find(f => f.isin === isin);
+  const normalizedIsin = String(isin || '').trim();
+  const fund = apiCache.dpsFundsMeta.find(f => String(f.isin || '').trim() === normalizedIsin);
   if (!fund) return;
 
   const nameEl = document.getElementById('fund-name');
@@ -969,18 +994,29 @@ function renderFundMeta(isin) {
   const link = document.getElementById('fund-url');
   const titleEl = document.getElementById('fund-title');
 
-  if (nameEl) nameEl.textContent = fund.name;
-  if (titleEl) titleEl.textContent = fund.name;
-  if (providerEl) providerEl.textContent = fund.provider;
-
+  if (nameEl) nameEl.textContent = fund.name || 'Detail fondu';
+  if (titleEl) titleEl.textContent = fund.name || 'Detail fondu';
+  if (providerEl) providerEl.textContent = fund.provider || '';
   if (riskEl) {
-    riskEl.textContent = `${fund.riskCategory} / 7`;
-    riskEl.className = 'risk risk-' + fund.riskCategory;
+    riskEl.textContent = fund.riskCategory != null ? `${fund.riskCategory} / 7` : '—';
+    riskEl.className = fund.riskCategory != null ? 'risk risk-' + fund.riskCategory : 'risk';
+  }
+
+  // Rychlé vyplnění poslední hodnoty z přehledového endpointu ještě před načtením historie.
+  const lastEl = document.getElementById('kpi-last');
+  const value = fund.lastValue ?? fund.lastValuationValue;
+  if (lastEl && value != null && !isNaN(Number(value))) {
+    const dateText = fund.lastValuationDate
+      ? ` (${new Date(fund.lastValuationDate).toLocaleDateString('cs-CZ')})`
+      : '';
+    const currency = fund.currency ? ` ${fund.currency}` : '';
+    lastEl.textContent = `${Number(value).toFixed(4)}${currency}${dateText}`;
   }
 
   if (link) {
     if (fund.url) {
       link.href = fund.url.startsWith('http') ? fund.url : `https://${fund.url}`;
+      link.style.display = '';
     } else {
       link.style.display = 'none';
     }
@@ -1098,43 +1134,84 @@ const main = document.getElementById('mainContent');
     };
   });
 
-  // ✅ META (SPRÁVNĚ ASYNC)
-  ensureFundsMeta().then(() => renderFundMeta(isin));
+  const defaultPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
+  if (defaultPeriodBtn) defaultPeriodBtn.classList.add('active');
+
+  const chart = document.getElementById('chart-portfolio');
+  if (chart) chart.innerHTML = '<p>Načítám historická data…</p>';
+
+  // ✅ META se vykreslí okamžitě z přehledu, pokud už existuje.
+  if (Array.isArray(apiCache.dpsFundsOverview)) {
+    apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
+    renderFundMeta(isin);
+  }
+
+  // ✅ META fallback při přímém otevření URL detailu.
+  ensureFundsMeta()
+    .then(() => renderFundMeta(isin))
+    .catch(err => console.error('Chyba načítání metadat fondu:', err));
 
   // ✅ DATA
   loadDPSData(isin, '3Y');
 }
 
 async function loadDPSData(isin, period) {
- // ✅ 1️⃣ fetch jen jednou
- if (!apiCache.dps[isin]) {
-  const res = await fetch(
-   `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
-  );
+  const cacheKey = String(isin || '').trim();
+  const requestKey = `${cacheKey}|${period}`;
+  window.__activeDpsRequestKey = requestKey;
 
-  let data = await res.json();
-  if (!Array.isArray(data)) data = [];
+  try {
+    // ✅ 1️⃣ fetch jen jednou, včetně sdílené promise proti duplicitním klikům.
+    if (!apiCache.dps[cacheKey]) {
+      if (!apiCache.dpsPromises[cacheKey]) {
+        const chart = document.getElementById('chart-portfolio');
+        if (chart && !chart.innerHTML.trim()) {
+          chart.innerHTML = '<p>Načítám historická data…</p>';
+        }
 
-  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+        apiCache.dpsPromises[cacheKey] = fetch(
+          `${DPS_API_URL}?isin=${encodeURIComponent(cacheKey)}`
+        )
+          .then(res => {
+            if (!res.ok) throw new Error(`DPS data HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            if (!Array.isArray(data)) data = [];
+            data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            apiCache.dps[cacheKey] = data;
+            return data;
+          })
+          .finally(() => {
+            delete apiCache.dpsPromises[cacheKey];
+          });
+      }
 
-  apiCache.dps[isin] = data;
- }
+      await apiCache.dpsPromises[cacheKey];
+    }
 
- // ✅ 2️⃣ period = frontend filtr (stejné jako akcie)
- const filtered = filterPeriod(apiCache.dps[isin], period);
- const finalData = filtered.length ? filtered : apiCache.dps[isin];
+    // Pokud mezitím uživatel přepnul fond/období, starý request už nevykresluj.
+    if (window.__activeDpsRequestKey !== requestKey) return;
 
- // ✅ 3️⃣ render (stejná logika)
- renderFundKPI(finalData);
- renderPeriodDifference(
-  finalData.map(d => ({ value: d.value }))
- );
- renderPortfolioChart(
-  finalData.map(d => ({ date: d.date, value: d.value })),
-  'chart-portfolio'
- );
+    // ✅ 2️⃣ period = frontend filtr (stejné jako akcie)
+    const filtered = filterPeriod(apiCache.dps[cacheKey], period);
+    const finalData = filtered.length ? filtered : apiCache.dps[cacheKey];
+
+    // ✅ 3️⃣ render (KPI z plných dat, graf může být zlehčený)
+    renderFundKPI(finalData);
+    renderPeriodDifference(
+      finalData.map(d => ({ value: d.value }))
+    );
+    renderPortfolioChart(
+      downsampleHistory(finalData.map(d => ({ date: d.date, value: d.value })), 700),
+      'chart-portfolio'
+    );
+  } catch (err) {
+    console.error('Chyba načítání DPS dat:', err);
+    const chart = document.getElementById('chart-portfolio');
+    if (chart) chart.innerHTML = '<p>Chyba načítání historických dat.</p>';
+  }
 }
-
 
 function renderFundKPI(data) {
   if (!data.length) return;
