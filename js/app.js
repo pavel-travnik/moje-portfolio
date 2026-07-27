@@ -231,6 +231,30 @@ function decorateSideCards() {
   });
 }
 
+function ensureGoldTileIconStyle() {
+  if (document.getElementById('gold-tile-icon-style')) return;
+  const style = document.createElement('style');
+  style.id = 'gold-tile-icon-style';
+  style.textContent = `
+    /* Sjednocení ikon dlaždic napříč sekcemi */
+    .side-card-icon,
+    .icon-badge,
+    .fund-card::before,
+    .fund-card::after,
+    .fund-card .tile-icon,
+    .fund-card .card-icon,
+    .fund-card .fund-card-icon,
+    .fund-card .icon,
+    .fund-card svg {
+      color: #C9A646 !important;
+      fill: #C9A646 !important;
+      stroke: #C9A646 !important;
+      border-color: rgba(201, 166, 70, 0.45) !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 (function init() {
  let path = location.pathname.replace(/^\/+/, '');
 
@@ -247,6 +271,7 @@ if (!path || path === 'index.html') {
  initDropdownControls();
  decoratePortfolioLabel();
  decorateSideCards();   // ✅ přidat
+ ensureGoldTileIconStyle();
 
  loadPage(path, false);
 
@@ -440,6 +465,7 @@ const main = document.getElementById('mainContent');
             ensurePageIntro(page);
 
             decorateSideCards();
+            ensureGoldTileIconStyle();
             if (page === 'penze') loadPensionFunds();
             if (page === 'podilove-fondy') loadPodiloveFondy();
             if (page === 'akcie') loadStocks();
@@ -1324,6 +1350,48 @@ function loadPodiloveFondy() {
     });
 }
 
+function normalizeExternalUrl(url) {
+  const value = String(url || '').trim();
+  if (!value) return null;
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+async function ensurePodiloveFondyList() {
+  if (Array.isArray(apiCache.podiloveFondyList)) return apiCache.podiloveFondyList;
+  const res = await fetch(PODILOVE_FONDY_API);
+  const data = await res.json();
+  apiCache.podiloveFondyList = Array.isArray(data) ? data : [];
+  return apiCache.podiloveFondyList;
+}
+
+function renderPodilovyFondMeta(fund) {
+  if (!fund) return;
+
+  const name = fund.name || fund.Name || fund.companyName || fund.CompanyName || '';
+  const manager = fund.manager || fund.Manager || fund.spravce || fund.Spravce || fund.provider || fund.Provider || '';
+  const url = normalizeExternalUrl(
+    fund.url || fund.URL || fund.web || fund.Web || fund.detailUrl || fund.detailURL || fund.fundUrl || fund.fundURL
+  );
+
+  const nameEl = document.getElementById('pf-name');
+  const titleEl = document.getElementById('pf-title');
+  const managerEl = document.getElementById('pf-kpi-manager');
+  const link = document.getElementById('pf-url');
+
+  if (nameEl && name) nameEl.textContent = name;
+  if (titleEl && name) titleEl.textContent = name;
+  if (managerEl) managerEl.textContent = manager || '—';
+
+  if (link) {
+    if (url) {
+      link.href = url;
+      link.style.display = '';
+    } else {
+      link.style.display = 'none';
+    }
+  }
+}
+
 function loadPodilovyFondDetail(isin) {
   const main = document.getElementById('mainContent');
   if (!main) return;
@@ -1345,8 +1413,8 @@ function loadPodilovyFondDetail(isin) {
       <strong id="pf-kpi-change">-</strong>
     </div>
     <div class="kpi">
-      <span>Záznamů</span>
-      <strong id="pf-kpi-count">-</strong>
+      <span>Správce</span>
+      <strong id="pf-kpi-manager">-</strong>
     </div>
   </div>
 
@@ -1363,6 +1431,12 @@ function loadPodilovyFondDetail(isin) {
     </div>
     <div id="period-diff" class="period-diff">—</div>
   </div>
+
+  <p class="meta">
+    <a id="pf-url" href="#" target="_blank" rel="noopener">
+      Detail fondu
+    </a>
+  </p>
 
   <div id="chart-podilovy-fond"></div>
 
@@ -1386,14 +1460,18 @@ function loadPodilovyFondDetail(isin) {
     };
   });
 
-  // ✅ název – použij cache (bez dalšího fetch)
+  // ✅ metadata – název, správce a odkaz na detail fondu
   const list = apiCache.podiloveFondyList;
-  if (list) {
-    const fund = list.find(f => f.isin === isin);
-    if (fund) {
-      document.getElementById('pf-name').textContent = fund.name;
-      document.getElementById('pf-title').textContent = fund.name;
-    }
+  if (Array.isArray(list)) {
+    const fund = list.find(f => String(f.isin || '').trim() === String(isin || '').trim());
+    renderPodilovyFondMeta(fund);
+  } else {
+    ensurePodiloveFondyList()
+      .then(funds => {
+        const fund = funds.find(f => String(f.isin || '').trim() === String(isin || '').trim());
+        renderPodilovyFondMeta(fund);
+      })
+      .catch(err => console.error('Chyba načítání metadat podílového fondu:', err));
   }
 
   // ✅ data
@@ -1435,7 +1513,6 @@ function renderPodilovyFondKPI(data) {
   document.getElementById('pf-kpi-last').textContent =
     `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
 
-  document.getElementById('pf-kpi-count').textContent = data.length;
 
   if (prev) {
     const diff = last.value - prev.value;
@@ -1857,7 +1934,7 @@ function renderPortfolioChart(history, containerId) {
  const tooltip = document.createElement('div');
  tooltip.style.position = 'absolute';
  tooltip.style.pointerEvents = 'none';
- tooltip.style.background = 'rgba(20,20,20,0.9)';
+ tooltip.style.background = 'rgba(82,82,82,0.95)';
  tooltip.style.color = '#C9A646';
  tooltip.style.padding = '6px 8px';
  tooltip.style.fontSize = '11px';
