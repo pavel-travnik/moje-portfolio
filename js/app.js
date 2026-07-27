@@ -13,7 +13,7 @@ function ensurePageIntro(page) {
     'podilove-fondy': { icon: '◈', title: 'Podílové fondy', text: 'Zobrazen je přehled <a href="/info-podilove-fondy" data-page="info-podilove-fondy">podílových fondů</a> s možností otevřít detail konkrétního fondu. Detail fondu obsahuje historický vývoj kurzu, poslední dostupnou hodnotu a základní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou průběžně aktualizována</a> z veřejných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' },
     'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných <a href="/info-akcie" data-page="info-akcie">akciových titulů</a> včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. <a href="/aktualizace" data-page="aktualizace">Uvedené informace jsou aktualizovány</a> z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
-    'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční ani jiné finanční poradenství.' },
+    'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled. Neposkytujeme investiční ani jiné finanční poradenství.' },
     'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' }
   };
   const intro = intros[page];
@@ -514,8 +514,9 @@ function ensureOverviewTableStyle() {
     }
 
     .overview-view-switch .pill-button.active {
-      background: #111;
-      color: #C9A646;
+      background: #C9A646;
+      color: #111;
+      border-color: #C9A646;
     }
 
     @media (max-width: 767px) {
@@ -1720,7 +1721,6 @@ function loadCrypto() {
     viewMode = 'grid';
     updateView();
   };
-
   tableBtn.onclick = () => {
     viewMode = 'table';
     updateView();
