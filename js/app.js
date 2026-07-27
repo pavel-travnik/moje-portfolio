@@ -9,7 +9,7 @@ function ensurePageIntro(page) {
   const main = document.getElementById('mainContent');
   if (!main || main.querySelector('.section-intro')) return;
   const intros = {
-    'penze': { icon: '♧', title: 'Penze', text: 'Zde najdete přehled vybraných <a href="/info-penze" data-page="info-penze">penzijních fondů</a> a jejich základních parametrů. Kliknutím na konkrétní fond otevřete detail s historickým vývojem hodnoty, rizikovostí a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční, penzijní ani jiné finanční poradenství.' },
+    'penze': { icon: '♧', title: 'Penze', text: 'Zde najdete přehled vybraných <a href="/info-penze" data-page="info-penze">penzijních účastnických fondů</a> a jejich základních parametrů. Kliknutím na konkrétní fond otevřete detail s historickým vývojem hodnoty, rizikovostí a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční, penzijní ani jiné finanční poradenství.' },
     'podilove-fondy': { icon: '◈', title: 'Podílové fondy', text: 'Zobrazen je přehled <a href="/info-podilove-fondy" data-page="info-podilove-fondy">podílových fondů</a> s možností otevřít detail konkrétního fondu. Detail fondu obsahuje historický vývoj kurzu, poslední dostupnou hodnotu a základní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou průběžně aktualizována</a> z veřejných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' },
     'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných <a href="/info-akcie" data-page="info-akcie">akciových titulů</a> včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. <a href="/aktualizace" data-page="aktualizace">Uvedené informace jsou aktualizovány</a> z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
@@ -440,7 +440,7 @@ const main = document.getElementById('mainContent');
             ensurePageIntro(page);
 
             decorateSideCards();
-if (page === 'penze') loadPensionFunds();
+            if (page === 'penze') loadPensionFunds();
             if (page === 'podilove-fondy') loadPodiloveFondy();
             if (page === 'akcie') loadStocks();
             if (page === 'etf') loadEtfs();
@@ -994,8 +994,8 @@ function renderFundMeta(isin) {
   const link = document.getElementById('fund-url');
   const titleEl = document.getElementById('fund-title');
 
-  if (nameEl) nameEl.textContent = fund.name || 'Detail fondu';
-  if (titleEl) titleEl.textContent = fund.name || 'Detail fondu';
+  if (nameEl) nameEl.textContent = fund.name || 'Detail fondu - web ↗';
+  if (titleEl) titleEl.textContent = fund.name || 'Detail fondu - web ↗';
   if (providerEl) providerEl.textContent = fund.provider || '';
   if (riskEl) {
     riskEl.textContent = fund.riskCategory != null ? `${fund.riskCategory} / 7` : '—';
