@@ -36,6 +36,7 @@ let portfolioInstrumentFilter = null;
 function assetTypeLabel(assetType) {
   const map = {
     ETF: 'ETF',
+    CRYPTO: 'Crypto',
     STOCK: 'Akcie',
     FUND: 'Fondy',
     DPS: 'Penze'
@@ -601,7 +602,7 @@ function openCreatePortfolioModal() {
     const allocation = raw.map(x => {
       const value = Number(x.value) || 0;
       return {
-        label: x.asset_type === 'ETF' ? 'ETF' : x.asset_type === 'STOCK' ? 'Akcie' : x.asset_type === 'FUND' ? 'Fondy' : x.asset_type === 'DPS' ? 'Penze' : x.asset_type,
+        label: assetTypeLabel(x.asset_type),
         value,
         pct: total > 0 ? value / total : 0
       };
@@ -1082,6 +1083,7 @@ async function loadAssetsByType(assetType) {
       break;
 
     case 'ETF':
+    case 'CRYPTO':
     case 'STOCK':
       url = `${PORTFOLIO_API}/get_active_stocks`;
       break;
@@ -1102,6 +1104,16 @@ async function loadAssetsByType(assetType) {
   const data = await res.json();
   if (!Array.isArray(data)) {
     throw new Error('API nevrátilo pole instrumentů');
+  }
+
+  if (assetType === 'ETF') {
+    return data.filter(x => x.sector === 'ETF');
+  }
+  if (assetType === 'CRYPTO') {
+    return data.filter(x => x.sector === 'Cryptocurrency');
+  }
+  if (assetType === 'STOCK') {
+    return data.filter(x => x.sector !== 'ETF' && x.sector !== 'Cryptocurrency');
   }
 
   return data;
@@ -1317,6 +1329,9 @@ function renderPortfolioInstruments(positions, options = {}) {
         <td data-label="Hodnota">
           ${instrumentValue ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
         </td>
+        <td data-label="Poslední ocenění">
+          ${formatPortfolioDate(positionLastValuationDate(p))}
+        </td>
       `;
 
       // ✅ klik → detail instrumentu
@@ -1414,7 +1429,7 @@ function renderPortfolioTransactions(trades) {
           ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
         </td>
         <td data-label="Typ">
-          ${t.asset_type} · ${positionDisplayName(t)}
+          ${assetTypeLabel(t.asset_type)} · ${positionDisplayName(t)}
         </td>
         <td data-label="Směr">
           ${t.trade_type}
@@ -1536,6 +1551,7 @@ function openTransactionModal(portfolioId) {
       <option value="">— vyber —</option>
       <option value="DPS">DPS</option>
       <option value="ETF">ETF</option>
+      <option value="CRYPTO">Crypto</option>
       <option value="STOCK">Akcie</option>
       <option value="FUND">Podílový fond</option>
     </select>

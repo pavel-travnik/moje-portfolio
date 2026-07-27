@@ -13,6 +13,7 @@ function ensurePageIntro(page) {
     'podilove-fondy': { icon: '◈', title: 'Podílové fondy', text: 'Zobrazen je přehled <a href="/info-podilove-fondy" data-page="info-podilove-fondy">podílových fondů</a> s možností otevřít detail konkrétního fondu. Detail fondu obsahuje historický vývoj kurzu, poslední dostupnou hodnotu a základní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou průběžně aktualizována</a> z veřejných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' },
     'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných <a href="/info-akcie" data-page="info-akcie">akciových titulů</a> včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. <a href="/aktualizace" data-page="aktualizace">Uvedené informace jsou aktualizovány</a> z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
+    'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme investiční ani jiné finanční poradenství.' },
     'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' }
   };
   const intro = intros[page];
@@ -26,6 +27,7 @@ function ensurePageIntro(page) {
 const apiCache = {
   dps: {},
   stocks: {},
+  crypto: {},
   currencies: {},
   podiloveFondy: {}
 };
@@ -223,7 +225,7 @@ function hideTooltip() {
 
 
 function decorateSideCards() {
-  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'meny':'¤', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-meny':'¤' };
+  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'crypto':'₿', 'meny':'¤', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-crypto':'₿', 'info-meny':'¤' };
   document.querySelectorAll('.side-card').forEach(card => {
     if (card.querySelector('.side-card-icon')) return;
     const icon = icons[card.dataset.page] || '›';
@@ -439,6 +441,11 @@ if (!page || page === "undefined") {
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
+    if (page.startsWith('crypto/')) {
+        loadStockDetail(page.split('/')[1]);
+        if (pushState) history.pushState({ page }, '', `/${page}`);
+        return;
+    }
 
     if (page.startsWith('meny/')) {
         loadCurrencyDetail(page.split('/')[1]);
@@ -470,6 +477,7 @@ const main = document.getElementById('mainContent');
             if (page === 'podilove-fondy') loadPodiloveFondy();
             if (page === 'akcie') loadStocks();
             if (page === 'etf') loadEtfs();
+            if (page === 'crypto') loadCrypto();
             if (page === 'meny') loadCurrencies();
 
             if (pushState) {
@@ -1600,7 +1608,7 @@ function loadStocks() {
     .then(r => r.json())
     .then(stocks => {
       apiCache.stocksList = (Array.isArray(stocks) ? stocks : [])
-        .filter(s => s.sector !== 'ETF');
+        .filter(s => s.sector !== 'ETF' && s.sector !== 'Cryptocurrency');
       updateView();
     })
     .catch(err => {
@@ -1691,6 +1699,89 @@ function loadEtfs() {
       console.error(err);
       grid.innerHTML = '<p>Chyba načítání ETF</p>';
       table.innerHTML = '<p>Chyba načítání ETF</p>';
+    });
+}
+
+
+function loadCrypto() {
+  const grid = document.getElementById('cryptoGrid');
+  if (!grid) return;
+
+  const { table, gridBtn, tableBtn } = ensureOverviewViewShell(grid, 'crypto');
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
+
+  const selectCrypto = ticker => {
+    history.pushState({ page: `crypto/${ticker}` }, '', `/crypto/${ticker}`);
+    loadStockDetail(ticker);
+  };
+
+  gridBtn.onclick = () => {
+    viewMode = 'grid';
+    updateView();
+  };
+
+  tableBtn.onclick = () => {
+    viewMode = 'table';
+    updateView();
+  };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    gridBtn.classList.toggle('active', viewMode === 'grid');
+    tableBtn.classList.toggle('active', viewMode === 'table');
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    apiCache.cryptoList.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
+      card.innerHTML = `
+        <h3>${s.name}</h3>
+        <small>${s.ticker} · ${s.currency || s.mena || s.Mena || ''}</small>
+        ${renderOverviewCardMetric(s)}
+      `;
+      card.onclick = () => selectCrypto(s.ticker);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable() {
+    if (!table.dataset.sortKey) { table.dataset.sortKey = 'name'; table.dataset.sortAsc = 'true'; }
+    const data = [...apiCache.cryptoList]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+
+    renderThreeColumnOverviewTable({
+      table,
+      data,
+      getName: s => s.name,
+      getMetric: s => s.currency || s.mena || s.Mena || '',
+      metricLabel: 'Měna',
+      getPerf3Y: s => s.perf3Y,
+      getPerf5Y: s => s.perf5Y,
+      getId: s => s.ticker,
+      onSelect: selectCrypto
+    });
+  }
+
+  grid.innerHTML = '<p>Načítám kryptoměny…</p>';
+  table.innerHTML = '';
+
+  fetch(STOCK_LIST_API)
+    .then(r => r.json())
+    .then(stocks => {
+      apiCache.cryptoList = (Array.isArray(stocks) ? stocks : [])
+        .filter(s => s.sector === 'Cryptocurrency');
+      updateView();
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání kryptoměn</p>';
+      table.innerHTML = '<p>Chyba načítání kryptoměn</p>';
     });
 }
 
@@ -1808,10 +1899,16 @@ function renderStockMeta(data) {
 
   if (meta) {
     
+  const sector = first.sector || first.sektor || '';
+  const tradingViewLabel = sector === 'Cryptocurrency'
+    ? 'Detail kryptoměny v TradingView ↗'
+    : sector === 'ETF'
+      ? 'Detail ETF v TradingView ↗'
+      : 'Detail akcie v TradingView ↗';
   meta.innerHTML = `
   <div>
     <a href="${url}" target="_blank" rel="noopener" class="tv-link">
-      Detail akcie v TradingView ↗
+      ${tradingViewLabel}
     </a>
   </div>
   `;
