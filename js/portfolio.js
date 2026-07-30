@@ -258,6 +258,40 @@ function ensurePortfolioUiStyles() {
       white-space: nowrap;
       text-align: right;
     }
+    #transactions-table {
+      table-layout: fixed;
+      width: 100%;
+    }
+    #transactions-table th[data-key="date"],
+    #transactions-table td[data-label="Datum"] {
+      width: 14%;
+      white-space: nowrap;
+    }
+    #transactions-table th[data-key="instrument"],
+    #transactions-table td[data-label="Typ"] {
+      width: 34%;
+    }
+    #transactions-table th[data-key="type"],
+    #transactions-table td[data-label="Směr"] {
+      width: 14%;
+      white-space: nowrap;
+    }
+    #transactions-table th[data-key="quantity"],
+    #transactions-table td[data-label="Množství"] {
+      width: 18%;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #transactions-table th[data-key="price"],
+    #transactions-table td[data-label="Cena"] {
+      width: 20%;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #transactions-table tbody tr.clickable:hover td,
+    #transactions-table tbody tr.active td {
+      background: rgba(201, 166, 70, 0.12);
+    }
     #instruments-table {
       table-layout: fixed;
       width: 100%;
@@ -1478,15 +1512,16 @@ function renderPortfolioTransactions(trades) {
   const table = document.getElementById('transactions-table');
   if (!tbody || !table) return;
 
+  const safeTrades = Array.isArray(trades) ? trades : [];
   let sort = { key: 'date', asc: false };
 
   function getValue(t, key) {
     switch (key) {
-      case 'date': return new Date(t.trade_date);
-      case 'instrument': return `${t.asset_type} · ${positionDisplayName(t)}`.toLowerCase();
-      case 'type': return t.trade_type;
-      case 'quantity': return t.quantity;
-      case 'price': return t.price;
+      case 'date': return new Date(t.trade_date || 0).getTime() || 0;
+      case 'instrument': return `${t.asset_type || ''} · ${positionDisplayName(t)}`.toLowerCase();
+      case 'type': return t.trade_type || '';
+      case 'quantity': return Number(t.quantity) || 0;
+      case 'price': return Number(t.price) || 0;
       default: return '';
     }
   }
@@ -1499,8 +1534,7 @@ function renderPortfolioTransactions(trades) {
       }
     });
 
-    const data = [...trades];
-
+    const data = [...safeTrades];
     data.sort((a, b) => {
       const A = getValue(a, sort.key);
       const B = getValue(b, sort.key);
@@ -1513,42 +1547,50 @@ function renderPortfolioTransactions(trades) {
 
     data.forEach(t => {
       const tr = document.createElement('tr');
+      tr.className = 'clickable';
 
+      const quantity = Number(t.quantity) || 0;
+      const price = Number(t.price);
+      const currency = t.currency || 'CZK';
+      const tradeDate = t.trade_date ? new Date(t.trade_date) : null;
+      const tradeDateText = tradeDate && !Number.isNaN(tradeDate.getTime())
+        ? tradeDate.toLocaleDateString('cs-CZ')
+        : '—';
+
+      // Důležité: všech 5 buněk je uvnitř stejného <tr>.
+      // Díky tomu je Cena součástí tabulky a hover/active probarvení funguje pro celý řádek.
       tr.innerHTML = `
         <td data-label="Datum">
-          ${new Date(t.trade_date).toLocaleDateString('cs-CZ')}
+          ${tradeDateText}
         </td>
         <td data-label="Typ">
           ${assetTypeLabel(t.asset_type)} · ${positionDisplayName(t)}
         </td>
         <td data-label="Směr">
-          ${t.trade_type}
+          ${t.trade_type || '—'}
         </td>
         <td data-label="Množství">
-          ${fmtNumber(t.quantity, 1)}
+          ${fmtNumber(quantity, 1)}
         </td>
-        
+        <td data-label="Cena">
+          ${Number.isFinite(price) ? fmtNumber(price, 2) + ' ' + currency : '—'}
+        </td>
       `;
 
       tbody.appendChild(tr);
     });
 
+    // Po překreslení tbody znovu navážeme hover/click chování.
     bindAppTableRows(table);
   }
 
   // ===== desktop sort (klik na th) =====
   table.querySelectorAll('th').forEach(th => {
-    th.onclick = e => {
+    th.onclick = () => {
       const key = th.dataset.key;
       if (!key) return;
-
       sort.asc = sort.key === key ? !sort.asc : true;
       sort.key = key;
-
-      table.querySelectorAll('th')
-        .forEach(x => x.classList.remove('sort-asc', 'sort-desc'));
-
-      th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
       render();
     };
   });
@@ -1556,14 +1598,19 @@ function renderPortfolioTransactions(trades) {
   // ===== mobile sort =====
   const mobileSelect = document.getElementById('tx-sort');
   const mobileDir = document.getElementById('tx-sort-dir');
-
   if (mobileSelect && mobileDir) {
+    if (![...mobileSelect.options].some(o => o.value === 'price')) {
+      const opt = document.createElement('option');
+      opt.value = 'price';
+      opt.textContent = 'Cena';
+      mobileSelect.appendChild(opt);
+    }
+
     setSortDirectionButton(mobileDir, sort.asc);
     mobileSelect.onchange = () => {
       sort.key = mobileSelect.value;
       render();
     };
-
     mobileDir.onclick = () => {
       sort.asc = !sort.asc;
       setSortDirectionButton(mobileDir, sort.asc);
