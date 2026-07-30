@@ -192,10 +192,27 @@ function ensurePortfolioUiStyles() {
       cursor: pointer;
       white-space: nowrap;
     }
+    #portfolioList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 280px));
+      gap: 1rem;
+      align-items: stretch;
+      justify-content: start;
+      margin-top: 1rem;
+    }
+    #portfolioList .fund-card,
+    .portfolio-switch-list .fund-card {
+      width: 100%;
+      max-width: 280px;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
     .portfolio-switch-list {
       display: grid;
-      gap: .75rem;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 280px));
+      gap: 1rem;
       margin-top: 1rem;
+      justify-content: start;
     }
 
     .portfolio-value-intro {
@@ -204,6 +221,42 @@ function ensurePortfolioUiStyles() {
     .portfolio-value-intro .icon-badge {
       background: rgba(201, 166, 70, 0.14);
       color: #C9A646;
+    }
+    #portfolio-allocation-chart.allocation-chart-layout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .allocation-legend {
+      display: grid;
+      gap: .55rem;
+      min-width: 220px;
+      max-width: 320px;
+    }
+    .allocation-legend-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: .5rem;
+      align-items: center;
+      font-size: .92rem;
+    }
+    .allocation-legend-color {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      box-shadow: 0 0 0 2px rgba(201, 166, 70, .12);
+    }
+    .allocation-legend-label {
+      color: #111;
+      font-weight: 600;
+    }
+    .allocation-legend-value {
+      color: #666;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-align: right;
     }
     #instruments-table {
       table-layout: fixed;
@@ -250,6 +303,21 @@ function ensurePortfolioUiStyles() {
         width: calc(100vw - 1rem);
         max-height: calc(100vh - 1rem);
         padding: 1rem !important;
+      }
+      #portfolioList,
+      .portfolio-switch-list {
+        grid-template-columns: 1fr;
+      }
+      #portfolioList .fund-card,
+      .portfolio-switch-list .fund-card {
+        max-width: none;
+      }
+      #portfolio-allocation-chart.allocation-chart-layout {
+        justify-content: flex-start;
+      }
+      .allocation-legend {
+        width: 100%;
+        max-width: none;
       }
       #instruments-table th[data-key="type"],
       #instruments-table td[data-label="Typ"],
@@ -538,6 +606,7 @@ function openCreatePortfolioModal() {
             <option value="instrument">Typ</option>
             <option value="type">Směr</option>
             <option value="quantity">Počet kusů</option>
+            <option value="price">Cena</option>
           </select>
           <button id="tx-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
@@ -547,6 +616,7 @@ function openCreatePortfolioModal() {
             <th data-key="instrument">Typ</th>
             <th data-key="type">Směr</th>
             <th data-key="quantity">Počet kusů</th>
+            <th data-key="price">Cena</th>
           </tr></thead>
           <tbody id="portfolio-transactions"></tbody>
         </table>
@@ -663,6 +733,22 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null, options 
   data.forEach((d, i) => {
     d._color = GOLD_PALETTE[i % GOLD_PALETTE.length];
   });
+  if (!isDrilldown) {
+    const legend = document.createElement('div');
+    legend.className = 'allocation-legend';
+    legend.setAttribute('aria-label', 'Legenda rozložení portfolia');
+    data.forEach(d => {
+      const item = document.createElement('div');
+      item.className = 'allocation-legend-item';
+      item.innerHTML = `
+        <span class="allocation-legend-color" style="background:${d._color}"></span>
+        <span class="allocation-legend-label">${d.label}</span>
+        <span class="allocation-legend-value">${fmtNumber(d.value, 0)} Kč · ${(d.pct * 100).toFixed(1)} %</span>
+      `;
+      legend.appendChild(item);
+    });
+    el.appendChild(legend);
+  }
 
   const DONUT_GAP = 0.025; // cca 1.4°
 
@@ -936,9 +1022,13 @@ function openAssetDetail(assetType, assetId) {
 // ===================================================
 async function fetchUserPortfolios() {
   const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolios?user_id=${getCurrentUserId()}`
+    `${PORTFOLIO_API}/get_portfolios?user_id=${getCurrentUserId()}&is_active=1`
   );
-  return await r.json();
+  const data = await r.json();
+  if (!Array.isArray(data)) return [];
+  // Bezpečnostní klientský filtr. Primární filtr má být na API/SQL:
+  // SELECT * FROM dbo.Portfolio WHERE user_id = ? AND is_active = 1
+  return data.filter(p => p.is_active === undefined || p.is_active === null || Number(p.is_active) === 1 || p.is_active === true);
 }
 
 async function fetchPortfolioDetail(id) {
@@ -1571,7 +1661,10 @@ function openTransactionModal(portfolioId) {
     <input id="tx-date" type="date">
 
     <label>Množství</label>
-    <input id="tx-quantity" type="number" inputmode="decimal">
+    <input id="tx-quantity" type="number" inputmode="decimal" step="any" min="0">
+
+    <label>Nákupní/prodejní cena za kus</label>
+    <input id="tx-price" type="number" inputmode="decimal" step="any" min="0" placeholder="Např. 123,45">
 
     <label>Měna</label>
     <input id="tx-currency" disabled>
@@ -1598,6 +1691,7 @@ function openTransactionModal(portfolioId) {
   const directionEl = document.getElementById('tx-direction');
   const dateEl = document.getElementById('tx-date');
   const quantityEl = document.getElementById('tx-quantity');
+  const priceEl = document.getElementById('tx-price');
   const currencyEl = document.getElementById('tx-currency');
   const cancelBtn = document.getElementById('tx-cancel');
   const saveBtn = document.getElementById('tx-save');
@@ -1616,7 +1710,7 @@ function openTransactionModal(portfolioId) {
     modal.classList.toggle('tx-busy', saving);
     savingStatus.classList.toggle('active', saving);
 
-    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, cancelBtn, saveBtn].forEach(el => {
+    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, priceEl, cancelBtn, saveBtn].forEach(el => {
       if (el) el.disabled = saving;
     });
 
@@ -1675,14 +1769,22 @@ function openTransactionModal(portfolioId) {
       asset_type: assetTypeEl.value,
       asset_id: assetIdEl.value,
       trade_type: directionEl.value,
-      quantity: Number(quantityEl.value),
-      price: 0,
+      quantity: Number(String(quantityEl.value).replace(',', '.')),
+      price: Number(String(priceEl.value || '0').replace(',', '.')),
       currency: currencyEl.value || 'CZK',
       trade_date: dateEl.value
     };
 
     if (!trade.asset_type || !trade.asset_id || !trade.quantity || !trade.trade_date) {
       alert('Vyplň prosím všechna povinná pole.');
+      return;
+    }
+    if (Number.isNaN(trade.quantity) || trade.quantity <= 0) {
+      alert('Množství musí být větší než nula.');
+      return;
+    }
+    if (Number.isNaN(trade.price) || trade.price < 0) {
+      alert('Cena musí být číslo od nuly výše.');
       return;
     }
 
