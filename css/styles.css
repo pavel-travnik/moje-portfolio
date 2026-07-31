@@ -2055,3 +2055,105 @@ Pravy sloupec zustava pevne na miste pri scrollovani.
     overflow-y: visible !important;
   }
 }
+
+/* =====================================
+FINAL REQUESTED LAYOUT FIXES
+- Uvod: six tiles as 3 + 3
+- Right selection panel: sticky, not fixed, available while scrolling
+- Footer: one grey strip matching header colour
+===================================== */
+
+/* Six feature tiles under "Co zde najdete" arranged 3 columns x 2 rows on desktop */
+.cards-three,
+.cards-four {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+/* Keep the right selection panel in normal page flow, but sticky in viewport.
+   It reaches the top offset while scrolling and stops naturally at the bottom
+   of the layout instead of staying fixed over the footer. */
+@media (min-width: 1025px) {
+    .layout {
+        grid-template-columns: minmax(0, 1fr) 260px !important;
+        align-items: start !important;
+        overflow: visible !important;
+    }
+
+    .sidebar {
+        position: sticky !important;
+        top: 24px !important;
+        right: auto !important;
+        width: 260px !important;
+        max-width: 260px !important;
+        max-height: calc(100vh - 48px) !important;
+        overflow-y: auto !important;
+        align-self: start !important;
+        justify-self: stretch !important;
+        margin-right: 0 !important;
+        z-index: 10 !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .cards-three,
+    .cards-four {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .sidebar {
+        position: static !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .cards-three,
+    .cards-four {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* One footer strip only, in the same grey as the header. */
+.footer {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin-top: 0 !important;
+    padding: 18px 24px !important;
+    box-sizing: border-box !important;
+    background: var(--green, #666666) !important;
+    border-top: 1px solid rgba(201,166,70,.15) !important;
+    color: #ffffff !important;
+    text-align: center !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+}
+
+.footer-content {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 24px !important;
+    margin: 0 0 6px !important;
+}
+
+.footer a {
+    color: var(--gold, #c9a646) !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+}
+
+.footer a:hover {
+    color: var(--gold, #c9a646) !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px !important;
+}
+
+.footer-risk {
+    color: #ffffff !important;
+    opacity: .9 !important;
+}
+
