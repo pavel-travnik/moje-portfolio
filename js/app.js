@@ -558,7 +558,7 @@ function ensureOverviewTableStyle() {
       #fundTable .dps-overview-table td {
         display: table-cell !important;
         padding: 10px 8px !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         vertical-align: middle;
       }
 
@@ -572,14 +572,14 @@ function ensureOverviewTableStyle() {
       .overview-table td:nth-child(1),
       #fundTable .dps-overview-table th:nth-child(1),
       #fundTable .dps-overview-table td:nth-child(1) {
-        width: 43%;
+        width: 40%;
       }
 
       .overview-table th:nth-child(2),
       .overview-table td:nth-child(2),
       #fundTable .dps-overview-table th:nth-child(2),
       #fundTable .dps-overview-table td:nth-child(2) {
-        width: 17%;
+        width: 18%;
         text-align: right;
       }
 
@@ -587,7 +587,7 @@ function ensureOverviewTableStyle() {
       .overview-table td:nth-child(3),
       #fundTable .dps-overview-table th:nth-child(3),
       #fundTable .dps-overview-table td:nth-child(3) {
-        width: 20%;
+        width: 21%;
         text-align: right;
       }
 
@@ -595,7 +595,7 @@ function ensureOverviewTableStyle() {
       .overview-table td:nth-child(4),
       #fundTable .dps-overview-table th:nth-child(4),
       #fundTable .dps-overview-table td:nth-child(4) {
-        width: 20%;
+        width: 21%;
         text-align: right;
       }
     }
@@ -2672,3 +2672,24 @@ function checkSession() {
   }
 }
 
+
+
+/* Mobile overview table override */
+(function ensureMobileOverviewFourColumns() {
+  if (document.getElementById('mobile-overview-four-columns-style')) return;
+  const style = document.createElement('style');
+  style.id = 'mobile-overview-four-columns-style';
+  style.textContent = `
+    @media (max-width: 767px) {
+      .overview-table th,
+      .overview-table td,
+      #fundTable .dps-overview-table th,
+      #fundTable .dps-overview-table td { font-size: 11px !important; }
+      .overview-table th:nth-child(5), .overview-table td:nth-child(5),
+      .overview-table th:nth-child(6), .overview-table td:nth-child(6),
+      #fundTable .dps-overview-table th:nth-child(5), #fundTable .dps-overview-table td:nth-child(5),
+      #fundTable .dps-overview-table th:nth-child(6), #fundTable .dps-overview-table td:nth-child(6) { display: none !important; }
+    }
+  `;
+  document.head.appendChild(style);
+})();
