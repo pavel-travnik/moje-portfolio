@@ -674,6 +674,28 @@ function formatLastValuation(item) {
   return '';
 }
 
+function getLastValue(item) {
+  return item?.lastValue ?? item?.lastValuationValue ?? item?.lastRate ?? item?.lastExchangeRate ?? item?.rate ?? null;
+}
+
+function getLastValuationDate(item) {
+  return item?.lastValuationDate ?? item?.lastDate ?? item?.date ?? null;
+}
+
+function formatOverviewValue(value, options = {}) {
+  const { suffix = '', min = 2, max = 4 } = options;
+  if (value == null || isNaN(Number(value))) return '—';
+  const text = Number(value).toLocaleString('cs-CZ', {
+    minimumFractionDigits: min,
+    maximumFractionDigits: max
+  });
+  return suffix ? `${text} ${suffix}` : text;
+}
+
+function formatOverviewDate(value) {
+  return value ? new Date(value).toLocaleDateString('cs-CZ') : '—';
+}
+
 function renderOverviewCardMetric(item) {
   const last = formatLastValuation(item);
 
@@ -883,12 +905,7 @@ function loadPensionFunds() {
       card.innerHTML = `
         <h3>${f.name}</h3>
         <small>${f.provider || ''}</small>
-        <div class="fund-perf ${perfClass(f.perf3Y)}">
-          3 roky: <strong>${formatPerf3Y(f.perf3Y)}</strong>
-        </div>
-        <div class="fund-perf ${perfClass(f.perf5Y)}">
-          5 let: <strong>${formatPerf5Y(f.perf5Y)}</strong>
-        </div>
+        ${renderOverviewCardMetric(f)}
       `;
 
       card.onclick = () => selectFund(f.isin);
@@ -925,6 +942,8 @@ function loadPensionFunds() {
         <option value="riskCategory">Riziko</option>
         <option value="perf3Y">Výnos 3 roky</option>
         <option value="perf5Y">Výnos 5 let</option>
+        <option value="lastValue">Poslední ocenění</option>
+        <option value="lastValuationDate">Datum ocenění</option>
       `;
       mobileSortSelect.value = sort.key;
 
@@ -950,6 +969,8 @@ function loadPensionFunds() {
             <th data-key="riskCategory">Riziko</th>
             <th data-key="perf3Y">Výnos 3 roky</th>
             <th data-key="perf5Y">Výnos 5 let</th>
+            <th data-key="lastValue">Poslední ocenění</th>
+            <th data-key="lastValuationDate">Datum ocenění</th>
           </tr>
         </thead>
         <tbody>
@@ -962,6 +983,12 @@ function loadPensionFunds() {
               </td>
               <td data-label="Výnos 5 let" class="${perfClass(f.perf5Y)}">
                 ${formatPerf5Y(f.perf5Y)}
+              </td>
+              <td data-label="Poslední ocenění">
+                ${formatOverviewValue(getLastValue(f))}
+              </td>
+              <td data-label="Datum ocenění">
+                ${formatOverviewDate(getLastValuationDate(f))}
               </td>
             </tr>
           `).join('')}
@@ -2262,34 +2289,159 @@ function loadCurrencies() {
   const grid = document.getElementById('currencyGrid');
   if (!grid) return;
 
+  const { table, gridBtn, tableBtn } = ensureOverviewViewShell(grid, 'currencies');
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
+
+  const selectCurrency = code => {
+    history.pushState(
+      { page: `meny/${code}` },
+      '',
+      `/meny/${code}`
+    );
+    loadCurrencyDetail(code);
+  };
+
+  gridBtn.onclick = () => {
+    viewMode = 'grid';
+    updateView();
+  };
+
+  tableBtn.onclick = () => {
+    viewMode = 'table';
+    updateView();
+  };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    gridBtn.classList.toggle('active', viewMode === 'grid');
+    tableBtn.classList.toggle('active', viewMode === 'table');
+
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+
+    apiCache.currenciesList.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
+      const lastValue = getLastValue(c);
+      const lastDate = getLastValuationDate(c);
+
+      card.innerHTML = `
+        <h3>${c.name}</h3>
+        <small>${c.code}</small>
+        <small>Poslední kurz: ${formatOverviewValue(lastValue, { suffix: 'CZK' })}${lastDate ? ` · ${formatOverviewDate(lastDate)}` : ''}</small>
+      `;
+
+      card.onclick = () => selectCurrency(c.code);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable() {
+    if (!table.dataset.sortKey) {
+      table.dataset.sortKey = 'name';
+      table.dataset.sortAsc = 'true';
+    }
+
+    const sortKey = table.dataset.sortKey || 'name';
+    const sortAsc = table.dataset.sortAsc !== 'false';
+    const getters = {
+      name: c => c.name || '',
+      code: c => c.code || '',
+      lastValue: c => getLastValue(c),
+      lastValuationDate: c => getLastValuationDate(c) || ''
+    };
+
+    const data = [...apiCache.currenciesList].sort((a, b) => {
+      const getter = getters[sortKey] || getters.name;
+      let A = getter(a);
+      let B = getter(b);
+
+      if (A == null) A = '';
+      if (B == null) B = '';
+      if (typeof A === 'string') A = A.toLowerCase();
+      if (typeof B === 'string') B = B.toLowerCase();
+
+      if (A < B) return sortAsc ? -1 : 1;
+      if (A > B) return sortAsc ? 1 : -1;
+      return 0;
+    });
+
+    table.innerHTML = `
+      <table class="fund-table overview-table">
+        <thead>
+          <tr>
+            <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
+            <th data-key="code" class="${sortKey === 'code' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Kód</th>
+            <th data-key="lastValue" class="${sortKey === 'lastValue' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Poslední kurz</th>
+            <th data-key="lastValuationDate" class="${sortKey === 'lastValuationDate' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Datum ocenění</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(c => {
+            const lastValue = getLastValue(c);
+            const lastDate = getLastValuationDate(c);
+
+            return `
+              <tr data-code="${c.code}">
+                <td data-label="Název">${c.name || ''}</td>
+                <td data-label="Kód">${c.code || ''}</td>
+                <td data-label="Poslední kurz">${formatOverviewValue(lastValue, { suffix: 'CZK' })}</td>
+                <td data-label="Datum ocenění">${formatOverviewDate(lastDate)}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+
+    table.querySelectorAll('th').forEach(th => {
+      th.onclick = e => {
+        e.stopPropagation();
+        const key = th.dataset.key;
+        if (!key) return;
+
+        const currentKey = table.dataset.sortKey || 'name';
+        const currentAsc = table.dataset.sortAsc !== 'false';
+        table.dataset.sortKey = key;
+        table.dataset.sortAsc = currentKey === key ? String(!currentAsc) : 'true';
+        renderTable();
+      };
+    });
+
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(tr => {
+      tr.addEventListener('mouseenter', () => {
+        rows.forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+      });
+
+      tr.addEventListener('click', () => {
+        rows.forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+        selectCurrency(tr.dataset.code);
+      });
+    });
+  }
+
   grid.innerHTML = '<p>Načítám měny ...</p>';
+  table.innerHTML = '';
 
   fetch(CURRENCY_LIST_API)
     .then(r => r.json())
     .then(list => {
-      grid.innerHTML = '';
-
-      list.forEach(c => {
-        const card = document.createElement('div');
-        card.className = 'fund-card';
-
-        // STEJNĂ STRUKTURA JAKO PENZE
-        card.innerHTML = `
-          <h3>${c.name}</h3>
-          <small>${c.code}</small>
-        `;
-
-        card.onclick = () => {
-          history.pushState(
-            { page: `meny/${c.code}` },
-            '',
-            `/meny/${c.code}`
-          );
-          loadCurrencyDetail(c.code);
-        };
-
-        grid.appendChild(card);
-      });
+      apiCache.currenciesList = Array.isArray(list) ? list : [];
+      updateView();
+    })
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání měn</p>';
+      table.innerHTML = '<p>Chyba načítání měn</p>';
     });
 }
 
