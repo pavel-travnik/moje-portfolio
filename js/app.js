@@ -43,21 +43,20 @@ apiCache.dpsMetaPromise = null;
 // ===================================================
 // API URL
 // ===================================================
-// Krok 7: get_dps_funds uz jde pres API Management.
+// Krok 11: verejne datove endpointy jdou pres API Management.
 // Function key neni ve frontendu. APIM vola Function App na pozadi.
-// Ostatni endpointy zatim nechavame na puvodni Function App URL, dokud je postupne nepridame do APIM.
-const FUNCTION_API_BASE_URL = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
-const APIM_DPS_API_BASE_URL = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
+// Poznamka: portfolio/login endpointy sem zamerne nepatri, ty budeme resit samostatne pres autentizaci.
+const APIM_API_BASE_URL = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
 
-const DPS_API_URL = `${FUNCTION_API_BASE_URL}/get_dps_data`;
-const DPS_API = `${APIM_DPS_API_BASE_URL}/get_dps_funds`;
-const DPS_FUNDS_OVERVIEW_API = `${FUNCTION_API_BASE_URL}/get_dps_funds_overview`;
-const STOCK_API_URL = `${FUNCTION_API_BASE_URL}/get_stock_data`;
-const STOCK_LIST_API = `${FUNCTION_API_BASE_URL}/get_active_stocks`;
-const CURRENCY_LIST_API = `${FUNCTION_API_BASE_URL}/get_active_currencies`;
-const CURRENCY_DATA_API = `${FUNCTION_API_BASE_URL}/get_currency_data`;
-const PODILOVE_FONDY_API = `${FUNCTION_API_BASE_URL}/get_active_podilove_fondy`;
-const PODILOVY_FOND_DATA_API = `${FUNCTION_API_BASE_URL}/get_podilovy_fond_data`;
+const DPS_API_URL = `${APIM_API_BASE_URL}/get_dps_data`;
+const DPS_API = `${APIM_API_BASE_URL}/get_dps_funds`;
+const DPS_FUNDS_OVERVIEW_API = `${APIM_API_BASE_URL}/get_dps_funds_overview`;
+const STOCK_API_URL = `${APIM_API_BASE_URL}/get_stock_data`;
+const STOCK_LIST_API = `${APIM_API_BASE_URL}/get_active_stocks`;
+const CURRENCY_LIST_API = `${APIM_API_BASE_URL}/get_active_currencies`;
+const CURRENCY_DATA_API = `${APIM_API_BASE_URL}/get_currency_data`;
+const PODILOVE_FONDY_API = `${APIM_API_BASE_URL}/get_active_podilove_fondy`;
+const PODILOVY_FOND_DATA_API = `${APIM_API_BASE_URL}/get_podilovy_fond_data`;
 // ===================================================
 // DROPDOWN - MOBILE SAFE / DIRECT BINDING
 // ===================================================
