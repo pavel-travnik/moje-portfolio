@@ -38,6 +38,50 @@ apiCache.dpsFundsOverview = null;
 apiCache.dpsPromises = {};
 apiCache.dpsMetaPromise = null;
 
+// ===================================================
+// AUTH - Azure Static Web Apps / Microsoft Entra
+// ===================================================
+let swaAuthPromise = null;
+window.__swaUser = null;
+
+async function getStaticWebAppsUser(forceRefresh = false) {
+  if (!forceRefresh && window.__swaUser !== null) return window.__swaUser;
+  if (!forceRefresh && swaAuthPromise) return swaAuthPromise;
+  swaAuthPromise = fetch('/.auth/me', { cache: 'no-store' })
+    .then(res => res.ok ? res.json() : { clientPrincipal: null })
+    .then(data => {
+      window.__swaUser = data && data.clientPrincipal ? data.clientPrincipal : null;
+      return window.__swaUser;
+    })
+    .catch(() => {
+      window.__swaUser = null;
+      return null;
+    })
+    .finally(() => { swaAuthPromise = null; });
+  return swaAuthPromise;
+}
+
+function isStaticWebAppsAuthenticated() {
+  return !!window.__swaUser;
+}
+
+function redirectToAzureLogin(returnPath = location.pathname + location.search) {
+  const target = returnPath && returnPath !== '/' ? returnPath : '/portfolio';
+  location.href = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(target)}`;
+}
+
+function redirectToAzureLogout() {
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('last_activity');
+  window.__swaUser = null;
+  location.href = '/.auth/logout?post_logout_redirect_uri=/uvod';
+}
+
+window.getCurrentAuthenticatedUser = function () {
+  return window.__swaUser;
+};
+
+
 
 
 // ===================================================
@@ -296,80 +340,37 @@ function decoratePortfolioLabel() {
   `;
 }
 
-function updateMenu() {
+async function updateMenu() {
     const portfolioLink = document.getElementById("menu-portfolio");
     const btnLogin = document.getElementById("btn-login");
     const btnLogout = document.getElementById("btn-logout");
+    const user = await getStaticWebAppsUser();
+    const logged = !!user;
 
-    const logged = !!localStorage.getItem("user_id");
+    // Starý lokální login se už nepoužívá.
+    localStorage.removeItem("user_id");
 
     if (portfolioLink) {
         portfolioLink.style.display = logged ? "inline-flex" : "none";
         decoratePortfolioLabel();
     }
-
     if (btnLogin) {
         btnLogin.style.display = logged ? "none" : "inline-block";
+        btnLogin.onclick = () => redirectToAzureLogin('/portfolio');
     }
-
     if (btnLogout) {
         btnLogout.style.display = logged ? "inline-block" : "none";
+        btnLogout.onclick = redirectToAzureLogout;
     }
 }
 
 function openLoginModal() {
-    const modal = document.createElement('div');
-    modal.className = 'modal-backdrop';
-
-    modal.innerHTML = `
-        <div class="tx-modal">
-            
-            <h3>Přihlášení</h3>
-
-            <label>Email</label>
-            <input id="login-email" class="tx-input" placeholder="Email">
-
-            <label>Heslo</label>
-            <input id="login-password" type="password" class="tx-input" placeholder="Heslo">
-
-            <div class="tx-actions">
-                <button class="pill-button" id="login-cancel">Zrušit</button>
-                <button class="pill-button" id="login-submit">Přihlásit</button>
-            </div>
-
-            <div class="tx-actions">
-                <button class="pill-button" id="login-register">
-                    Nemám účet → Registrovat
-                </button>
-            </div>
-
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    document.body.style.overflow = 'hidden';
-
-    // ❌ zavřít
-    document.getElementById("login-cancel").onclick = () => {
-        modal.remove();
-        document.body.style.overflow = '';
-    };
-
-    // ✅ login
-    document.getElementById("login-submit").onclick = async () => {
-        await loginUser();
-        modal.remove();
-        document.body.style.overflow = '';
-    };
-
-    // ✅ registrace
-    document.getElementById("login-register").onclick = async () => {
-        await registerUser();
-    };
+    // Původní lokální login přes email/heslo je vypnutý.
+    // Přihlášení řeší Azure Static Web Apps Auth / Microsoft Entra.
+    redirectToAzureLogin('/portfolio');
 }
 
-
-function loadPage(page, pushState = true) {
+async function loadPage(page, pushState = true) {
 
 if (!page || page === "undefined") {
     page = "uvod";
@@ -393,10 +394,13 @@ if (!page || page === "undefined") {
      window.scrollTo(0, 0);
 
 
-    // 🔒 ochrana portfolio
-    if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
-        openLoginModal();
-        return;
+    // 🔒 ochrana portfolio přes Azure Static Web Apps Auth
+    if (page.startsWith('portfolio')) {
+        const user = await getStaticWebAppsUser();
+        if (!user) {
+            redirectToAzureLogin(`/${page}`);
+            return;
+        }
     }
 
     // ===============================
@@ -2556,77 +2560,15 @@ function renderCurrencyKPI(data) {
 // ===============================
 
 async function loginUser() {
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
-
-    if (!email || !password) {
-        alert("Vyplň email a heslo");
-        return;
-    }
-
-    const res = await fetch(`${PORTFOLIO_API}/login_user`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-        alert(data.error || "Login failed");
-        return;
-    }
-
-    localStorage.setItem("user_id", data.user_id);
-    resetInactivityTimer(); // ⬅️ důležité
-    updateMenu();
-    loadPage("portfolio");
+    redirectToAzureLogin('/portfolio');
 }
 
 function logout() {
-    localStorage.removeItem("user_id");
-    updateMenu();
-    loadPage("uvod");
+    redirectToAzureLogout();
 }
 
-
 async function registerUser() {
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
-
-    try {
-        const res = await fetch(`${PORTFOLIO_API}/save_user`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email, password })
-        });
-
-        // ✅ DEBUG – klíčové!
-        console.log("STATUS:", res.status);
-
-        const text = await res.text();
-        console.log("RESPONSE:", text);
-
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch {
-            data = { error: text };
-        }
-
-        if (!res.ok) {
-            alert(data.error || "Registrace selhala");
-            return;
-        }
-
-        alert("Registrace OK – přihlas se");
-
-    } catch (err) {
-        console.error("REGISTER ERROR:", err);
-        alert("Chyba registrace");
-    }
+    redirectToAzureLogin('/portfolio');
 }
 
 // ===============================
@@ -2660,17 +2602,12 @@ document.addEventListener("mousemove", updateLastActivity);
 function checkSession() {
   const last = localStorage.getItem("last_activity");
   if (!last) return;
-
-  const diff = Date.now() - parseInt(last);
-
-  // 10 minut
-  if (diff > 600000) {
+  const diff = Date.now() - parseInt(last, 10);
+  if (diff > 600000 && isStaticWebAppsAuthenticated()) {
     console.log("Session expirovala");
-    logout();
+    redirectToAzureLogout();
   }
 }
-
-
 
 /* Mobile overview table override */
 (function ensureMobileOverviewFourColumns() {

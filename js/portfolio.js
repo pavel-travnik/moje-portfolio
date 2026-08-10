@@ -2,14 +2,29 @@
 // PORTFOLIO.JS – NOVÝ STABILNÍ SOUBOR
 // ===================================================
 
-const PORTFOLIO_API =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
-
-  window.PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
+// Portfolio API už nesmí být volané přímo přes Function App URL.
+// Veřejné datové endpointy jdou přes APIM. Soukromé portfolio endpointy
+// budou v dalším kroku přidané do samostatného chráněného API s tokenem.
+const PORTFOLIO_API = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
+window.PORTFOLIO_API = PORTFOLIO_API;
 
 function getCurrentUserId() {
-    return Number(localStorage.getItem("user_id"));
+    // Původní numeric user_id z localStorage je záměrně vypnutý.
+    // Identita uživatele se bere z Azure Static Web Apps Auth.
+    const user = window.getCurrentAuthenticatedUser ? window.getCurrentAuthenticatedUser() : window.__swaUser;
+    return user?.userId || null;
+}
 
+function requirePortfolioIdentity() {
+    const userId = getCurrentUserId();
+    if (!userId) {
+        if (typeof redirectToAzureLogin === 'function') {
+            redirectToAzureLogin('/portfolio');
+            return null;
+        }
+        throw new Error('Uživatel není přihlášený.');
+    }
+    return userId;
 }
 
 // ===================================================
@@ -1055,8 +1070,10 @@ function openAssetDetail(assetType, assetId) {
 // API
 // ===================================================
 async function fetchUserPortfolios() {
+  const userId = requirePortfolioIdentity();
+  if (!userId) return [];
   const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolios?user_id=${getCurrentUserId()}&is_active=1`
+    `${PORTFOLIO_API}/get_portfolios?user_id=${encodeURIComponent(userId)}&is_active=1`
   );
   const data = await r.json();
   if (!Array.isArray(data)) return [];
@@ -1066,16 +1083,20 @@ async function fetchUserPortfolios() {
 }
 
 async function fetchPortfolioDetail(id) {
+  const userId = requirePortfolioIdentity();
+  if (!userId) throw new Error('Uživatel není přihlášený.');
   const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${id}&user_id=${getCurrentUserId()}`
+    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${encodeURIComponent(id)}&user_id=${encodeURIComponent(userId)}`
   );
   return await r.json();
 }
 
 async function fetchPortfolioTransactions(portfolioId) {
   try {
+    const userId = requirePortfolioIdentity();
+    if (!userId) return [];
     const r = await fetch(
-      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${getCurrentUserId()}`
+      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${encodeURIComponent(portfolioId)}&user_id=${encodeURIComponent(userId)}`
     );
     if (!r.ok) return [];
 
