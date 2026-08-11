@@ -9,42 +9,5 @@
       "/api/*",
       "/.auth/*"
     ]
-  },
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/e622ccf5-fd9d-4cd7-a227-2307c9243fd9/v2.0",
-          "clientIdSettingName": "AZURE_CLIENT_ID",
-          "clientSecretSettingName": "AZURE_CLIENT_SECRET"
-        }
-      }
-    }
-  },
-  "routes": [
-    {
-      "route": "/portfolio*",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/moje-portfolio*",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/login",
-      "redirect": "/.auth/login/aad",
-      "statusCode": 302
-    },
-    {
-      "route": "/logout",
-      "redirect": "/.auth/logout",
-      "statusCode": 302
-    }
-  ],
-  "responseOverrides": {
-    "401": {
-      "statusCode": 302,
-      "redirect": "/.auth/login/aad"
-    }
   }
 }
