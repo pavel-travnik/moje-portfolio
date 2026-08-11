@@ -57,6 +57,76 @@ const CURRENCY_LIST_API = `${APIM_API_BASE_URL}/get_active_currencies`;
 const CURRENCY_DATA_API = `${APIM_API_BASE_URL}/get_currency_data`;
 const PODILOVE_FONDY_API = `${APIM_API_BASE_URL}/get_active_podilove_fondy`;
 const PODILOVY_FOND_DATA_API = `${APIM_API_BASE_URL}/get_podilovy_fond_data`;
+
+// ===================================================
+// AUTH / SESSION – vlastní login přes JWT
+// ===================================================
+// Soukromé portfolio endpointy budou volané přes APIM. Pokud vytvoříš jiné
+// APIM API pro privátní část, změň pouze tuto konstantu.
+const PORTFOLIO_PRIVATE_API_BASE_URL = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
+window.PORTFOLIO_API = PORTFOLIO_PRIVATE_API_BASE_URL;
+
+function getPortfolioApiBaseUrl() {
+  return window.PORTFOLIO_API || PORTFOLIO_PRIVATE_API_BASE_URL;
+}
+
+function getAccessToken() {
+  return localStorage.getItem('access_token');
+}
+
+function getTokenExpiresAt() {
+  return Number(localStorage.getItem('token_expires_at') || 0);
+}
+
+function isLoggedIn() {
+  const token = getAccessToken();
+  const expiresAt = getTokenExpiresAt();
+  return !!token && !!expiresAt && Date.now() < expiresAt;
+}
+
+function clearSession() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('token_type');
+  localStorage.removeItem('token_expires_at');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('last_activity');
+}
+
+function getAuthHeaders(extraHeaders = {}) {
+  const token = getAccessToken();
+  return {
+    ...extraHeaders,
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+async function authFetch(url, options = {}) {
+  if (!isLoggedIn()) {
+    clearSession();
+    updateMenu();
+    openLoginModal();
+    throw new Error('Uživatel není přihlášený nebo relace vypršela.');
+  }
+
+  const headers = getAuthHeaders(options.headers || {});
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    clearSession();
+    updateMenu();
+    openLoginModal();
+    throw new Error('Přihlášení vypršelo nebo není platné.');
+  }
+
+  return res;
+}
+
+window.getAccessToken = getAccessToken;
+window.isLoggedIn = isLoggedIn;
+window.clearSession = clearSession;
+window.authFetch = authFetch;
+window.getAuthHeaders = getAuthHeaders;
+
 // ===================================================
 // DROPDOWN - MOBILE SAFE / DIRECT BINDING
 // ===================================================
@@ -301,7 +371,7 @@ function updateMenu() {
     const btnLogin = document.getElementById("btn-login");
     const btnLogout = document.getElementById("btn-logout");
 
-    const logged = !!localStorage.getItem("user_id");
+    const logged = isLoggedIn();
 
     if (portfolioLink) {
         portfolioLink.style.display = logged ? "inline-flex" : "none";
@@ -393,8 +463,10 @@ if (!page || page === "undefined") {
      window.scrollTo(0, 0);
 
 
-    // 🔒 ochrana portfolio
-    if (page.startsWith('portfolio') && !localStorage.getItem("user_id")) {
+    // 🔒 ochrana portfolio přes JWT token
+    if (page.startsWith('portfolio') && !isLoggedIn()) {
+        clearSession();
+        updateMenu();
         openLoginModal();
         return;
     }
@@ -2556,7 +2628,7 @@ function renderCurrencyKPI(data) {
 // ===============================
 
 async function loginUser() {
-    const email = document.getElementById("login-email").value;
+    const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value;
 
     if (!email || !password) {
@@ -2564,51 +2636,58 @@ async function loginUser() {
         return;
     }
 
-    const res = await fetch(`${PORTFOLIO_API}/login_user`, {
+    const res = await fetch(`${getPortfolioApiBaseUrl()}/login_user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
     });
 
-    const data = await res.json();
+    let data;
+    try {
+        data = await res.json();
+    } catch {
+        data = { error: "Neplatná odpověď serveru" };
+    }
 
-    if (!res.ok) {
+    if (!res.ok || !data.access_token) {
         alert(data.error || "Login failed");
         return;
     }
 
-    localStorage.setItem("user_id", data.user_id);
-    resetInactivityTimer(); // ⬅️ důležité
+    clearSession();
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("token_type", data.token_type || "Bearer");
+    localStorage.setItem("token_expires_at", String(Date.now() + Number(data.expires_in || 3600) * 1000));
+    localStorage.setItem("last_activity", String(Date.now()));
+
+    resetInactivityTimer();
     updateMenu();
     loadPage("portfolio");
 }
 
 function logout() {
-    localStorage.removeItem("user_id");
+    clearSession();
     updateMenu();
     loadPage("uvod");
 }
 
-
 async function registerUser() {
-    const email = document.getElementById("login-email").value;
+    const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value;
 
+    if (!email || !password) {
+        alert("Vyplň email a heslo");
+        return;
+    }
+
     try {
-        const res = await fetch(`${PORTFOLIO_API}/save_user`, {
+        const res = await fetch(`${getPortfolioApiBaseUrl()}/save_user`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
         });
 
-        // ✅ DEBUG – klíčové!
-        console.log("STATUS:", res.status);
-
         const text = await res.text();
-        console.log("RESPONSE:", text);
-
         let data;
         try {
             data = JSON.parse(text);
@@ -2621,8 +2700,7 @@ async function registerUser() {
             return;
         }
 
-        alert("Registrace OK – přihlas se");
-
+        alert("Registrace OK – můžeš se přihlásit");
     } catch (err) {
         console.error("REGISTER ERROR:", err);
         alert("Chyba registrace");
@@ -2659,18 +2737,16 @@ document.addEventListener("mousemove", updateLastActivity);
 
 function checkSession() {
   const last = localStorage.getItem("last_activity");
-  if (!last) return;
+  if (!last && !getAccessToken()) return;
 
-  const diff = Date.now() - parseInt(last);
+  const inactiveFor = last ? Date.now() - parseInt(last, 10) : 0;
+  const tokenExpired = !isLoggedIn();
 
-  // 10 minut
-  if (diff > 600000) {
-    console.log("Session expirovala");
+  if (tokenExpired || inactiveFor > 600000) {
+    console.log(tokenExpired ? "Session expirovala – token" : "Session expirovala – neaktivita");
     logout();
   }
 }
-
-
 
 /* Mobile overview table override */
 (function ensureMobileOverviewFourColumns() {

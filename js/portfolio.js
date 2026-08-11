@@ -2,14 +2,43 @@
 // PORTFOLIO.JS – NOVÝ STABILNÍ SOUBOR
 // ===================================================
 
-const PORTFOLIO_API =
-  'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
-
-  window.PORTFOLIO_API = 'https://portfolio-func-app-hvc9bbfbahdmhbb0.westeurope-01.azurewebsites.net/api';
+// Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
+// musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
+const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
+window.PORTFOLIO_API = PORTFOLIO_API;
 
 function getCurrentUserId() {
-    return Number(localStorage.getItem("user_id"));
+    // Nepoužívat jako bezpečnostní vstup. User ID musí backend brát z JWT.
+    // Funkce zůstává jen kvůli případné dočasné kompatibilitě UI.
+    return null;
+}
 
+function requireAccessToken() {
+    const token = window.getAccessToken ? window.getAccessToken() : localStorage.getItem('access_token');
+    if (!token) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        throw new Error('Uživatel není přihlášený.');
+    }
+    return token;
+}
+
+async function portfolioAuthFetch(url, options = {}) {
+    if (window.authFetch) {
+        return window.authFetch(url, options);
+    }
+
+    const token = requireAccessToken();
+    const headers = {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`
+    };
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401 || res.status === 403) {
+        if (window.clearSession) window.clearSession();
+        if (typeof openLoginModal === 'function') openLoginModal();
+        throw new Error('Přihlášení vypršelo nebo není platné.');
+    }
+    return res;
 }
 
 // ===================================================
@@ -1055,8 +1084,8 @@ function openAssetDetail(assetType, assetId) {
 // API
 // ===================================================
 async function fetchUserPortfolios() {
-  const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolios?user_id=${getCurrentUserId()}&is_active=1`
+  const r = await portfolioAuthFetch(
+    `${PORTFOLIO_API}/get_portfolios?is_active=1`
   );
   const data = await r.json();
   if (!Array.isArray(data)) return [];
@@ -1066,16 +1095,16 @@ async function fetchUserPortfolios() {
 }
 
 async function fetchPortfolioDetail(id) {
-  const r = await fetch(
-    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${id}&user_id=${getCurrentUserId()}`
+  const r = await portfolioAuthFetch(
+    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${encodeURIComponent(id)}`
   );
   return await r.json();
 }
 
 async function fetchPortfolioTransactions(portfolioId) {
   try {
-    const r = await fetch(
-      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${portfolioId}&user_id=${getCurrentUserId()}`
+    const r = await portfolioAuthFetch(
+      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${encodeURIComponent(portfolioId)}`
     );
     if (!r.ok) return [];
 
@@ -1096,26 +1125,21 @@ async function fetchPortfolioTransactions(portfolioId) {
 
 async function createPortfolio(name) {
     const payload = {
-        user_id: getCurrentUserId(),
         name: name,
         base_ccy: "CZK"
     };
 
-    const res = await fetch(`${PORTFOLIO_API}/create_portfolio`, {
+    const res = await portfolioAuthFetch(`${PORTFOLIO_API}/create_portfolio`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     });
 
     const data = await res.json();
-
     if (!res.ok) {
         console.error("CREATE PORTFOLIO ERROR:", data);
         throw new Error(data.error || "Create failed");
     }
-
     return data;
 }
 
@@ -1169,12 +1193,11 @@ function renderPortfolioSettings(detail, portfolioId) {
 }
 
 async function savePortfolioSettings(portfolioId, email, frequency) {
-  const res = await fetch(`${PORTFOLIO_API}/save_portfolio_settings`, {
+  const res = await portfolioAuthFetch(`${PORTFOLIO_API}/save_portfolio_settings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       portfolio_id: Number(portfolioId),
-      user_id: getCurrentUserId(),
       email,
       frequency
     })
@@ -1191,7 +1214,6 @@ async function savePortfolioSettings(portfolioId, email, frequency) {
   if (!res.ok) {
     throw new Error(data.error || 'Save portfolio settings failed');
   }
-
   return data;
 }
 
@@ -1871,12 +1893,11 @@ function openTransactionModal(portfolioId) {
 
 async function savePortfolioTrade(portfolioId, trade) {
   const payload = {
-    portfolio_id: Number(portfolioId), // ← DŮLEŽITÉ
-    user_id: getCurrentUserId(), // ✅ FIX
+    portfolio_id: Number(portfolioId),
     trades: [trade]
   };
 
-  const res = await fetch(`${PORTFOLIO_API}/save_portfolio_trades`, {
+  const res = await portfolioAuthFetch(`${PORTFOLIO_API}/save_portfolio_trades`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -1892,8 +1913,6 @@ async function savePortfolioTrade(portfolioId, trade) {
   }
   return data;
 }
-
-
 
 // ===================================================
 // TABS
