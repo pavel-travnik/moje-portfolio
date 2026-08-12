@@ -128,6 +128,100 @@ window.authFetch = authFetch;
 window.getAuthHeaders = getAuthHeaders;
 
 // ===================================================
+// PUBLIC DATA CACHE – localStorage TTL cache pro veřejná GET data
+// ===================================================
+// APIM Consumption nemá spolehlivou interní cache, proto cachujeme veřejná data
+// přímo v prohlížeči. Privátní portfolio/JWT endpointy se tímto necachují.
+const PUBLIC_DATA_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minut
+const PUBLIC_DATA_CACHE_PREFIX = 'public_api_cache_v1:';
+window.__publicDataFetchPromises = window.__publicDataFetchPromises || {};
+
+function publicDataCacheKey(url) {
+  return PUBLIC_DATA_CACHE_PREFIX + String(url);
+}
+
+function getCachedPublicData(url) {
+  try {
+    const raw = localStorage.getItem(publicDataCacheKey(url));
+    if (!raw) return null;
+
+    const item = JSON.parse(raw);
+    if (!item || typeof item.expiresAt !== 'number') return null;
+
+    if (Date.now() > item.expiresAt) {
+      localStorage.removeItem(publicDataCacheKey(url));
+      return null;
+    }
+
+    return item.data;
+  } catch (err) {
+    console.warn('Public cache read failed:', err);
+    return null;
+  }
+}
+
+function setCachedPublicData(url, data, ttlMs = PUBLIC_DATA_CACHE_TTL_MS) {
+  try {
+    localStorage.setItem(
+      publicDataCacheKey(url),
+      JSON.stringify({
+        cachedAt: Date.now(),
+        expiresAt: Date.now() + ttlMs,
+        data
+      })
+    );
+  } catch (err) {
+    // localStorage může být plný nebo vypnutý, cache je pouze optimalizace.
+    console.warn('Public cache write failed:', err);
+  }
+}
+
+async function cachedJsonFetch(url, options = {}) {
+  const ttlMs = options.ttlMs ?? PUBLIC_DATA_CACHE_TTL_MS;
+  const forceRefresh = options.forceRefresh === true;
+  const cacheKey = publicDataCacheKey(url);
+
+  if (!forceRefresh) {
+    const cached = getCachedPublicData(url);
+    if (cached !== null) return cached;
+  }
+
+  if (!forceRefresh && window.__publicDataFetchPromises[cacheKey]) {
+    return window.__publicDataFetchPromises[cacheKey];
+  }
+
+  const promise = fetch(url, { method: 'GET' })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+      return res.json();
+    })
+    .then(data => {
+      setCachedPublicData(url, data, ttlMs);
+      return data;
+    })
+    .finally(() => {
+      delete window.__publicDataFetchPromises[cacheKey];
+    });
+
+  window.__publicDataFetchPromises[cacheKey] = promise;
+  return promise;
+}
+
+function clearPublicDataCache() {
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(PUBLIC_DATA_CACHE_PREFIX))
+      .forEach(k => localStorage.removeItem(k));
+  } catch (err) {
+    console.warn('Public cache clear failed:', err);
+  }
+}
+
+window.cachedJsonFetch = cachedJsonFetch;
+window.clearPublicDataCache = clearPublicDataCache;
+
+
+// ===================================================
 // DROPDOWN - MOBILE SAFE / DIRECT BINDING
 // ===================================================
 function initDropdownControls() {
@@ -388,54 +482,265 @@ function updateMenu() {
 }
 
 function openLoginModal() {
+    // Zabraň vícenásobnému otevření stejného modalu.
+    const existing = document.querySelector('.modal-backdrop.auth-modal');
+    if (existing) existing.remove();
+
     const modal = document.createElement('div');
-    modal.className = 'modal-backdrop';
-
-    modal.innerHTML = `
-        <div class="tx-modal">
-            
-            <h3>Přihlášení</h3>
-
-            <label>Email</label>
-            <input id="login-email" class="tx-input" placeholder="Email">
-
-            <label>Heslo</label>
-            <input id="login-password" type="password" class="tx-input" placeholder="Heslo">
-
-            <div class="tx-actions">
-                <button class="pill-button" id="login-cancel">Zrušit</button>
-                <button class="pill-button" id="login-submit">Přihlásit</button>
-            </div>
-
-            <div class="tx-actions">
-                <button class="pill-button" id="login-register">
-                    Nemám účet → Registrovat
-                </button>
-            </div>
-
-        </div>
-    `;
-
+    modal.className = 'modal-backdrop auth-modal';
     document.body.appendChild(modal);
     document.body.style.overflow = 'hidden';
 
-    // ❌ zavřít
-    document.getElementById("login-cancel").onclick = () => {
-        modal.remove();
-        document.body.style.overflow = '';
+    const state = {
+        email: '',
+        password: ''
     };
 
-    // ✅ login
-    document.getElementById("login-submit").onclick = async () => {
-        await loginUser();
+    function closeModal() {
         modal.remove();
         document.body.style.overflow = '';
-    };
+    }
 
-    // ✅ registrace
-    document.getElementById("login-register").onclick = async () => {
-        await registerUser();
-    };
+    function setMessage(text, type = 'info') {
+        const el = modal.querySelector('#auth-message');
+        if (!el) return;
+        el.textContent = text || '';
+        el.className = `auth-message ${type}`;
+        el.style.display = text ? 'block' : 'none';
+    }
+
+    function setLoading(isLoading) {
+        modal.querySelectorAll('button').forEach(btn => {
+            btn.disabled = !!isLoading;
+        });
+    }
+
+    function renderLogin() {
+        modal.innerHTML = `
+            <div class="tx-modal">
+                <h3>Přihlášení</h3>
+                <p id="auth-message" class="auth-message" style="display:none"></p>
+
+                <label>Email</label>
+                <input id="login-email" class="tx-input" placeholder="Email" autocomplete="email" value="${state.email || ''}">
+
+                <label>Heslo</label>
+                <input id="login-password" type="password" class="tx-input" placeholder="Heslo" autocomplete="current-password">
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="login-cancel">Zrušit</button>
+                    <button class="pill-button" id="login-submit">Přihlásit</button>
+                </div>
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="login-register">Nemám účet → Registrovat</button>
+                </div>
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="login-forgot">Zapomněl jsem heslo</button>
+                </div>
+            </div>
+        `;
+
+        modal.querySelector('#login-cancel').onclick = closeModal;
+
+        modal.querySelector('#login-submit').onclick = async () => {
+            setLoading(true);
+            const ok = await loginUser();
+            setLoading(false);
+            if (ok) closeModal();
+        };
+
+        modal.querySelector('#login-register').onclick = () => {
+            state.email = modal.querySelector('#login-email')?.value.trim() || '';
+            renderRegisterRequest();
+        };
+
+        modal.querySelector('#login-forgot').onclick = () => {
+            state.email = modal.querySelector('#login-email')?.value.trim() || '';
+            renderPasswordResetRequest();
+        };
+    }
+
+    function renderRegisterRequest() {
+        modal.innerHTML = `
+            <div class="tx-modal">
+                <h3>Registrace</h3>
+                <p id="auth-message" class="auth-message" style="display:none"></p>
+
+                <label>Email</label>
+                <input id="reg-email" class="tx-input" placeholder="Email" autocomplete="email" value="${state.email || ''}">
+
+                <label>Heslo</label>
+                <input id="reg-password" type="password" class="tx-input" placeholder="Minimálně 8 znaků" autocomplete="new-password">
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="reg-back">Zpět</button>
+                    <button class="pill-button" id="reg-send-code">Poslat ověřovací kód</button>
+                </div>
+            </div>
+        `;
+
+        modal.querySelector('#reg-back').onclick = renderLogin;
+
+        modal.querySelector('#reg-send-code').onclick = async () => {
+            state.email = modal.querySelector('#reg-email').value.trim();
+            state.password = modal.querySelector('#reg-password').value;
+
+            setLoading(true);
+            const result = await requestRegistrationCode(state.email, state.password);
+            setLoading(false);
+
+            if (result.ok) {
+                renderRegisterConfirm();
+                setMessage(result.message || 'Ověřovací kód jsme poslali e-mailem. Platí 10 minut.', 'success');
+            } else {
+                setMessage(result.error || 'Nepodařilo se odeslat ověřovací kód.', 'error');
+            }
+        };
+    }
+
+    function renderRegisterConfirm() {
+        modal.innerHTML = `
+            <div class="tx-modal">
+                <h3>Ověření e-mailu</h3>
+                <p id="auth-message" class="auth-message" style="display:none"></p>
+                <p class="meta">Na e-mail <strong>${state.email}</strong> jsme poslali 6místný kód. Kód platí 10 minut.</p>
+
+                <label>Ověřovací kód</label>
+                <input id="reg-code" class="tx-input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="reg-code-back">Zpět</button>
+                    <button class="pill-button" id="reg-code-confirm">Dokončit registraci</button>
+                </div>
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="reg-code-resend">Poslat nový kód</button>
+                </div>
+            </div>
+        `;
+
+        modal.querySelector('#reg-code-back').onclick = renderRegisterRequest;
+
+        modal.querySelector('#reg-code-confirm').onclick = async () => {
+            const code = modal.querySelector('#reg-code').value.trim();
+            setLoading(true);
+            const result = await confirmRegistrationCode(state.email, code);
+            setLoading(false);
+
+            if (result.ok) {
+                storeAuthResult(result.data);
+                resetInactivityTimer();
+                updateMenu();
+                closeModal();
+                loadPage('portfolio');
+            } else {
+                setMessage(result.error || 'Kód není platný nebo vypršel.', 'error');
+            }
+        };
+
+        modal.querySelector('#reg-code-resend').onclick = async () => {
+            setLoading(true);
+            const result = await requestRegistrationCode(state.email, state.password);
+            setLoading(false);
+            setMessage(
+                result.ok ? (result.message || 'Poslali jsme nový ověřovací kód.') : (result.error || 'Nepodařilo se odeslat nový kód.'),
+                result.ok ? 'success' : 'error'
+            );
+        };
+    }
+
+    function renderPasswordResetRequest() {
+        modal.innerHTML = `
+            <div class="tx-modal">
+                <h3>Obnovení hesla</h3>
+                <p id="auth-message" class="auth-message" style="display:none"></p>
+
+                <label>Email</label>
+                <input id="reset-email" class="tx-input" placeholder="Email" autocomplete="email" value="${state.email || ''}">
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="reset-back">Zpět</button>
+                    <button class="pill-button" id="reset-send-code">Poslat kód</button>
+                </div>
+            </div>
+        `;
+
+        modal.querySelector('#reset-back').onclick = renderLogin;
+
+        modal.querySelector('#reset-send-code').onclick = async () => {
+            state.email = modal.querySelector('#reset-email').value.trim();
+            setLoading(true);
+            const result = await requestPasswordResetCode(state.email);
+            setLoading(false);
+
+            if (result.ok) {
+                renderPasswordResetConfirm();
+                setMessage(result.message || 'Pokud účet existuje, poslali jsme ověřovací kód.', 'success');
+            } else {
+                setMessage(result.error || 'Nepodařilo se odeslat kód.', 'error');
+            }
+        };
+    }
+
+    function renderPasswordResetConfirm() {
+        modal.innerHTML = `
+            <div class="tx-modal">
+                <h3>Nastavení nového hesla</h3>
+                <p id="auth-message" class="auth-message" style="display:none"></p>
+                <p class="meta">Zadejte 6místný kód z e-mailu a nové heslo.</p>
+
+                <label>Ověřovací kód</label>
+                <input id="reset-code" class="tx-input" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+
+                <label>Nové heslo</label>
+                <input id="reset-password" type="password" class="tx-input" placeholder="Minimálně 8 znaků" autocomplete="new-password">
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="reset-code-back">Zpět</button>
+                    <button class="pill-button" id="reset-confirm">Změnit heslo</button>
+                </div>
+
+                <div class="tx-actions">
+                    <button class="pill-button" id="reset-resend">Poslat nový kód</button>
+                </div>
+            </div>
+        `;
+
+        modal.querySelector('#reset-code-back').onclick = renderPasswordResetRequest;
+
+        modal.querySelector('#reset-confirm').onclick = async () => {
+            const code = modal.querySelector('#reset-code').value.trim();
+            const password = modal.querySelector('#reset-password').value;
+            setLoading(true);
+            const result = await confirmPasswordResetCode(state.email, code, password);
+            setLoading(false);
+
+            if (result.ok) {
+                renderLogin();
+                setMessage('Heslo bylo změněno. Teď se můžete přihlásit.', 'success');
+            } else {
+                setMessage(result.error || 'Kód není platný nebo vypršel.', 'error');
+            }
+        };
+
+        modal.querySelector('#reset-resend').onclick = async () => {
+            setLoading(true);
+            const result = await requestPasswordResetCode(state.email);
+            setLoading(false);
+            setMessage(
+                result.ok ? (result.message || 'Poslali jsme nový kód.') : (result.error || 'Nepodařilo se odeslat nový kód.'),
+                result.ok ? 'success' : 'error'
+            );
+        };
+    }
+
+    modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal();
+    });
+
+    renderLogin();
 }
 
 
@@ -897,11 +1202,7 @@ async function ensureFundsMeta() {
   }
 
   if (!apiCache.dpsMetaPromise) {
-    apiCache.dpsMetaPromise = fetch(DPS_API)
-      .then(res => {
-        if (!res.ok) throw new Error(`DPS metadata HTTP ${res.status}`);
-        return res.json();
-      })
+    apiCache.dpsMetaPromise = cachedJsonFetch(DPS_API)
       .then(data => {
         apiCache.dpsFundsMeta = Array.isArray(data) ? data : [];
         return apiCache.dpsFundsMeta;
@@ -1099,8 +1400,7 @@ function loadPensionFunds() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  fetch(DPS_API)
-    .then(r => r.json())
+  cachedJsonFetch(DPS_API)
     .then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
@@ -1160,10 +1460,9 @@ async function getDpsTableMetrics(isin) {
     return apiCache.dpsTableMetrics[isin];
   }
 
-  const res = await fetch(
+  let data = await cachedJsonFetch(
     `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
   );
-  let data = await res.json();
   if (!Array.isArray(data) || data.length < 2) {
     return null;
   }
@@ -1301,13 +1600,9 @@ async function loadDPSData(isin, period) {
           chart.innerHTML = '<p>Načítám historická data…</p>';
         }
 
-        apiCache.dpsPromises[cacheKey] = fetch(
+        apiCache.dpsPromises[cacheKey] = cachedJsonFetch(
           `${DPS_API_URL}?isin=${encodeURIComponent(cacheKey)}`
         )
-          .then(res => {
-            if (!res.ok) throw new Error(`DPS data HTTP ${res.status}`);
-            return res.json();
-          })
           .then(data => {
             if (!Array.isArray(data)) data = [];
             data.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -1443,8 +1738,7 @@ function loadPodiloveFondy() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  fetch(PODILOVE_FONDY_API)
-    .then(r => r.json())
+  cachedJsonFetch(PODILOVE_FONDY_API)
     .then(funds => {
       apiCache.podiloveFondyList = Array.isArray(funds) ? funds : [];
       updateView();
@@ -1464,8 +1758,7 @@ function normalizeExternalUrl(url) {
 
 async function ensurePodiloveFondyList() {
   if (Array.isArray(apiCache.podiloveFondyList)) return apiCache.podiloveFondyList;
-  const res = await fetch(PODILOVE_FONDY_API);
-  const data = await res.json();
+  const data = await cachedJsonFetch(PODILOVE_FONDY_API);
   apiCache.podiloveFondyList = Array.isArray(data) ? data : [];
   return apiCache.podiloveFondyList;
 }
@@ -1586,10 +1879,9 @@ function loadPodilovyFondDetail(isin) {
 
 async function loadPodilovyFondData(isin, period) {
   if (!apiCache.podiloveFondy[isin]) {
-    const res = await fetch(
+    let data = await cachedJsonFetch(
       `${PODILOVY_FOND_DATA_API}?isin=${encodeURIComponent(isin)}`
     );
-    let data = await res.json();
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     apiCache.podiloveFondy[isin] = data;
   }
@@ -1702,8 +1994,7 @@ function loadStocks() {
   grid.innerHTML = '<p>Načítám akcie ...</p>';
   table.innerHTML = '';
 
-  fetch(STOCK_LIST_API)
-    .then(r => r.json())
+  cachedJsonFetch(STOCK_LIST_API)
     .then(stocks => {
       apiCache.stocksList = (Array.isArray(stocks) ? stocks : [])
         .filter(s => s.sector !== 'ETF' && s.sector !== 'Cryptocurrency');
@@ -1786,8 +2077,7 @@ function loadEtfs() {
   grid.innerHTML = '<p>Načítám ETF…</p>';
   table.innerHTML = '';
 
-  fetch(STOCK_LIST_API)
-    .then(r => r.json())
+  cachedJsonFetch(STOCK_LIST_API)
     .then(stocks => {
       apiCache.etfsList = (Array.isArray(stocks) ? stocks : [])
         .filter(s => s.sector === 'ETF');
@@ -1868,8 +2158,7 @@ function loadCrypto() {
   grid.innerHTML = '<p>Načítám kryptoměny…</p>';
   table.innerHTML = '';
 
-  fetch(STOCK_LIST_API)
-    .then(r => r.json())
+  cachedJsonFetch(STOCK_LIST_API)
     .then(stocks => {
       apiCache.cryptoList = (Array.isArray(stocks) ? stocks : [])
         .filter(s => s.sector === 'Cryptocurrency');
@@ -2018,10 +2307,9 @@ async function loadStockData(ticker, period) {
 
   // ✅ 1️⃣ fetch jen jednou
   if (!apiCache.stocks[ticker]) {
-    const res = await fetch(
+    let data = await cachedJsonFetch(
       `${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`
     );
-    let data = await res.json();
     if (!Array.isArray(data)) data = [];
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     apiCache.stocks[ticker] = data;
@@ -2502,8 +2790,7 @@ function loadCurrencies() {
   grid.innerHTML = '<p>Načítám měny ...</p>';
   table.innerHTML = '';
 
-  fetch(CURRENCY_LIST_API)
-    .then(r => r.json())
+  cachedJsonFetch(CURRENCY_LIST_API)
     .then(list => {
       apiCache.currenciesList = Array.isArray(list) ? list : [];
       updateView();
@@ -2581,10 +2868,9 @@ document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.bac
 
 async function loadCurrencyData(code, period) {
   if (!apiCache.currencies[code]) {
-    const res = await fetch(
+    let data = await cachedJsonFetch(
       `${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`
     );
-    let data = await res.json();
     if (!Array.isArray(data)) data = [];
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     apiCache.currencies[code] = data;
@@ -2627,42 +2913,63 @@ function renderCurrencyKPI(data) {
 // LOGIN / REGISTER
 // ===============================
 
-async function loginUser() {
-    const email = document.getElementById("login-email").value.trim();
-    const password = document.getElementById("login-password").value;
-
-    if (!email || !password) {
-        alert("Vyplň email a heslo");
-        return;
-    }
-
-    const res = await fetch(`${getPortfolioApiBaseUrl()}/login_user`, {
+async function postJson(url, payload) {
+    const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(payload)
     });
 
+    const text = await res.text();
     let data;
     try {
-        data = await res.json();
+        data = text ? JSON.parse(text) : {};
     } catch {
-        data = { error: "Neplatná odpověď serveru" };
+        data = { error: text || "Neplatná odpověď serveru" };
     }
 
-    if (!res.ok || !data.access_token) {
-        alert(data.error || "Login failed");
-        return;
-    }
+    return { res, data };
+}
 
+function storeAuthResult(data) {
     clearSession();
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("token_type", data.token_type || "Bearer");
     localStorage.setItem("token_expires_at", String(Date.now() + Number(data.expires_in || 3600) * 1000));
     localStorage.setItem("last_activity", String(Date.now()));
+}
 
-    resetInactivityTimer();
-    updateMenu();
-    loadPage("portfolio");
+async function loginUser() {
+    const email = document.getElementById("login-email")?.value.trim();
+    const password = document.getElementById("login-password")?.value;
+
+    if (!email || !password) {
+        alert("Vyplň email a heslo");
+        return false;
+    }
+
+    try {
+        const { res, data } = await postJson(`${getPortfolioApiBaseUrl()}/login_user`, {
+            action: "login",
+            email,
+            password
+        });
+
+        if (!res.ok || !data.access_token) {
+            alert(data.error || "Login failed");
+            return false;
+        }
+
+        storeAuthResult(data);
+        resetInactivityTimer();
+        updateMenu();
+        loadPage("portfolio");
+        return true;
+    } catch (err) {
+        console.error("LOGIN ERROR:", err);
+        alert("Chyba přihlášení");
+        return false;
+    }
 }
 
 function logout() {
@@ -2671,40 +2978,96 @@ function logout() {
     loadPage("uvod");
 }
 
-async function registerUser() {
-    const email = document.getElementById("login-email").value.trim();
-    const password = document.getElementById("login-password").value;
-
+async function requestRegistrationCode(email, password) {
     if (!email || !password) {
-        alert("Vyplň email a heslo");
-        return;
+        return { ok: false, error: "Vyplň email a heslo" };
     }
 
     try {
-        const res = await fetch(`${getPortfolioApiBaseUrl()}/save_user`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+        const { res, data } = await postJson(`${getPortfolioApiBaseUrl()}/save_user`, {
+            action: "request_registration_code",
+            email,
+            password
         });
 
-        const text = await res.text();
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch {
-            data = { error: text };
-        }
-
-        if (!res.ok) {
-            alert(data.error || "Registrace selhala");
-            return;
-        }
-
-        alert("Registrace OK – můžeš se přihlásit");
+        if (!res.ok) return { ok: false, error: data.error || "Registrace selhala" };
+        return { ok: true, message: data.message, data };
     } catch (err) {
-        console.error("REGISTER ERROR:", err);
-        alert("Chyba registrace");
+        console.error("REQUEST REGISTRATION CODE ERROR:", err);
+        return { ok: false, error: "Chyba registrace" };
     }
+}
+
+async function confirmRegistrationCode(email, code) {
+    if (!email || !code) {
+        return { ok: false, error: "Vyplň e-mail a ověřovací kód" };
+    }
+
+    try {
+        const { res, data } = await postJson(`${getPortfolioApiBaseUrl()}/save_user`, {
+            action: "confirm_registration_code",
+            email,
+            code
+        });
+
+        if (!res.ok || !data.access_token) {
+            return { ok: false, error: data.error || "Ověření registrace selhalo" };
+        }
+
+        return { ok: true, data };
+    } catch (err) {
+        console.error("CONFIRM REGISTRATION CODE ERROR:", err);
+        return { ok: false, error: "Chyba ověření registrace" };
+    }
+}
+
+async function requestPasswordResetCode(email) {
+    if (!email) {
+        return { ok: false, error: "Vyplň email" };
+    }
+
+    try {
+        const { res, data } = await postJson(`${getPortfolioApiBaseUrl()}/login_user`, {
+            action: "request_password_reset_code",
+            email
+        });
+
+        if (!res.ok) return { ok: false, error: data.error || "Odeslání kódu selhalo" };
+        return { ok: true, message: data.message, data };
+    } catch (err) {
+        console.error("REQUEST PASSWORD RESET CODE ERROR:", err);
+        return { ok: false, error: "Chyba odeslání kódu" };
+    }
+}
+
+async function confirmPasswordResetCode(email, code, password) {
+    if (!email || !code || !password) {
+        return { ok: false, error: "Vyplň e-mail, kód a nové heslo" };
+    }
+
+    try {
+        const { res, data } = await postJson(`${getPortfolioApiBaseUrl()}/login_user`, {
+            action: "confirm_password_reset_code",
+            email,
+            code,
+            password
+        });
+
+        if (!res.ok) return { ok: false, error: data.error || "Změna hesla selhala" };
+        return { ok: true, message: data.message, data };
+    } catch (err) {
+        console.error("CONFIRM PASSWORD RESET CODE ERROR:", err);
+        return { ok: false, error: "Chyba změny hesla" };
+    }
+}
+
+// Zpětná kompatibilita pro případ, že by někde zůstal starší onclick.
+async function registerUser() {
+    const email = document.getElementById("login-email")?.value.trim();
+    const password = document.getElementById("login-password")?.value;
+    const result = await requestRegistrationCode(email, password);
+    alert(result.ok ? (result.message || "Ověřovací kód byl odeslán") : (result.error || "Registrace selhala"));
+    return result.ok;
 }
 
 // ===============================
