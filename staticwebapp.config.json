@@ -9,5 +9,8 @@
       "/api/*",
       "/.auth/*"
     ]
+  },
+  "platform": {
+    "apiRuntime": "node:18"
   }
 }
