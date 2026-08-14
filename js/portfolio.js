@@ -701,7 +701,7 @@ function openCreatePortfolioModal() {
         </select>
 
         <p class="muted" id="pf-settings-info" style="margin-top:.75rem">
-          Přehled se odesílá vždy poslední den zvoleného období v 18:00.
+          Přehled se odesílá ráno v 7:00 podle zvolené frekvence.
         </p>
 
         <div class="tx-actions">
@@ -1161,7 +1161,7 @@ function renderPortfolioSettings(detail, portfolioId) {
       : '—';
 
     infoEl.textContent =
-      `Přehled se odesílá vždy poslední den zvoleného období v 18:00. Další odeslání: ${next}`;
+      `Přehled se odesílá ráno v 7:00 podle zvolené frekvence. Další odeslání: ${next}`;
   }
 
   saveBtn.onclick = async () => {
@@ -1181,7 +1181,7 @@ function renderPortfolioSettings(detail, portfolioId) {
           ? new Date(result.settings.next_send_at).toLocaleString('cs-CZ')
           : '—';
         infoEl.textContent =
-          `Přehled se odesílá vždy poslední den zvoleného období v 18:00. Další odeslání: ${next}`;
+          `Přehled se odesílá ráno v 7:00 podle zvolené frekvence. Další odeslání: ${next}`;
       }
 
       alert('Nastavení bylo uloženo.');
