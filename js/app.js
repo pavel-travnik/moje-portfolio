@@ -60,8 +60,11 @@ const CURRENCY_DATA_API = `${APIM_API_BASE_URL}/get_currency_data`;
 const PODILOVE_FONDY_API = `${APIM_API_BASE_URL}/get_active_podilove_fondy`;
 const PODILOVY_FOND_DATA_API = `${APIM_API_BASE_URL}/get_podilovy_fond_data`;
 const PUBLIC_DATA_PROXY_API = '/api/public-data';
-function publicDataProxyUrl(type, id) {
-  return `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`;
+function publicDataProxyUrl(type, id = '') {
+  const url = `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}`;
+  return id !== undefined && id !== null && String(id).trim() !== ''
+    ? `${url}&id=${encodeURIComponent(id)}`
+    : url;
 }
 
 
@@ -292,7 +295,7 @@ function preloadSectionData(page) {
   const normalized = String(page).split('/')[0];
 
   if (normalized === 'penze') {
-    return cachedJsonFetch(DPS_API).then(data => {
+    return cachedJsonFetch(publicDataProxyUrl('dps-list')).then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
       return apiCache.dpsFundsOverview;
@@ -308,7 +311,7 @@ function preloadSectionData(page) {
   }
 
   if (normalized === 'meny') {
-    return cachedJsonFetch(CURRENCY_LIST_API).then(data => {
+    return cachedJsonFetch(publicDataProxyUrl('currencies-list')).then(data => {
       apiCache.currenciesList = Array.isArray(data) ? data : [];
       return apiCache.currenciesList;
     });
@@ -1354,7 +1357,7 @@ async function ensureFundsMeta() {
   }
 
   if (!apiCache.dpsMetaPromise) {
-    apiCache.dpsMetaPromise = cachedJsonFetch(DPS_API)
+    apiCache.dpsMetaPromise = cachedJsonFetch(publicDataProxyUrl('dps-list'))
       .then(data => {
         apiCache.dpsFundsMeta = Array.isArray(data) ? data : [];
         return apiCache.dpsFundsMeta;
@@ -1552,7 +1555,7 @@ function loadPensionFunds() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(DPS_API)
+  cachedJsonFetch(publicDataProxyUrl('dps-list'))
     .then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
@@ -1890,7 +1893,7 @@ function loadPodiloveFondy() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(PODILOVE_FONDY_API)
+  cachedJsonFetch(publicDataProxyUrl('funds-list'))
     .then(funds => {
       apiCache.podiloveFondyList = Array.isArray(funds) ? funds : [];
       updateView();
@@ -1910,7 +1913,7 @@ function normalizeExternalUrl(url) {
 
 async function ensurePodiloveFondyList() {
   if (Array.isArray(apiCache.podiloveFondyList)) return apiCache.podiloveFondyList;
-  const data = await cachedJsonFetch(PODILOVE_FONDY_API);
+  const data = await cachedJsonFetch(publicDataProxyUrl('funds-list'));
   apiCache.podiloveFondyList = Array.isArray(data) ? data : [];
   return apiCache.podiloveFondyList;
 }
@@ -2080,7 +2083,7 @@ async function ensureStockUniverse() {
   if (Array.isArray(apiCache.stockUniverse)) return apiCache.stockUniverse;
   if (apiCache.stockUniversePromise) return apiCache.stockUniversePromise;
 
-  apiCache.stockUniversePromise = cachedJsonFetch(STOCK_LIST_API)
+  apiCache.stockUniversePromise = cachedJsonFetch(publicDataProxyUrl('stocks-list'))
     .then(stocks => {
       const universe = Array.isArray(stocks) ? stocks : [];
       apiCache.stockUniverse = universe;
@@ -2959,7 +2962,7 @@ function loadCurrencies() {
   grid.innerHTML = '<p>Načítám měny ...</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(CURRENCY_LIST_API)
+  cachedJsonFetch(publicDataProxyUrl('currencies-list'))
     .then(list => {
       apiCache.currenciesList = Array.isArray(list) ? list : [];
       updateView();
