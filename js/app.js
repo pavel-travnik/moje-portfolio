@@ -60,11 +60,8 @@ const CURRENCY_DATA_API = `${APIM_API_BASE_URL}/get_currency_data`;
 const PODILOVE_FONDY_API = `${APIM_API_BASE_URL}/get_active_podilove_fondy`;
 const PODILOVY_FOND_DATA_API = `${APIM_API_BASE_URL}/get_podilovy_fond_data`;
 const PUBLIC_DATA_PROXY_API = '/api/public-data';
-function publicDataProxyUrl(type, id = '') {
-  const url = `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}`;
-  return id !== undefined && id !== null && String(id).trim() !== ''
-    ? `${url}&id=${encodeURIComponent(id)}`
-    : url;
+function publicDataProxyUrl(type, id) {
+  return `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`;
 }
 
 
@@ -286,6 +283,216 @@ window.cachedJsonFetch = cachedJsonFetch;
 window.clearPublicDataCache = clearPublicDataCache;
 
 // ===================================================
+// COOKIE CONSENT
+// ===================================================
+const COOKIE_CONSENT_KEY = 'mp_cookie_consent_v1';
+const COOKIE_CONSENT_COOKIE = 'cookieConsent';
+
+function setCookieConsentCookie(value) {
+  try {
+    const maxAge = 60 * 60 * 24 * 180; // 180 dní
+    document.cookie = `${COOKIE_CONSENT_COOKIE}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+  } catch (err) {
+    console.warn('Cookie consent cookie write failed:', err);
+  }
+}
+
+function getCookieConsent() {
+  try {
+    const raw = localStorage.getItem(COOKIE_CONSENT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCookieConsent(choice) {
+  const safeChoice = choice === 'all' || choice === 'analytics' ? choice : 'necessary';
+  const payload = {
+    choice: safeChoice,
+    necessary: true,
+    analytics: safeChoice === 'all' || safeChoice === 'analytics',
+    savedAt: new Date().toISOString(),
+    version: 1
+  };
+
+  try {
+    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn('Cookie consent localStorage write failed:', err);
+  }
+
+  setCookieConsentCookie(safeChoice);
+  closeCookieBanner();
+
+  if (payload.analytics && typeof window.enableAnalyticsAfterConsent === 'function') {
+    window.enableAnalyticsAfterConsent(payload);
+  }
+
+  return payload;
+}
+
+function closeCookieBanner() {
+  document.querySelectorAll('.cookie-consent-backdrop').forEach(el => el.remove());
+}
+
+function showCookieBanner(force = false) {
+  if (!force && getCookieConsent()) return;
+  closeCookieBanner();
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'cookie-consent-backdrop';
+  backdrop.innerHTML = `
+    <div class="cookie-consent-box" role="dialog" aria-modal="true" aria-labelledby="cookie-consent-title">
+      <div class="cookie-consent-icon" aria-hidden="true">ⓘ</div>
+      <div class="cookie-consent-content">
+        <h3 id="cookie-consent-title">Nastavení cookies</h3>
+        <p>
+          Používáme nezbytné technické ukládání pro fungování webu, přihlášení a bezpečnost relace.
+          Analytiku spustíme pouze po vašem souhlasu.
+        </p>
+        <label class="cookie-choice-row">
+          <input type="checkbox" checked disabled>
+          <span><strong>Nezbytné</strong><small>Vždy aktivní, bez nich web správně nefunguje.</small></span>
+        </label>
+        <label class="cookie-choice-row">
+          <input type="checkbox" id="cookie-analytics-choice">
+          <span><strong>Analytické</strong><small>Pomáhají nám zlepšovat web. Jsou volitelné.</small></span>
+        </label>
+        <div class="cookie-consent-actions">
+          <button type="button" class="pill-button" id="cookie-necessary">Pouze nezbytné</button>
+          <button type="button" class="pill-button" id="cookie-save">Uložit výběr</button>
+          <button type="button" class="pill-button cookie-primary" id="cookie-all">Přijmout vše</button>
+        </div>
+        <p class="cookie-consent-links">
+          <a href="#" data-page="cookies">Více o cookies</a>
+          <span>Souhlas můžete kdykoliv změnit na stránce Cookies.</span>
+        </p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const analytics = backdrop.querySelector('#cookie-analytics-choice');
+  const current = getCookieConsent();
+  if (analytics && current?.analytics) analytics.checked = true;
+
+  backdrop.querySelector('#cookie-necessary')?.addEventListener('click', () => saveCookieConsent('necessary'));
+  backdrop.querySelector('#cookie-all')?.addEventListener('click', () => saveCookieConsent('all'));
+  backdrop.querySelector('#cookie-save')?.addEventListener('click', () => {
+    saveCookieConsent(analytics?.checked ? 'analytics' : 'necessary');
+  });
+}
+
+function resetCookieConsent() {
+  try {
+    localStorage.removeItem(COOKIE_CONSENT_KEY);
+  } catch {}
+  showCookieBanner(true);
+}
+
+function ensureCookieConsentStyle() {
+  if (document.getElementById('cookie-consent-style')) return;
+  const style = document.createElement('style');
+  style.id = 'cookie-consent-style';
+  style.textContent = `
+    .cookie-consent-backdrop {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 99999;
+      padding: 16px;
+      background: linear-gradient(to top, rgba(17,17,17,.22), rgba(17,17,17,0));
+    }
+    .cookie-consent-box {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(201,166,70,.45);
+      background: rgba(255,255,255,.98);
+      box-shadow: 0 16px 50px rgba(0,0,0,.18);
+      color: #111;
+    }
+    .cookie-consent-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f3d2e;
+      color: #C9A646;
+      font-weight: 800;
+      font-size: 20px;
+    }
+    .cookie-consent-content h3 { margin: 0 0 6px; }
+    .cookie-consent-content p { margin: 0 0 12px; line-height: 1.45; color: #444; }
+    .cookie-choice-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin: 8px 0;
+      padding: 10px;
+      border: 1px solid rgba(201,166,70,.25);
+      border-radius: 14px;
+      background: #fffaf0;
+    }
+    .cookie-choice-row input { margin-top: 3px; }
+    .cookie-choice-row span { display: grid; gap: 2px; }
+    .cookie-choice-row small { color: #666; }
+    .cookie-consent-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+    .cookie-consent-actions .cookie-primary {
+      background: #C9A646;
+      border-color: #C9A646;
+      color: #111;
+      font-weight: 800;
+    }
+    .cookie-consent-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px !important;
+      font-size: 13px;
+    }
+    .cookie-consent-links a { color: #0f3d2e; font-weight: 700; }
+    @media (max-width: 640px) {
+      .cookie-consent-box { grid-template-columns: 1fr; }
+      .cookie-consent-actions { justify-content: stretch; }
+      .cookie-consent-actions .pill-button { flex: 1 1 100%; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function initCookieConsent() {
+  ensureCookieConsentStyle();
+  window.showCookieBanner = () => showCookieBanner(true);
+  window.resetCookieConsent = resetCookieConsent;
+  if (!getCookieConsent()) {
+    setTimeout(() => showCookieBanner(false), 500);
+  } else {
+    const consent = getCookieConsent();
+    if (consent?.choice) setCookieConsentCookie(consent.choice);
+    if (consent?.analytics && typeof window.enableAnalyticsAfterConsent === 'function') {
+      window.enableAnalyticsAfterConsent(consent);
+    }
+  }
+}
+
+
+// ===================================================
 // PUBLIC DATA PRELOAD – zahřívání veřejných dat
 // ===================================================
 // Po načtení stránky na pozadí přednačteme jen lehké přehledové endpointy.
@@ -295,7 +502,7 @@ function preloadSectionData(page) {
   const normalized = String(page).split('/')[0];
 
   if (normalized === 'penze') {
-    return cachedJsonFetch(publicDataProxyUrl('dps-list')).then(data => {
+    return cachedJsonFetch(DPS_API).then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
       return apiCache.dpsFundsOverview;
@@ -311,7 +518,7 @@ function preloadSectionData(page) {
   }
 
   if (normalized === 'meny') {
-    return cachedJsonFetch(publicDataProxyUrl('currencies-list')).then(data => {
+    return cachedJsonFetch(CURRENCY_LIST_API).then(data => {
       apiCache.currenciesList = Array.isArray(data) ? data : [];
       return apiCache.currenciesList;
     });
@@ -1357,7 +1564,7 @@ async function ensureFundsMeta() {
   }
 
   if (!apiCache.dpsMetaPromise) {
-    apiCache.dpsMetaPromise = cachedJsonFetch(publicDataProxyUrl('dps-list'))
+    apiCache.dpsMetaPromise = cachedJsonFetch(DPS_API)
       .then(data => {
         apiCache.dpsFundsMeta = Array.isArray(data) ? data : [];
         return apiCache.dpsFundsMeta;
@@ -1555,7 +1762,7 @@ function loadPensionFunds() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(publicDataProxyUrl('dps-list'))
+  cachedJsonFetch(DPS_API)
     .then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
@@ -1893,7 +2100,7 @@ function loadPodiloveFondy() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(publicDataProxyUrl('funds-list'))
+  cachedJsonFetch(PODILOVE_FONDY_API)
     .then(funds => {
       apiCache.podiloveFondyList = Array.isArray(funds) ? funds : [];
       updateView();
@@ -1913,7 +2120,7 @@ function normalizeExternalUrl(url) {
 
 async function ensurePodiloveFondyList() {
   if (Array.isArray(apiCache.podiloveFondyList)) return apiCache.podiloveFondyList;
-  const data = await cachedJsonFetch(publicDataProxyUrl('funds-list'));
+  const data = await cachedJsonFetch(PODILOVE_FONDY_API);
   apiCache.podiloveFondyList = Array.isArray(data) ? data : [];
   return apiCache.podiloveFondyList;
 }
@@ -2083,7 +2290,7 @@ async function ensureStockUniverse() {
   if (Array.isArray(apiCache.stockUniverse)) return apiCache.stockUniverse;
   if (apiCache.stockUniversePromise) return apiCache.stockUniversePromise;
 
-  apiCache.stockUniversePromise = cachedJsonFetch(publicDataProxyUrl('stocks-list'))
+  apiCache.stockUniversePromise = cachedJsonFetch(STOCK_LIST_API)
     .then(stocks => {
       const universe = Array.isArray(stocks) ? stocks : [];
       apiCache.stockUniverse = universe;
@@ -2962,7 +3169,7 @@ function loadCurrencies() {
   grid.innerHTML = '<p>Načítám měny ...</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(publicDataProxyUrl('currencies-list'))
+  cachedJsonFetch(CURRENCY_LIST_API)
     .then(list => {
       apiCache.currenciesList = Array.isArray(list) ? list : [];
       updateView();
