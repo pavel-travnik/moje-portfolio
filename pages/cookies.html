@@ -18,4 +18,4 @@
 
 <h3>Změna souhlasu</h3>
 <p>Souhlas můžete kdykoliv změnit tlačítkem níže.</p>
-<button class="pill-button" onclick="localStorage.removeItem('mp_cookie_consent_v1'); showCookieBanner();">Změnit nastavení cookies</button>
+<button class="pill-button" onclick="resetCookieConsent ? resetCookieConsent() : (localStorage.removeItem('mp_cookie_consent_v1'), showCookieBanner(true));">Změnit nastavení cookies</button>
