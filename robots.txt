@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://icy-sea-053d99203.4.azurestaticapps.net/sitemap.xml
