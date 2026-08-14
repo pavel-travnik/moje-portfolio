@@ -148,6 +148,7 @@ function publicDataCacheKey(url) {
 }
 
 function getCachedPublicData(url) {
+  if (isProxyDetailUrl(url)) return null;
   try {
     const raw = localStorage.getItem(publicDataCacheKey(url));
     if (!raw) return null;
@@ -167,19 +168,73 @@ function getCachedPublicData(url) {
   }
 }
 
-function setCachedPublicData(url, data, ttlMs = PUBLIC_DATA_CACHE_TTL_MS) {
+function isProxyDetailUrl(url) {
   try {
-    localStorage.setItem(
-      publicDataCacheKey(url),
-      JSON.stringify({
-        cachedAt: Date.now(),
-        expiresAt: Date.now() + ttlMs,
-        data
+    const parsed = new URL(String(url), window.location.origin);
+    return parsed.pathname === PUBLIC_DATA_PROXY_API && parsed.searchParams.has('id');
+  } catch {
+    return String(url).includes('/api/public-data') && String(url).includes('&id=');
+  }
+}
+
+function shouldUseLocalPublicCache(url, data) {
+  // Detailní historie může být velká. Tu držíme v apiCache + server proxy cache,
+  // ale neukládáme ji do localStorage, aby nevznikal QuotaExceededError.
+  if (isProxyDetailUrl(url)) return false;
+
+  // Bezpečnostní limit pro localStorage. Přehledy obvykle projdou, velké JSON odpovědi ne.
+  try {
+    return JSON.stringify(data).length <= 750000;
+  } catch {
+    return false;
+  }
+}
+
+function trimPublicDataCache() {
+  try {
+    const items = Object.keys(localStorage)
+      .filter(k => k.startsWith(PUBLIC_DATA_CACHE_PREFIX))
+      .map(k => {
+        try {
+          const item = JSON.parse(localStorage.getItem(k) || '{}');
+          return { key: k, cachedAt: Number(item.cachedAt || 0), expiresAt: Number(item.expiresAt || 0) };
+        } catch {
+          return { key: k, cachedAt: 0, expiresAt: 0 };
+        }
       })
-    );
+      .sort((a, b) => (a.expiresAt - b.expiresAt) || (a.cachedAt - b.cachedAt));
+
+    // Smaž starší/přebytečné záznamy. Cílem je uvolnit místo, ne držet lokální archiv.
+    const removeCount = Math.max(1, Math.ceil(items.length / 3));
+    items.slice(0, removeCount).forEach(item => localStorage.removeItem(item.key));
   } catch (err) {
-    // localStorage může být plný nebo vypnutý, cache je pouze optimalizace.
-    console.warn('Public cache write failed:', err);
+    console.warn('Public cache trim failed:', err);
+  }
+}
+
+function setCachedPublicData(url, data, ttlMs = PUBLIC_DATA_CACHE_TTL_MS) {
+  if (!shouldUseLocalPublicCache(url, data)) return;
+
+  const payload = JSON.stringify({
+    cachedAt: Date.now(),
+    expiresAt: Date.now() + ttlMs,
+    data
+  });
+
+  try {
+    localStorage.setItem(publicDataCacheKey(url), payload);
+  } catch (err) {
+    // localStorage může být plný nebo vypnutý. Uvolníme starší záznamy a zkusíme jednou znovu.
+    if (err && (err.name === 'QuotaExceededError' || err.code === 22)) {
+      trimPublicDataCache();
+      try {
+        localStorage.setItem(publicDataCacheKey(url), payload);
+        return;
+      } catch {
+        // Cache je jen optimalizace. Nehlásíme uživatelskou chybu.
+      }
+    }
+    console.warn('Public cache write skipped:', err);
   }
 }
 
