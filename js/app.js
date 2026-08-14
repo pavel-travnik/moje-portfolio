@@ -59,6 +59,11 @@ const CURRENCY_LIST_API = `${APIM_API_BASE_URL}/get_active_currencies`;
 const CURRENCY_DATA_API = `${APIM_API_BASE_URL}/get_currency_data`;
 const PODILOVE_FONDY_API = `${APIM_API_BASE_URL}/get_active_podilove_fondy`;
 const PODILOVY_FOND_DATA_API = `${APIM_API_BASE_URL}/get_podilovy_fond_data`;
+const PUBLIC_DATA_PROXY_API = '/api/public-data';
+function publicDataProxyUrl(type, id) {
+  return `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`;
+}
+
 
 // ===================================================
 // AUTH / SESSION – vlastní login přes JWT
@@ -1553,7 +1558,7 @@ async function getDpsTableMetrics(isin) {
   }
 
   let data = await cachedJsonFetch(
-    `${DPS_API_URL}?isin=${encodeURIComponent(isin)}`
+    publicDataProxyUrl('dps', isin)
   );
   if (!Array.isArray(data) || data.length < 2) {
     return null;
@@ -1693,7 +1698,7 @@ async function loadDPSData(isin, period) {
         }
 
         apiCache.dpsPromises[cacheKey] = cachedJsonFetch(
-          `${DPS_API_URL}?isin=${encodeURIComponent(cacheKey)}`
+          publicDataProxyUrl('dps', cacheKey)
         )
           .then(data => {
             if (!Array.isArray(data)) data = [];
@@ -1972,7 +1977,7 @@ function loadPodilovyFondDetail(isin) {
 async function loadPodilovyFondData(isin, period) {
   if (!apiCache.podiloveFondy[isin]) {
     let data = await cachedJsonFetch(
-      `${PODILOVY_FOND_DATA_API}?isin=${encodeURIComponent(isin)}`
+      publicDataProxyUrl('fund', isin)
     );
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     apiCache.podiloveFondy[isin] = data;
@@ -2417,7 +2422,7 @@ async function loadStockData(ticker, period) {
   // ✅ 1️⃣ fetch jen jednou
   if (!apiCache.stocks[ticker]) {
     let data = await cachedJsonFetch(
-      `${STOCK_API_URL}?ticker=${encodeURIComponent(ticker)}`
+      publicDataProxyUrl('stock', ticker)
     );
     if (!Array.isArray(data)) data = [];
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -2978,7 +2983,7 @@ document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.bac
 async function loadCurrencyData(code, period) {
   if (!apiCache.currencies[code]) {
     let data = await cachedJsonFetch(
-      `${CURRENCY_DATA_API}?currency=${encodeURIComponent(code)}`
+      publicDataProxyUrl('currency', code)
     );
     if (!Array.isArray(data)) data = [];
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
