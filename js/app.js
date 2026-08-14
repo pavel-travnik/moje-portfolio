@@ -37,6 +37,9 @@ apiCache.dpsTableMetrics = {};
 apiCache.dpsFundsOverview = null;
 apiCache.dpsPromises = {};
 apiCache.dpsMetaPromise = null;
+apiCache.stockUniverse = null;
+apiCache.stockUniversePromise = null;
+
 
 
 
@@ -220,6 +223,77 @@ function clearPublicDataCache() {
 window.cachedJsonFetch = cachedJsonFetch;
 window.clearPublicDataCache = clearPublicDataCache;
 
+// ===================================================
+// PUBLIC DATA PRELOAD – krok 1: zahřívání veřejných dat
+// ===================================================
+// Nečteme všechny historické detaily najednou. Po načtení úvodní stránky jen
+// na pozadí přednačteme lehké přehledové endpointy, které používají hlavní sekce.
+function preloadSectionData(page) {
+  if (!page) return Promise.resolve(null);
+
+  const normalized = String(page).split('/')[0];
+
+  if (normalized === 'penze') {
+    return cachedJsonFetch(DPS_API)
+      .then(data => {
+        apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
+        apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
+        return apiCache.dpsFundsOverview;
+      });
+  }
+
+  if (normalized === 'podilove-fondy') {
+    return ensurePodiloveFondyList();
+  }
+
+  if (normalized === 'akcie' || normalized === 'etf' || normalized === 'crypto') {
+    return ensureStockUniverse();
+  }
+
+  if (normalized === 'meny') {
+    return cachedJsonFetch(CURRENCY_LIST_API)
+      .then(data => {
+        apiCache.currenciesList = Array.isArray(data) ? data : [];
+        return apiCache.currenciesList;
+      });
+  }
+
+  return Promise.resolve(null);
+}
+
+function warmPublicDataCache() {
+  if (window.__publicWarmupStarted) return;
+  window.__publicWarmupStarted = true;
+
+  const jobs = [
+    () => preloadSectionData('penze'),
+    () => preloadSectionData('podilove-fondy'),
+    () => preloadSectionData('akcie'),
+    () => preloadSectionData('meny')
+  ];
+
+  let delay = 700;
+  jobs.forEach(job => {
+    setTimeout(() => {
+      job().catch(err => console.warn('Warmup veřejných dat selhal:', err));
+    }, delay);
+    delay += 900;
+  });
+}
+
+function schedulePublicDataWarmup() {
+  const run = () => warmPublicDataCache();
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 2500 });
+  } else {
+    setTimeout(run, 1500);
+  }
+}
+
+window.preloadSectionData = preloadSectionData;
+window.warmPublicDataCache = warmPublicDataCache;
+
+
 
 // ===================================================
 // DROPDOWN - MOBILE SAFE / DIRECT BINDING
@@ -299,6 +373,20 @@ document.addEventListener('click', e => {
  // ✅ zavři dropdown
  const menu = document.querySelector('.dropdown-menu');
  if (menu) menu.classList.remove('open');
+});
+
+
+// Přednačtení dat už při záměru uživatele, hover/focus na menu nebo dlaždce.
+document.addEventListener('mouseover', e => {
+  const link = e.target.closest('[data-page]');
+  if (!link) return;
+  preloadSectionData(link.dataset.page).catch(() => {});
+}, { passive: true });
+
+document.addEventListener('focusin', e => {
+  const link = e.target.closest('[data-page]');
+  if (!link) return;
+  preloadSectionData(link.dataset.page).catch(() => {});
 });
 
 window.addEventListener('popstate', e => {
@@ -1922,6 +2010,29 @@ function renderPodilovyFondKPI(data) {
 }
 
 // ===================================================
+// SPOLECNY ZDROJ PRO AKCIE / ETF / CRYPTO
+// ===================================================
+async function ensureStockUniverse() {
+  if (Array.isArray(apiCache.stockUniverse)) return apiCache.stockUniverse;
+  if (apiCache.stockUniversePromise) return apiCache.stockUniversePromise;
+
+  apiCache.stockUniversePromise = cachedJsonFetch(STOCK_LIST_API)
+    .then(stocks => {
+      const universe = Array.isArray(stocks) ? stocks : [];
+      apiCache.stockUniverse = universe;
+      apiCache.stocksList = universe.filter(s => s.sector !== 'ETF' && s.sector !== 'Cryptocurrency');
+      apiCache.etfsList = universe.filter(s => s.sector === 'ETF');
+      apiCache.cryptoList = universe.filter(s => s.sector === 'Cryptocurrency');
+      return universe;
+    })
+    .finally(() => {
+      apiCache.stockUniversePromise = null;
+    });
+
+  return apiCache.stockUniversePromise;
+}
+
+// ===================================================
 // AKCIE preEHLED
 // ===================================================
 function loadStocks() {
@@ -1994,10 +2105,8 @@ function loadStocks() {
   grid.innerHTML = '<p>Načítám akcie ...</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(STOCK_LIST_API)
-    .then(stocks => {
-      apiCache.stocksList = (Array.isArray(stocks) ? stocks : [])
-        .filter(s => s.sector !== 'ETF' && s.sector !== 'Cryptocurrency');
+  ensureStockUniverse()
+    .then(() => {
       updateView();
     })
     .catch(err => {
@@ -2077,10 +2186,8 @@ function loadEtfs() {
   grid.innerHTML = '<p>Načítám ETF…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(STOCK_LIST_API)
-    .then(stocks => {
-      apiCache.etfsList = (Array.isArray(stocks) ? stocks : [])
-        .filter(s => s.sector === 'ETF');
+  ensureStockUniverse()
+    .then(() => {
       updateView();
     })
     .catch(err => {
@@ -2158,10 +2265,8 @@ function loadCrypto() {
   grid.innerHTML = '<p>Načítám kryptoměny…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(STOCK_LIST_API)
-    .then(stocks => {
-      apiCache.cryptoList = (Array.isArray(stocks) ? stocks : [])
-        .filter(s => s.sector === 'Cryptocurrency');
+  ensureStockUniverse()
+    .then(() => {
       updateView();
     })
     .catch(err => {
