@@ -14,7 +14,8 @@ function ensurePageIntro(page) {
     'akcie': { icon: '↗', title: 'Akcie', text: 'Sekce akcie nabízí přehled vybraných <a href="/info-akcie" data-page="info-akcie">akciových titulů</a> včetně měny, vývoje ceny a základních tržních údajů. Po otevření detailu je možné sledovat historický vývoj ceny v různých časových obdobích a přejít na externí tržní detail. <a href="/aktualizace" data-page="aktualizace">Uvedené informace jsou aktualizovány</a> z veřejně dostupných dat a slouží pouze pro orientaci, nikoliv jako investiční doporučení.' },
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
     'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled. Neposkytujeme investiční ani jiné finanční poradenství.' },
-    'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' }
+    'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' },
+    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
   };
   const intro = intros[page];
   if (!intro) return;
@@ -60,8 +61,11 @@ const CURRENCY_DATA_API = `${APIM_API_BASE_URL}/get_currency_data`;
 const PODILOVE_FONDY_API = `${APIM_API_BASE_URL}/get_active_podilove_fondy`;
 const PODILOVY_FOND_DATA_API = `${APIM_API_BASE_URL}/get_podilovy_fond_data`;
 const PUBLIC_DATA_PROXY_API = '/api/public-data';
-function publicDataProxyUrl(type, id) {
-  return `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`;
+function publicDataProxyUrl(type, id = '') {
+  const url = `${PUBLIC_DATA_PROXY_API}?type=${encodeURIComponent(type)}`;
+  return id !== undefined && id !== null && String(id).trim() !== ''
+    ? `${url}&id=${encodeURIComponent(id)}`
+    : url;
 }
 
 
@@ -502,7 +506,7 @@ function preloadSectionData(page) {
   const normalized = String(page).split('/')[0];
 
   if (normalized === 'penze') {
-    return cachedJsonFetch(DPS_API).then(data => {
+    return cachedJsonFetch(publicDataProxyUrl('dps-list')).then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
       return apiCache.dpsFundsOverview;
@@ -513,12 +517,12 @@ function preloadSectionData(page) {
     return ensurePodiloveFondyList();
   }
 
-  if (normalized === 'akcie' || normalized === 'etf' || normalized === 'crypto') {
+  if (normalized === 'akcie' || normalized === 'etf' || normalized === 'crypto' || normalized === 'indexy') {
     return ensureStockUniverse();
   }
 
   if (normalized === 'meny') {
-    return cachedJsonFetch(CURRENCY_LIST_API).then(data => {
+    return cachedJsonFetch(publicDataProxyUrl('currencies-list')).then(data => {
       apiCache.currenciesList = Array.isArray(data) ? data : [];
       return apiCache.currenciesList;
     });
@@ -535,6 +539,7 @@ function warmPublicDataCache() {
     () => preloadSectionData('penze'),
     () => preloadSectionData('podilove-fondy'),
     () => preloadSectionData('akcie'),
+    () => preloadSectionData('indexy'),
     () => preloadSectionData('meny')
   ];
 
@@ -747,7 +752,7 @@ function hideTooltip() {
 
 
 function decorateSideCards() {
-  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'crypto':'₿', 'meny':'¤', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-crypto':'₿', 'info-meny':'¤' };
+  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'crypto':'₿', 'meny':'¤', 'indexy':'▦', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-crypto':'₿', 'info-meny':'¤' };
   document.querySelectorAll('.side-card').forEach(card => {
     if (card.querySelector('.side-card-icon')) return;
     const icon = icons[card.dataset.page] || '›';
@@ -1187,6 +1192,11 @@ if (!page || page === "undefined") {
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
+    if (page.startsWith('indexy/')) {
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
+        if (pushState) history.pushState({ page }, '', `/${page}`);
+        return;
+    }
 
     // ===============================
     // STANDARD PAGE LOAD
@@ -1214,6 +1224,7 @@ const main = document.getElementById('mainContent');
             if (page === 'etf') loadEtfs();
             if (page === 'crypto') loadCrypto();
             if (page === 'meny') loadCurrencies();
+            if (page === 'indexy') loadIndexes();
 
             trackCurrentPage(page);
 
@@ -1564,7 +1575,7 @@ async function ensureFundsMeta() {
   }
 
   if (!apiCache.dpsMetaPromise) {
-    apiCache.dpsMetaPromise = cachedJsonFetch(DPS_API)
+    apiCache.dpsMetaPromise = cachedJsonFetch(publicDataProxyUrl('dps-list'))
       .then(data => {
         apiCache.dpsFundsMeta = Array.isArray(data) ? data : [];
         return apiCache.dpsFundsMeta;
@@ -1762,7 +1773,7 @@ function loadPensionFunds() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(DPS_API)
+  cachedJsonFetch(publicDataProxyUrl('dps-list'))
     .then(data => {
       apiCache.dpsFundsOverview = Array.isArray(data) ? data : [];
       apiCache.dpsFundsMeta = apiCache.dpsFundsOverview;
@@ -2100,7 +2111,7 @@ function loadPodiloveFondy() {
   grid.innerHTML = '<p>Načítám fondy…</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(PODILOVE_FONDY_API)
+  cachedJsonFetch(publicDataProxyUrl('funds-list'))
     .then(funds => {
       apiCache.podiloveFondyList = Array.isArray(funds) ? funds : [];
       updateView();
@@ -2120,7 +2131,7 @@ function normalizeExternalUrl(url) {
 
 async function ensurePodiloveFondyList() {
   if (Array.isArray(apiCache.podiloveFondyList)) return apiCache.podiloveFondyList;
-  const data = await cachedJsonFetch(PODILOVE_FONDY_API);
+  const data = await cachedJsonFetch(publicDataProxyUrl('funds-list'));
   apiCache.podiloveFondyList = Array.isArray(data) ? data : [];
   return apiCache.podiloveFondyList;
 }
@@ -2290,13 +2301,14 @@ async function ensureStockUniverse() {
   if (Array.isArray(apiCache.stockUniverse)) return apiCache.stockUniverse;
   if (apiCache.stockUniversePromise) return apiCache.stockUniversePromise;
 
-  apiCache.stockUniversePromise = cachedJsonFetch(STOCK_LIST_API)
+  apiCache.stockUniversePromise = cachedJsonFetch(publicDataProxyUrl('stocks-list'))
     .then(stocks => {
       const universe = Array.isArray(stocks) ? stocks : [];
       apiCache.stockUniverse = universe;
-      apiCache.stocksList = universe.filter(s => s.sector !== 'ETF' && s.sector !== 'Cryptocurrency');
+      apiCache.stocksList = universe.filter(s => s.sector !== 'ETF' && s.sector !== 'Cryptocurrency' && s.sector !== 'Index');
       apiCache.etfsList = universe.filter(s => s.sector === 'ETF');
       apiCache.cryptoList = universe.filter(s => s.sector === 'Cryptocurrency');
+      apiCache.indexesList = universe.filter(s => s.sector === 'Index');
       return universe;
     })
     .finally(() => {
@@ -2547,6 +2559,74 @@ function loadCrypto() {
       console.error(err);
       grid.innerHTML = '<p>Chyba načítání kryptoměn</p>';
       table.innerHTML = '<p>Chyba načítání kryptoměn</p>';
+    });
+}
+
+
+function loadIndexes() {
+  const grid = document.getElementById('indexGrid');
+  if (!grid) return;
+  const { table, gridBtn, tableBtn } = ensureOverviewViewShell(grid, 'indexes');
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  let viewMode = isMobile ? 'table' : 'grid';
+
+  const selectIndex = ticker => {
+    history.pushState({ page: `indexy/${encodeURIComponent(ticker)}` }, '', `/indexy/${encodeURIComponent(ticker)}`);
+    loadStockDetail(ticker);
+  };
+
+  gridBtn.onclick = () => { viewMode = 'grid'; updateView(); };
+  tableBtn.onclick = () => { viewMode = 'table'; updateView(); };
+
+  function updateView() {
+    grid.classList.toggle('hidden', viewMode !== 'grid');
+    table.classList.toggle('hidden', viewMode !== 'table');
+    gridBtn.classList.toggle('active', viewMode === 'grid');
+    tableBtn.classList.toggle('active', viewMode === 'table');
+    if (viewMode === 'grid') renderGrid();
+    else renderTable();
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    (apiCache.indexesList || []).forEach(x => {
+      const card = document.createElement('div');
+      card.className = 'fund-card';
+      card.innerHTML = `
+        <h3>${x.name}</h3>
+        <small>${x.ticker} · ${x.currency || x.mena || x.Mena || ''}</small>
+        ${renderOverviewCardMetric(x)}
+      `;
+      card.onclick = () => selectIndex(x.ticker);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderTable() {
+    if (!table.dataset.sortKey) { table.dataset.sortKey = 'name'; table.dataset.sortAsc = 'true'; }
+    const data = [...(apiCache.indexesList || [])]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
+    renderThreeColumnOverviewTable({
+      table,
+      data,
+      getName: x => x.name,
+      getMetric: x => x.currency || x.mena || x.Mena || '',
+      metricLabel: 'Měna',
+      getPerf3Y: x => x.perf3Y,
+      getPerf5Y: x => x.perf5Y,
+      getId: x => x.ticker,
+      onSelect: selectIndex
+    });
+  }
+
+  grid.innerHTML = '<p>Načítám indexy…</p>';
+  table.innerHTML = '';
+  ensureStockUniverse()
+    .then(() => updateView())
+    .catch(err => {
+      console.error(err);
+      grid.innerHTML = '<p>Chyba načítání indexů</p>';
+      table.innerHTML = '<p>Chyba načítání indexů</p>';
     });
 }
 
@@ -3169,7 +3249,7 @@ function loadCurrencies() {
   grid.innerHTML = '<p>Načítám měny ...</p>';
   table.innerHTML = '';
 
-  cachedJsonFetch(CURRENCY_LIST_API)
+  cachedJsonFetch(publicDataProxyUrl('currencies-list'))
     .then(list => {
       apiCache.currenciesList = Array.isArray(list) ? list : [];
       updateView();
