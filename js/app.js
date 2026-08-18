@@ -15,7 +15,7 @@ function ensurePageIntro(page) {
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
     'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled. Neposkytujeme investiční ani jiné finanční poradenství.' },
     'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' },
-    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Více informací najdete na stránce <a href="/info-index" data-page="info-index">O burzovních indexech</a>. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled, nejde o investiční doporučení ani poradenství.' }
+    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
   };
   const intro = intros[page];
   if (!intro) return;
@@ -1171,18 +1171,18 @@ if (!page || page === "undefined") {
     }
 
     if (page.startsWith('akcie/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('etf/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
     if (page.startsWith('crypto/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
@@ -1641,7 +1641,7 @@ function isPositiveNumber(value) {
 }
 
 function isStockCzkMode() {
-  return !!document.getElementById('stock-show-czk')?.checked;
+  return canShowStockAdvancedDetail() && !!document.getElementById('stock-show-czk')?.checked;
 }
 
 function getStockChartValue(row, useCzk) {
@@ -2861,7 +2861,10 @@ function setRiskMetric(id, value, decimals = 2, signed = false) {
   el.className = '';
   if (signed && value != null && !isNaN(Number(value))) el.className = Number(value) >= 0 ? 'pos' : 'neg';
 }
-function isStockCompareMode() { return !!document.getElementById('stock-compare-index')?.checked; }
+function canShowStockAdvancedDetail() {
+  return typeof isLoggedIn === 'function' && isLoggedIn();
+}
+function isStockCompareMode() { return canShowStockAdvancedDetail() && !!document.getElementById('stock-compare-index')?.checked; }
 function getBenchmarkTickerForStock(row) { return row?.benchmarkTicker || row?.BenchmarkTicker || '^DJI'; }
 function normalizeSeriesToBase100(rows, valueGetter) {
   const cleaned = (rows || []).map(r => ({ date: r.date, value: valueGetter(r) })).filter(r => r.value != null && !isNaN(Number(r.value)) && Number(r.value) > 0);
@@ -2914,21 +2917,26 @@ function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, s
 function loadStockDetail(ticker) {
   const main = document.getElementById('mainContent');
   if (!main) return;
+
+  const showAdvanced = canShowStockAdvancedDetail();
+
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
     <div class="stock-detail-head">
       <p><strong id="stock-name"> - </strong><br><small>ID: ${ticker}</small></p>
+      ${showAdvanced ? `
       <div class="stock-detail-actions">
         <label class="stock-czk-toggle" title="Přepne cenu a graf na CZK, pokud je dostupný přepočet.">
           <input type="checkbox" id="stock-show-czk" aria-label="Zobrazit v CZK">
           <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Zobrazit v CZK</span>
         </label>
-        <label class="stock-czk-toggle" title="Porovná vývoj s benchmark indexem.">
+        <label class="stock-czk-toggle" title="Porovná vývoj instrumentu s benchmark indexem.">
           <input type="checkbox" id="stock-compare-index" aria-label="Porovnat s indexem">
           <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Porovnat s indexem</span>
         </label>
-      </div>
+      </div>` : ''}
     </div>
+
     <div class="kpi-row">
       <div class="kpi"><span>Poslední cena</span><strong id="stock-kpi-last"> - </strong></div>
       <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change"> - </strong></div>
@@ -2937,17 +2945,21 @@ function loadStockDetail(ticker) {
       <div class="kpi"><span>Dividendy letos</span><strong id="stock-kpi-dividend-this-year"> - </strong></div>
       <div class="kpi"><span>Dividendy loni</span><strong id="stock-kpi-dividend-last-year"> - </strong></div>
     </div>
+
     <p id="stock-meta" class="meta"> - </p>
+
+    ${showAdvanced ? `
     <section class="stock-risk-panel">
       <h4>Riziko a výnos</h4>
       <div class="stock-risk-grid">
-        <div class="stock-risk-metric"><span>Volatilita 1Y</span><strong id="stock-risk-vol-1y">—</strong></div>
-        <div class="stock-risk-metric"><span>Volatilita 3Y</span><strong id="stock-risk-vol-3y">—</strong></div>
-        <div class="stock-risk-metric"><span>Max. propad 1Y</span><strong id="stock-risk-dd-1y">—</strong></div>
-        <div class="stock-risk-metric"><span>Div. výnos loni</span><strong id="stock-risk-div-yield">—</strong></div>
-        <div class="stock-risk-metric"><span>Výnos vs index 3Y</span><strong id="stock-risk-vs-index-3y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><span>Volatilita 1Y</span><strong id="stock-risk-vol-1y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><span>Volatilita 3Y</span><strong id="stock-risk-vol-3y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období."><span>Max. propad 1Y</span><strong id="stock-risk-dd-1y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku."><span>Div. výnos loni</span><strong id="stock-risk-div-yield">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index."><span>Výnos vs index 3Y</span><strong id="stock-risk-vs-index-3y">—</strong></div>
       </div>
-    </section>
+    </section>` : ''}
+
     <div class="period-row">
       <div class="period-switch">
         <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
@@ -2959,20 +2971,38 @@ function loadStockDetail(ticker) {
       </div>
       <div id="period-diff" class="period-diff">—</div>
     </div>
+
     <div id="chart-stock"></div>
     <button class="back-btn">← Zpět</button>
   `;
+
   document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
+
   document.querySelectorAll('.period-switch button').forEach(btn => {
-    btn.onclick = () => { document.querySelectorAll('.period-switch button').forEach(b => b.classList.remove('active')); btn.classList.add('active'); loadStockData(ticker, btn.dataset.period); };
+    btn.onclick = () => {
+      document.querySelectorAll('.period-switch button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadStockData(ticker, btn.dataset.period);
+    };
   });
+
   ensureStockCzkToggleStyle();
+
   const defaultStockPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
   if (defaultStockPeriodBtn) defaultStockPeriodBtn.classList.add('active');
-  ['stock-show-czk', 'stock-compare-index'].forEach(id => {
-    const toggle = document.getElementById(id);
-    if (toggle) toggle.onchange = () => { const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y'; loadStockData(ticker, activePeriod); };
-  });
+
+  if (showAdvanced) {
+    ['stock-show-czk', 'stock-compare-index'].forEach(id => {
+      const toggle = document.getElementById(id);
+      if (toggle) {
+        toggle.onchange = () => {
+          const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y';
+          loadStockData(ticker, activePeriod);
+        };
+      }
+    });
+  }
+
   loadStockData(ticker, '3Y');
 }
 
@@ -2994,7 +3024,7 @@ function renderStockMeta(data) {
   }
 }
 function renderStockRiskMetrics(data) {
-  if (!data || !data.length) return;
+  if (!canShowStockAdvancedDetail() || !data || !data.length) return;
   const first = data[0];
   setRiskMetric('stock-risk-vol-1y', first.volatility1Y);
   setRiskMetric('stock-risk-vol-3y', first.volatility3Y);
