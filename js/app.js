@@ -1440,6 +1440,52 @@ function formatOverviewValue(value, options = {}) {
   return suffix ? `${text} ${suffix}` : text;
 }
 
+
+
+function formatStockMoney(value, currency, decimals = 2) {
+  if (value == null || isNaN(Number(value))) return '—';
+  const text = Number(value).toLocaleString('cs-CZ', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+  return currency ? `${text} ${currency}` : text;
+}
+
+function formatDividendPair(value, currency, valueCzk) {
+  const hasValue = value != null && !isNaN(Number(value)) && Number(value) !== 0;
+  const hasCzk = valueCzk != null && !isNaN(Number(valueCzk)) && Number(valueCzk) !== 0;
+
+  if (!hasValue && !hasCzk) return '—';
+
+  const main = hasValue
+    ? Number(value).toLocaleString('cs-CZ', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 4
+      }) + (currency ? ` ${currency}` : '')
+    : '—';
+
+  const czk = hasCzk
+    ? Number(valueCzk).toLocaleString('cs-CZ', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + ' CZK'
+    : '—';
+
+  return `${main}<br><small>${czk}</small>`;
+}
+
+function isStockCzkMode() {
+  return !!document.getElementById('stock-show-czk')?.checked;
+}
+
+function getStockChartValue(row, useCzk) {
+  if (!row) return null;
+  if (useCzk && row.closeCzk != null && !isNaN(Number(row.closeCzk))) {
+    return Number(row.closeCzk);
+  }
+  return row.close != null && !isNaN(Number(row.close)) ? Number(row.close) : null;
+}
+
 function formatOverviewDate(value) {
   return value ? new Date(value).toLocaleDateString('cs-CZ') : '—';
 }
@@ -2668,6 +2714,16 @@ const main = document.getElementById('mainContent');
     <strong id="stock-kpi-exchange"> - </strong>
   </div>
 
+  <div class="kpi">
+    <span>Dividendy letos</span>
+    <strong id="stock-kpi-dividend-this-year"> - </strong>
+  </div>
+
+  <div class="kpi">
+    <span>Dividendy loni</span>
+    <strong id="stock-kpi-dividend-last-year"> - </strong>
+  </div>
+
 </div>
 
 
@@ -2693,6 +2749,13 @@ const main = document.getElementById('mainContent');
 
 
 
+    <div class="period-row">
+      <label class="meta" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="stock-show-czk">
+        Zobrazit hodnotu v CZK
+      </label>
+    </div>
+
     <div id="chart-stock"></div>
     
 <button class="back-btn">
@@ -2717,6 +2780,18 @@ document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.bac
   });
 
   
+  
+  const defaultStockPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
+  if (defaultStockPeriodBtn) defaultStockPeriodBtn.classList.add('active');
+
+  const czkToggle = document.getElementById('stock-show-czk');
+  if (czkToggle) {
+    czkToggle.onchange = () => {
+      const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y';
+      loadStockData(ticker, activePeriod);
+    };
+  }
+
   loadStockData(ticker, '3Y');
 }
 
@@ -2777,15 +2852,22 @@ async function loadStockData(ticker, period) {
   // ✅ 2️⃣ period = frontend filtr
   const filtered = filterPeriod(apiCache.stocks[ticker], period);
   const finalData = filtered.length ? filtered : apiCache.stocks[ticker];
+  const useCzk = isStockCzkMode();
 
   // ✅ 3️⃣ render
   renderStockMeta(finalData);
   renderStockKPI(finalData);
-  renderPeriodDifference(
-    finalData.map(d => ({ value: d.close }))
-  );
+
+  const chartData = finalData
+    .map(d => ({
+      date: d.date,
+      value: getStockChartValue(d, useCzk)
+    }))
+    .filter(d => d.value != null && !isNaN(Number(d.value)));
+
+  renderPeriodDifference(chartData);
   renderPortfolioChart(
-    finalData.map(d => ({ date: d.date, value: d.close })),
+    chartData,
     'chart-stock'
   );
 }
@@ -2793,28 +2875,57 @@ async function loadStockData(ticker, period) {
 function renderStockKPI(data) {
   if (!data.length) return;
 
+  const useCzk = isStockCzkMode();
   const last = data.at(-1);
   const prev = data.at(-2);
-
+  const first = data[0];
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
-  const currency = last.currency ?? '';
+  const originalCurrency = last.currency ?? '';
+  const displayCurrency = useCzk ? 'CZK' : originalCurrency;
+  const lastValue = getStockChartValue(last, useCzk);
 
-  // Poslední cena + datum v závorce
   document.getElementById('stock-kpi-last').textContent =
-    `${last.close.toFixed(2)} ${last.currency} (${dateStr})`;
+    lastValue != null
+      ? `${formatStockMoney(lastValue, displayCurrency, 2)} (${dateStr})`
+      : '—';
 
-  // Objem
   document.getElementById('stock-kpi-volume').textContent =
     last.volume?.toLocaleString('cs-CZ') ?? ' - ';
 
-  // Denní­ změna
+  const divThisYearEl = document.getElementById('stock-kpi-dividend-this-year');
+  const divLastYearEl = document.getElementById('stock-kpi-dividend-last-year');
+
+  if (divThisYearEl) {
+    divThisYearEl.innerHTML = formatDividendPair(
+      first.dividendThisYear,
+      originalCurrency,
+      first.dividendThisYearCzk
+    );
+    divThisYearEl.className = Number(first.dividendThisYear || first.dividendThisYearCzk || 0) > 0 ? 'pos' : '';
+  }
+
+  if (divLastYearEl) {
+    divLastYearEl.innerHTML = formatDividendPair(
+      first.dividendLastYear,
+      originalCurrency,
+      first.dividendLastYearCzk
+    );
+    divLastYearEl.className = Number(first.dividendLastYear || first.dividendLastYearCzk || 0) > 0 ? 'pos' : '';
+  }
+
   if (prev) {
-    const diff = last.close - prev.close;
-    const pct = (diff / prev.close) * 100;
+    const prevValue = getStockChartValue(prev, useCzk);
+    const diff = lastValue != null && prevValue != null ? lastValue - prevValue : null;
+    const pct = diff != null && prevValue ? (diff / prevValue) * 100 : null;
     const el = document.getElementById('stock-kpi-change');
 
-    el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
-    el.className = diff >= 0 ? 'pos' : 'neg';
+    if (diff != null && pct != null) {
+      el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
+      el.className = diff >= 0 ? 'pos' : 'neg';
+    } else {
+      el.textContent = ' - ';
+      el.className = '';
+    }
   } else {
     document.getElementById('stock-kpi-change').textContent = ' - ';
   }
