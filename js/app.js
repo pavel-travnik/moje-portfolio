@@ -1442,6 +1442,78 @@ function formatOverviewValue(value, options = {}) {
 
 
 
+function ensureStockCzkToggleStyle() {
+  if (document.getElementById('stock-czk-toggle-style')) return;
+  const style = document.createElement('style');
+  style.id = 'stock-czk-toggle-style';
+  style.textContent = `
+    .stock-czk-toggle-row {
+      display: flex;
+      justify-content: flex-end;
+      margin: 6px 0 14px;
+    }
+    .stock-czk-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(201, 166, 70, 0.5);
+      background: rgba(255, 250, 240, 0.92);
+      color: #0f3d2e;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+    .stock-czk-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .stock-czk-toggle .toggle-track {
+      width: 46px;
+      height: 24px;
+      border-radius: 999px;
+      background: #d9d9d9;
+      position: relative;
+      transition: background .2s ease;
+      flex: 0 0 auto;
+    }
+    .stock-czk-toggle .toggle-track::after {
+      content: '';
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      box-shadow: 0 2px 7px rgba(0,0,0,0.25);
+      transition: transform .2s ease;
+    }
+    .stock-czk-toggle input:checked + .toggle-track {
+      background: #0f3d2e;
+    }
+    .stock-czk-toggle input:checked + .toggle-track::after {
+      transform: translateX(22px);
+    }
+    .stock-czk-toggle .toggle-text {
+      white-space: nowrap;
+    }
+    .stock-czk-toggle .toggle-note {
+      color: #777;
+      font-weight: 500;
+      font-size: 12px;
+    }
+    @media (max-width: 640px) {
+      .stock-czk-toggle-row { justify-content: stretch; }
+      .stock-czk-toggle { width: 100%; justify-content: space-between; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function formatStockMoney(value, currency, decimals = 2) {
   if (value == null || isNaN(Number(value))) return '—';
   const text = Number(value).toLocaleString('cs-CZ', {
@@ -1474,16 +1546,28 @@ function formatDividendPair(value, currency, valueCzk) {
   return `${main}<br><small>${czk}</small>`;
 }
 
+function isPositiveNumber(value) {
+  return value != null && !isNaN(Number(value)) && Number(value) > 0;
+}
+
 function isStockCzkMode() {
   return !!document.getElementById('stock-show-czk')?.checked;
 }
 
 function getStockChartValue(row, useCzk) {
   if (!row) return null;
-  if (useCzk && row.closeCzk != null && !isNaN(Number(row.closeCzk))) {
-    return Number(row.closeCzk);
+  if (useCzk) {
+    // Důležité: nula znamená nepřepočteno, ne platnou cenu.
+    return isPositiveNumber(row.closeCzk) ? Number(row.closeCzk) : null;
   }
   return row.close != null && !isNaN(Number(row.close)) ? Number(row.close) : null;
+}
+
+function getStockDisplayRows(data, useCzk) {
+  if (!Array.isArray(data)) return [];
+  if (!useCzk) return data.filter(d => d.close != null && !isNaN(Number(d.close)));
+  // V CZK režimu vyhazujeme řádky bez přepočtu nebo s nulovou CZK hodnotou.
+  return data.filter(d => isPositiveNumber(d.closeCzk));
 }
 
 function formatOverviewDate(value) {
@@ -2713,12 +2797,10 @@ const main = document.getElementById('mainContent');
     <span>Burza</span>
     <strong id="stock-kpi-exchange"> - </strong>
   </div>
-
   <div class="kpi">
     <span>Dividendy letos</span>
     <strong id="stock-kpi-dividend-this-year"> - </strong>
   </div>
-
   <div class="kpi">
     <span>Dividendy loni</span>
     <strong id="stock-kpi-dividend-last-year"> - </strong>
@@ -2749,10 +2831,12 @@ const main = document.getElementById('mainContent');
 
 
 
-    <div class="period-row">
-      <label class="meta" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+    <div class="stock-czk-toggle-row">
+      <label class="stock-czk-toggle" title="Použije pouze řádky, které mají platný CZK přepočet větší než nula.">
         <input type="checkbox" id="stock-show-czk">
-        Zobrazit hodnotu v CZK
+        <span class="toggle-track" aria-hidden="true"></span>
+        <span class="toggle-text">Zobrazit v CZK</span>
+        <span class="toggle-note">bez nulových přepočtů</span>
       </label>
     </div>
 
@@ -2780,7 +2864,8 @@ document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.bac
   });
 
   
-  
+  ensureStockCzkToggleStyle();
+
   const defaultStockPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
   if (defaultStockPeriodBtn) defaultStockPeriodBtn.classList.add('active');
 
@@ -2838,7 +2923,6 @@ function renderStockMeta(data) {
 
 
 async function loadStockData(ticker, period) {
-
   // ✅ 1️⃣ fetch jen jednou
   if (!apiCache.stocks[ticker]) {
     let data = await cachedJsonFetch(
@@ -2853,12 +2937,13 @@ async function loadStockData(ticker, period) {
   const filtered = filterPeriod(apiCache.stocks[ticker], period);
   const finalData = filtered.length ? filtered : apiCache.stocks[ticker];
   const useCzk = isStockCzkMode();
+  const displayRows = getStockDisplayRows(finalData, useCzk);
 
-  // ✅ 3️⃣ render
+  // ✅ 3️⃣ render, v CZK režimu jen z platných CZK řádků (> 0)
   renderStockMeta(finalData);
-  renderStockKPI(finalData);
+  renderStockKPI(displayRows.length ? displayRows : finalData);
 
-  const chartData = finalData
+  const chartData = displayRows
     .map(d => ({
       date: d.date,
       value: getStockChartValue(d, useCzk)
@@ -2876,8 +2961,10 @@ function renderStockKPI(data) {
   if (!data.length) return;
 
   const useCzk = isStockCzkMode();
-  const last = data.at(-1);
-  const prev = data.at(-2);
+  const validRows = getStockDisplayRows(data, useCzk);
+  const rowsForPrice = validRows.length ? validRows : data;
+  const last = rowsForPrice.at(-1);
+  const prev = rowsForPrice.at(-2);
   const first = data[0];
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
   const originalCurrency = last.currency ?? '';
