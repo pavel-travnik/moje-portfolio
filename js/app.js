@@ -15,7 +15,7 @@ function ensurePageIntro(page) {
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
     'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled. Neposkytujeme investiční ani jiné finanční poradenství.' },
     'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' },
-    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
+    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Více informací najdete na stránce <a href="/info-index" data-page="info-index">O burzovních indexech</a>. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
   };
   const intro = intros[page];
   if (!intro) return;
@@ -727,18 +727,24 @@ document.addEventListener('click', e => {
 
 function showTooltip(el) {
   tooltip.textContent = el.dataset.tooltip;
+  tooltip.style.width = '';
+  tooltip.style.maxWidth = '';
 
-  const rect = el.getBoundingClientRect();
-
+  const riskMetric = el.closest?.('.stock-risk-metric');
+  const anchor = riskMetric || el;
+  const rect = anchor.getBoundingClientRect();
   const top = rect.top + window.scrollY;
   const left = rect.left + window.scrollX;
 
-  tooltip.style.left =
-    left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+  if (riskMetric) {
+    tooltip.style.width = Math.max(180, rect.width) + 'px';
+    tooltip.style.maxWidth = Math.min(320, Math.max(180, rect.width)) + 'px';
+    tooltip.style.left = left + 'px';
+  } else {
+    tooltip.style.left = left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+  }
 
-  tooltip.style.top =
-    top - 35 + 'px';
-
+  tooltip.style.top = top - 42 + 'px';
   tooltip.classList.add('show');
 }
 
@@ -1549,6 +1555,41 @@ function ensureStockCzkToggleStyle() {
       background: rgba(255,255,255,.86);
       border: 1px solid rgba(201, 166, 70, 0.18);
       min-width: 0;
+    }
+    .stock-risk-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      margin-bottom: 4px;
+    }
+    .stock-risk-label span {
+      margin-bottom: 0 !important;
+      min-width: 0;
+    }
+    .stock-risk-help {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(201, 166, 70, 0.75);
+      color: #0f3d2e;
+      background: #fffaf0;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: help;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .stock-risk-help:hover {
+      background: rgba(201, 166, 70, 0.18);
+      border-color: #C9A646;
     }
     .stock-risk-metric span { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
     .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
@@ -2952,11 +2993,11 @@ function loadStockDetail(ticker) {
     <section class="stock-risk-panel">
       <h4>Riziko a výnos</h4>
       <div class="stock-risk-grid">
-        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><span>Volatilita 1Y</span><strong id="stock-risk-vol-1y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><span>Volatilita 3Y</span><strong id="stock-risk-vol-3y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období."><span>Max. propad 1Y</span><strong id="stock-risk-dd-1y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku."><span>Div. výnos loni</span><strong id="stock-risk-div-yield">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index."><span>Výnos vs index 3Y</span><strong id="stock-risk-vs-index-3y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><div class="stock-risk-label"><span>Volatilita 1Y</span><span class="stock-risk-help" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů." aria-label="Vysvětlení metriky Volatilita 1Y">?</span></div><strong id="stock-risk-vol-1y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><div class="stock-risk-label"><span>Volatilita 3Y</span><span class="stock-risk-help" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů." aria-label="Vysvětlení metriky Volatilita 3Y">?</span></div><strong id="stock-risk-vol-3y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období."><div class="stock-risk-label"><span>Max. propad 1Y</span><span class="stock-risk-help" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období." aria-label="Vysvětlení metriky Max. propad 1Y">?</span></div><strong id="stock-risk-dd-1y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku."><div class="stock-risk-label"><span>Div. výnos loni</span><span class="stock-risk-help" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku." aria-label="Vysvětlení metriky Dividendový výnos loni">?</span></div><strong id="stock-risk-div-yield">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index."><div class="stock-risk-label"><span>Výnos vs index 3Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index." aria-label="Vysvětlení metriky Výnos vs index 3Y">?</span></div><strong id="stock-risk-vs-index-3y">—</strong></div>
       </div>
     </section>` : ''}
 

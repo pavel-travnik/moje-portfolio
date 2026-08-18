@@ -1056,18 +1056,70 @@ function backToPortfolioDonut() {
   scrollPortfolioPageToTop();
 }
 
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    const text = String(value ?? '').trim();
+    if (text) return text;
+  }
+  return null;
+}
+
 function normalizePortfolioAssetType(assetType) {
   return String(assetType || '').trim().toUpperCase();
 }
 
 function resolvePortfolioAssetId(position) {
-  return position?.asset_id || position?.assetId || position?.ticker || position?.isin || position?.ISIN || position?.asset_code || position?.code || null;
+  const type = normalizePortfolioAssetType(position?.asset_type || position?.assetType || position?.type);
+
+  if (type === 'STOCK' || type === 'AKCIE' || type === 'ETF' || type === 'CRYPTO' || type === 'CRYPTOCURRENCY' || type === 'INDEX') {
+    return firstNonEmpty(
+      position?.ticker,
+      position?.Ticker,
+      position?.symbol,
+      position?.Symbol,
+      position?.asset_ticker,
+      position?.assetTicker,
+      position?.asset_code,
+      position?.assetCode,
+      position?.code,
+      position?.asset_id,
+      position?.assetId
+    );
+  }
+
+  if (type === 'FUND' || type === 'PODILOVY_FOND' || type === 'DPS') {
+    return firstNonEmpty(
+      position?.isin,
+      position?.ISIN,
+      position?.asset_isin,
+      position?.assetIsin,
+      position?.asset_id,
+      position?.assetId,
+      position?.ticker,
+      position?.code
+    );
+  }
+
+  return firstNonEmpty(
+    position?.ticker,
+    position?.Ticker,
+    position?.isin,
+    position?.ISIN,
+    position?.symbol,
+    position?.asset_code,
+    position?.code,
+    position?.asset_id,
+    position?.assetId
+  );
 }
 
 function openAssetDetail(assetType, assetId) {
   const type = normalizePortfolioAssetType(assetType);
   const id = String(assetId || '').trim();
-  if (!id) return;
+  if (!id) {
+    console.warn('Nelze otevřít detail instrumentu, chybí ticker/ISIN:', { assetType, assetId });
+    return;
+  }
 
   let path;
   switch (type) {
@@ -1093,6 +1145,7 @@ function openAssetDetail(assetType, assetId) {
       path = `indexy/${encodeURIComponent(id)}`;
       break;
     default:
+      console.warn('Neznámý typ instrumentu pro detail:', { assetType, assetId });
       return;
   }
 
