@@ -15,7 +15,7 @@ function ensurePageIntro(page) {
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
     'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled. Neposkytujeme investiční ani jiné finanční poradenství.' },
     'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' },
-    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
+    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Více informací najdete na stránce <a href="/info-index" data-page="info-index">O burzovních indexech</a>. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled, nejde o investiční doporučení ani poradenství.' }
   };
   const intro = intros[page];
   if (!intro) return;
@@ -1171,18 +1171,18 @@ if (!page || page === "undefined") {
     }
 
     if (page.startsWith('akcie/')) {
-        loadStockDetail(decodeURIComponent(page.split('/')[1]));
+        loadStockDetail(page.split('/')[1]);
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('etf/')) {
-        loadStockDetail(decodeURIComponent(page.split('/')[1]));
+        loadStockDetail(page.split('/')[1]);
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
     if (page.startsWith('crypto/')) {
-        loadStockDetail(decodeURIComponent(page.split('/')[1]));
+        loadStockDetail(page.split('/')[1]);
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
