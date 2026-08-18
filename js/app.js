@@ -1447,24 +1447,40 @@ function ensureStockCzkToggleStyle() {
   const style = document.createElement('style');
   style.id = 'stock-czk-toggle-style';
   style.textContent = `
-    .stock-czk-toggle-row {
+    .stock-detail-head {
       display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+    .stock-detail-head p { margin: 0; }
+    .stock-detail-actions {
+      display: flex;
+      flex-wrap: wrap;
       justify-content: flex-end;
-      margin: 6px 0 14px;
+      gap: 8px;
+      padding-top: 2px;
     }
     .stock-czk-toggle {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 9px;
       cursor: pointer;
       user-select: none;
       padding: 8px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(201, 166, 70, 0.5);
-      background: rgba(255, 250, 240, 0.92);
+      border: 1px solid rgba(201, 166, 70, 0.55);
+      background: rgba(255, 250, 240, 0.95);
       color: #0f3d2e;
       font-weight: 700;
       box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .stock-czk-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 9px 24px rgba(0,0,0,0.09);
+      border-color: rgba(201, 166, 70, 0.85);
     }
     .stock-czk-toggle input {
       position: absolute;
@@ -1472,8 +1488,8 @@ function ensureStockCzkToggleStyle() {
       pointer-events: none;
     }
     .stock-czk-toggle .toggle-track {
-      width: 46px;
-      height: 24px;
+      width: 42px;
+      height: 22px;
       border-radius: 999px;
       background: #d9d9d9;
       position: relative;
@@ -1482,8 +1498,8 @@ function ensureStockCzkToggleStyle() {
     }
     .stock-czk-toggle .toggle-track::after {
       content: '';
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: #fff;
       position: absolute;
@@ -1496,19 +1512,13 @@ function ensureStockCzkToggleStyle() {
       background: #0f3d2e;
     }
     .stock-czk-toggle input:checked + .toggle-track::after {
-      transform: translateX(22px);
+      transform: translateX(20px);
     }
-    .stock-czk-toggle .toggle-text {
-      white-space: nowrap;
-    }
-    .stock-czk-toggle .toggle-note {
-      color: #777;
-      font-weight: 500;
-      font-size: 12px;
-    }
-    @media (max-width: 640px) {
-      .stock-czk-toggle-row { justify-content: stretch; }
-      .stock-czk-toggle { width: 100%; justify-content: space-between; }
+    .stock-czk-toggle .toggle-text { white-space: nowrap; }
+    @media (max-width: 760px) {
+      .stock-detail-head { display: block; }
+      .stock-detail-actions { justify-content: stretch; margin-top: 12px; }
+      .stock-czk-toggle { flex: 1 1 100%; justify-content: space-between; }
     }
   `;
   document.head.appendChild(style);
@@ -2760,19 +2770,151 @@ function loadIndexes() {
     });
 }
 
+function isStockCompareMode() {
+  return !!document.getElementById('stock-compare-index')?.checked;
+}
+
+function getBenchmarkTickerForStock(row) {
+  // Do budoucna lze načítat z DB, např. AkcieSeznam.BenchmarkTicker.
+  return row?.benchmarkTicker || row?.BenchmarkTicker || '^DJI';
+}
+
+function normalizeSeriesToBase100(rows, valueGetter) {
+  const cleaned = (rows || [])
+    .map(r => ({ date: r.date, value: valueGetter(r) }))
+    .filter(r => r.value != null && !isNaN(Number(r.value)) && Number(r.value) > 0);
+  if (cleaned.length < 2) return [];
+  const base = Number(cleaned[0].value);
+  return cleaned.map(r => ({ date: r.date, value: Number(r.value) / base * 100 }));
+}
+
+function alignBenchmarkToStockDates(stockRows, benchmarkRows, benchmarkGetter) {
+  const benchmarkByDate = new Map(
+    (benchmarkRows || [])
+      .filter(r => benchmarkGetter(r) != null && !isNaN(Number(benchmarkGetter(r))) && Number(benchmarkGetter(r)) > 0)
+      .map(r => [r.date, r])
+  );
+  return (stockRows || [])
+    .map(r => benchmarkByDate.get(r.date))
+    .filter(Boolean);
+}
+
+async function ensureStockHistory(ticker) {
+  if (!apiCache.stocks[ticker]) {
+    let data = await cachedJsonFetch(publicDataProxyUrl('stock', ticker));
+    if (!Array.isArray(data)) data = [];
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    apiCache.stocks[ticker] = data;
+  }
+  return apiCache.stocks[ticker];
+}
+
+function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
+  lastChartData = {
+    history: stockSeries,
+    containerId,
+    comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel }
+  };
+
+  const div = document.getElementById(containerId);
+  if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
+
+  div.innerHTML = '';
+  div.style.position = 'relative';
+
+  const width = div.clientWidth;
+  const height = Math.min(width * 0.65, 320);
+  div.style.height = height + 'px';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  div.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const padding = { top: 24, right: 60, bottom: 34, left: 20 };
+  const allValues = [...stockSeries, ...benchmarkSeries].map(p => p.value);
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
+  const range = max - min || 1;
+
+  function xy(series, i) {
+    return {
+      x: padding.left + (i / (series.length - 1)) * (width - padding.left - padding.right),
+      y: padding.top + ((max - series[i].value) / range) * (height - padding.top - padding.bottom)
+    };
+  }
+
+  ctx.strokeStyle = '#e6e6e6';
+  ctx.fillStyle = '#666';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const y = padding.top + (i / 5) * (height - padding.top - padding.bottom);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+    ctx.fillText((max - (i / 5) * range).toFixed(1), width - 8, y + 4);
+  }
+
+  function drawLine(series, color, widthLine) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = widthLine;
+    series.forEach((_, i) => {
+      const p = xy(series, i);
+      i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+    });
+    ctx.stroke();
+  }
+
+  drawLine(benchmarkSeries, '#6c7a89', 1.6);
+  drawLine(stockSeries, '#C9A646', 2.2);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#C9A646';
+  ctx.fillText(stockLabel, padding.left, 4);
+  ctx.fillStyle = '#6c7a89';
+  ctx.fillText(benchmarkLabel, padding.left + 130, 4);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#666';
+  const maxXTicks = width < 500 ? 3 : 5;
+  const step = Math.max(1, Math.floor(stockSeries.length / maxXTicks));
+  for (let i = 0; i < stockSeries.length; i += step) {
+    const p = xy(stockSeries, i);
+    const d = new Date(stockSeries[i].date);
+    ctx.fillText(d.toLocaleDateString('cs-CZ'), p.x, height - padding.bottom + 8);
+  }
+}
+
 function loadStockDetail(ticker) {
-
-  
-const main = document.getElementById('mainContent');
- if (!main) return;
-
+  const main = document.getElementById('mainContent');
+  if (!main) return;
 
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
-    <p>
-      <strong id="stock-name"> - </strong><br>
-      <small>ID: ${ticker}</small>
-    </p>
+
+    <div class="stock-detail-head">
+      <p>
+        <strong id="stock-name"> - </strong><br>
+        <small>ID: ${ticker}</small>
+      </p>
+      <div class="stock-detail-actions">
+        <label class="stock-czk-toggle" title="Přepne cenu a graf na CZK, pokud je dostupný přepočet.">
+          <input type="checkbox" id="stock-show-czk">
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span class="toggle-text">Zobrazit v CZK</span>
+        </label>
+        <label class="stock-czk-toggle" title="Porovná vývoj s benchmark indexem. Zatím se používá Dow Jones.">
+          <input type="checkbox" id="stock-compare-index">
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span class="toggle-text">Porovnat s indexem</span>
+        </label>
+      </div>
+    </div>
 
 <div class="kpi-row">
   <div class="kpi">
@@ -2787,12 +2929,6 @@ const main = document.getElementById('mainContent');
     <span>Objem</span>
     <strong id="stock-kpi-volume"> - </strong>
   </div>
-  
-  <div class="kpi">
-    <span>Obor</span>
-    <strong id="stock-kpi-sector"> - </strong>
-  </div>
-
   <div class="kpi">
     <span>Burza</span>
     <strong id="stock-kpi-exchange"> - </strong>
@@ -2805,54 +2941,30 @@ const main = document.getElementById('mainContent');
     <span>Dividendy loni</span>
     <strong id="stock-kpi-dividend-last-year"> - </strong>
   </div>
-
 </div>
-
 
     <p id="stock-meta" class="meta"> - </p>
 
-
 <div class="period-row">
   <div class="period-switch">
-    
       <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
       <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
       <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
       <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
       <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
       <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
-
   </div>
-
-  <div id="period-diff" class="period-diff">
-    —
-  </div>
+  <div id="period-diff" class="period-diff">—</div>
 </div>
 
-
-
-    <div class="stock-czk-toggle-row">
-      <label class="stock-czk-toggle" title="Použije pouze řádky, které mají platný CZK přepočet větší než nula.">
-        <input type="checkbox" id="stock-show-czk">
-        <span class="toggle-track" aria-hidden="true"></span>
-        <span class="toggle-text">Zobrazit v CZK</span>
-        <span class="toggle-note">bez nulových přepočtů</span>
-      </label>
-    </div>
-
     <div id="chart-stock"></div>
-    
+
 <button class="back-btn">
   ← Zpět
 </button>
-
   `;
 
-  
-
-document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
-
-
+  document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
@@ -2863,19 +2975,20 @@ document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.bac
     };
   });
 
-  
   ensureStockCzkToggleStyle();
 
   const defaultStockPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
   if (defaultStockPeriodBtn) defaultStockPeriodBtn.classList.add('active');
 
-  const czkToggle = document.getElementById('stock-show-czk');
-  if (czkToggle) {
-    czkToggle.onchange = () => {
-      const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y';
-      loadStockData(ticker, activePeriod);
-    };
-  }
+  ['stock-show-czk', 'stock-compare-index'].forEach(id => {
+    const toggle = document.getElementById(id);
+    if (toggle) {
+      toggle.onchange = () => {
+        const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y';
+        loadStockData(ticker, activePeriod);
+      };
+    }
+  });
 
   loadStockData(ticker, '3Y');
 }
@@ -2884,77 +2997,77 @@ function renderStockMeta(data) {
   if (!data.length) return;
 
   const first = data[0];
+  const exchangeEl = document.getElementById('stock-kpi-exchange');
+  if (exchangeEl) exchangeEl.textContent = first.exchange || ' - ';
 
-  document.getElementById('stock-kpi-sector').textContent = first.sektor || ' - ';
-  document.getElementById('stock-kpi-exchange').textContent = first.exchange || ' - ';
-
-  // ✅ název
   document.getElementById('stock-name').textContent = first.name || first.ticker;
   document.getElementById('stock-title').textContent = first.name || first.ticker;
 
-  // ✅ TradingView URL
   const symbol = first.symbolData || first.ticker;
   const exchange = first.exchange;
-
   const url = exchange
     ? `https://www.tradingview.com/symbols/${exchange}:${symbol}/`
     : null;
 
   const meta = document.getElementById('stock-meta');
-
   if (meta) {
-    
-  const sector = first.sector || first.sektor || '';
-  const tradingViewLabel = sector === 'Cryptocurrency'
-    ? 'Detail kryptoměny v TradingView ↗'
-    : sector === 'ETF'
-      ? 'Detail ETF v TradingView ↗'
-      : 'Detail akcie v TradingView ↗';
-  meta.innerHTML = `
-  <div>
-    <a href="${url}" target="_blank" rel="noopener" class="tv-link">
-      ${tradingViewLabel}
-    </a>
-  </div>
-  `;
-
+    const sector = first.sector || first.sektor || '';
+    const tradingViewLabel = sector === 'Cryptocurrency'
+      ? 'Detail kryptoměny v TradingView ↗'
+      : sector === 'ETF'
+        ? 'Detail ETF v TradingView ↗'
+        : 'Detail akcie v TradingView ↗';
+    meta.innerHTML = url
+      ? `<div><a href="${url}" target="_blank" rel="noopener" class="tv-link">${tradingViewLabel}</a></div>`
+      : '';
   }
 }
 
-
 async function loadStockData(ticker, period) {
-  // ✅ 1️⃣ fetch jen jednou
-  if (!apiCache.stocks[ticker]) {
-    let data = await cachedJsonFetch(
-      publicDataProxyUrl('stock', ticker)
-    );
-    if (!Array.isArray(data)) data = [];
-    data.sort((a, b) => new Date(a.date) - new Date(b.date));
-    apiCache.stocks[ticker] = data;
-  }
+  const data = await ensureStockHistory(ticker);
 
-  // ✅ 2️⃣ period = frontend filtr
-  const filtered = filterPeriod(apiCache.stocks[ticker], period);
-  const finalData = filtered.length ? filtered : apiCache.stocks[ticker];
+  const filtered = filterPeriod(data, period);
+  const finalData = filtered.length ? filtered : data;
   const useCzk = isStockCzkMode();
+  const compareIndex = isStockCompareMode();
   const displayRows = getStockDisplayRows(finalData, useCzk);
+  const stockRowsForChart = displayRows.length ? displayRows : finalData;
 
-  // ✅ 3️⃣ render, v CZK režimu jen z platných CZK řádků (> 0)
   renderStockMeta(finalData);
-  renderStockKPI(displayRows.length ? displayRows : finalData);
+  renderStockKPI(stockRowsForChart);
 
-  const chartData = displayRows
-    .map(d => ({
-      date: d.date,
-      value: getStockChartValue(d, useCzk)
-    }))
-    .filter(d => d.value != null && !isNaN(Number(d.value)));
+  const chartData = stockRowsForChart
+    .map(d => ({ date: d.date, value: getStockChartValue(d, useCzk) }))
+    .filter(d => d.value != null && !isNaN(Number(d.value)) && Number(d.value) > 0);
 
   renderPeriodDifference(chartData);
-  renderPortfolioChart(
-    chartData,
-    'chart-stock'
-  );
+
+  if (compareIndex && stockRowsForChart.length) {
+    const benchmarkTicker = getBenchmarkTickerForStock(finalData[0]);
+    const benchmarkData = await ensureStockHistory(benchmarkTicker);
+    const benchmarkFiltered = filterPeriod(benchmarkData, period);
+    const benchmarkRows = benchmarkFiltered.length ? benchmarkFiltered : benchmarkData;
+    const alignedBenchmarkRows = alignBenchmarkToStockDates(stockRowsForChart, benchmarkRows, r => r.close);
+    const alignedStockRows = stockRowsForChart.filter(r =>
+      alignedBenchmarkRows.some(b => b.date === r.date)
+    );
+
+    const stockSeries = normalizeSeriesToBase100(alignedStockRows, r => getStockChartValue(r, useCzk));
+    const benchmarkSeries = normalizeSeriesToBase100(alignedBenchmarkRows, r => r.close);
+
+    if (stockSeries.length > 1 && benchmarkSeries.length > 1) {
+      renderStockComparisonChart(
+        stockSeries,
+        benchmarkSeries,
+        'chart-stock',
+        finalData[0]?.ticker || ticker,
+        benchmarkTicker
+      );
+      return;
+    }
+  }
+
+  renderPortfolioChart(chartData, 'chart-stock');
 }
 
 function renderStockKPI(data) {
@@ -2983,21 +3096,15 @@ function renderStockKPI(data) {
   const divLastYearEl = document.getElementById('stock-kpi-dividend-last-year');
 
   if (divThisYearEl) {
-    divThisYearEl.innerHTML = formatDividendPair(
-      first.dividendThisYear,
-      originalCurrency,
-      first.dividendThisYearCzk
-    );
-    divThisYearEl.className = Number(first.dividendThisYear || first.dividendThisYearCzk || 0) > 0 ? 'pos' : '';
+    const value = useCzk ? first.dividendThisYearCzk : first.dividendThisYear;
+    divThisYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4);
+    divThisYearEl.className = Number(value || 0) > 0 ? 'pos' : '';
   }
 
   if (divLastYearEl) {
-    divLastYearEl.innerHTML = formatDividendPair(
-      first.dividendLastYear,
-      originalCurrency,
-      first.dividendLastYearCzk
-    );
-    divLastYearEl.className = Number(first.dividendLastYear || first.dividendLastYearCzk || 0) > 0 ? 'pos' : '';
+    const value = useCzk ? first.dividendLastYearCzk : first.dividendLastYear;
+    divLastYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4);
+    divLastYearEl.className = Number(value || 0) > 0 ? 'pos' : '';
   }
 
   if (prev) {
@@ -3241,6 +3348,16 @@ function renderPeriodDifference(data) {
 // ===================================================
 window.addEventListener('resize', () => {
   if (!lastChartData) return;
+  if (lastChartData.comparison) {
+    renderStockComparisonChart(
+      lastChartData.comparison.stockSeries,
+      lastChartData.comparison.benchmarkSeries,
+      lastChartData.containerId,
+      lastChartData.comparison.stockLabel,
+      lastChartData.comparison.benchmarkLabel
+    );
+    return;
+  }
   renderPortfolioChart(lastChartData.history, lastChartData.containerId);
 });
 
