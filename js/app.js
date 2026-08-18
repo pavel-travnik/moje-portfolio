@@ -1171,18 +1171,18 @@ if (!page || page === "undefined") {
     }
 
     if (page.startsWith('akcie/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
 
     if (page.startsWith('etf/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }
     if (page.startsWith('crypto/')) {
-        loadStockDetail(page.split('/')[1]);
+        loadStockDetail(decodeURIComponent(page.split('/')[1]));
         if (pushState) history.pushState({ page }, '', `/${page}`);
         return;
     }

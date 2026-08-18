@@ -1056,28 +1056,51 @@ function backToPortfolioDonut() {
   scrollPortfolioPageToTop();
 }
 
-function openAssetDetail(assetType, assetId) {
-  let path;
+function normalizePortfolioAssetType(assetType) {
+  return String(assetType || '').trim().toUpperCase();
+}
 
-  switch (assetType) {
+function resolvePortfolioAssetId(position) {
+  return position?.asset_id || position?.assetId || position?.ticker || position?.isin || position?.ISIN || position?.asset_code || position?.code || null;
+}
+
+function openAssetDetail(assetType, assetId) {
+  const type = normalizePortfolioAssetType(assetType);
+  const id = String(assetId || '').trim();
+  if (!id) return;
+
+  let path;
+  switch (type) {
     case 'ETF':
-      path = `etf/${assetId}`;
+      path = `etf/${encodeURIComponent(id)}`;
       break;
     case 'STOCK':
-      path = `akcie/${assetId}`;
+    case 'AKCIE':
+      path = `akcie/${encodeURIComponent(id)}`;
+      break;
+    case 'CRYPTO':
+    case 'CRYPTOCURRENCY':
+      path = `crypto/${encodeURIComponent(id)}`;
       break;
     case 'FUND':
-      path = `podilove-fondy/${assetId}`;
+    case 'PODILOVY_FOND':
+      path = `podilove-fondy/${encodeURIComponent(id)}`;
       break;
     case 'DPS':
-      path = `penze/${assetId}`;
+      path = `penze/${encodeURIComponent(id)}`;
+      break;
+    case 'INDEX':
+      path = `indexy/${encodeURIComponent(id)}`;
       break;
     default:
       return;
   }
 
-  history.pushState({ page: path }, '', `/${path}`);
-  loadPage(path, false); // ✅ stejný router jako app.js
+  if (typeof loadPage === 'function') {
+    loadPage(path);
+  } else {
+    history.pushState({ page: path }, '', `/${path}`);
+  }
 }
 
 // ===================================================
@@ -1481,7 +1504,7 @@ function renderPortfolioInstruments(positions, options = {}) {
       `;
 
       // ✅ klik → detail instrumentu
-      tr.onclick = () => openAssetDetail(p.asset_type, p.asset_id);
+      tr.onclick = () => openAssetDetail(p.asset_type, resolvePortfolioAssetId(p));
 
       tbody.appendChild(tr);
     });
