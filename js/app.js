@@ -1452,22 +1452,28 @@ function ensureStockCzkToggleStyle() {
       align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .stock-detail-head p { margin: 0; }
+    .stock-detail-head p { margin: 0; min-width: 0; }
+    .stock-detail-head strong { word-break: break-word; }
     .stock-detail-actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: 8px;
       padding-top: 2px;
+      flex: 0 0 auto;
     }
     .stock-czk-toggle {
+      position: relative;
       display: inline-flex;
       align-items: center;
+      justify-content: flex-start;
       gap: 9px;
+      min-height: 40px;
       cursor: pointer;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
       padding: 8px 12px;
       border-radius: 999px;
       border: 1px solid rgba(201, 166, 70, 0.55);
@@ -1476,6 +1482,7 @@ function ensureStockCzkToggleStyle() {
       font-weight: 700;
       box-shadow: 0 6px 20px rgba(0,0,0,0.06);
       transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      overflow: hidden;
     }
     .stock-czk-toggle:hover {
       transform: translateY(-1px);
@@ -1484,15 +1491,27 @@ function ensureStockCzkToggleStyle() {
     }
     .stock-czk-toggle input {
       position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
       opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .stock-czk-toggle .toggle-track,
+    .stock-czk-toggle .toggle-text {
       pointer-events: none;
+      position: relative;
+      z-index: 1;
     }
     .stock-czk-toggle .toggle-track {
       width: 42px;
       height: 22px;
       border-radius: 999px;
       background: #d9d9d9;
-      position: relative;
       transition: background .2s ease;
       flex: 0 0 auto;
     }
@@ -1508,17 +1527,78 @@ function ensureStockCzkToggleStyle() {
       box-shadow: 0 2px 7px rgba(0,0,0,0.25);
       transition: transform .2s ease;
     }
-    .stock-czk-toggle input:checked + .toggle-track {
-      background: #0f3d2e;
+    .stock-czk-toggle input:checked + .toggle-track { background: #0f3d2e; }
+    .stock-czk-toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+    .stock-czk-toggle .toggle-text { white-space: nowrap; font-size: 13px; }
+    .stock-risk-panel {
+      margin: 12px 0 16px;
+      padding: 14px;
+      border: 1px solid rgba(201, 166, 70, 0.28);
+      border-radius: 18px;
+      background: rgba(255, 250, 240, 0.55);
     }
-    .stock-czk-toggle input:checked + .toggle-track::after {
-      transform: translateX(20px);
+    .stock-risk-panel h4 { margin: 0 0 10px; color: #0f3d2e; font-size: 15px; }
+    .stock-risk-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
     }
-    .stock-czk-toggle .toggle-text { white-space: nowrap; }
+    .stock-risk-metric {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(201, 166, 70, 0.18);
+      min-width: 0;
+    }
+    .stock-risk-metric span { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
+    .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
+
+    @media (max-width: 900px) {
+      .stock-risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     @media (max-width: 760px) {
-      .stock-detail-head { display: block; }
-      .stock-detail-actions { justify-content: stretch; margin-top: 12px; }
-      .stock-czk-toggle { flex: 1 1 100%; justify-content: space-between; }
+      .stock-detail-head {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .stock-detail-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        justify-content: stretch;
+      }
+      .stock-czk-toggle {
+        width: 100%;
+        justify-content: space-between;
+        min-height: 44px;
+        padding: 10px 12px;
+        box-sizing: border-box;
+      }
+      .stock-czk-toggle .toggle-text { font-size: 14px; }
+      .period-row {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+      }
+      .period-switch {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+      }
+      .period-switch button { width: 100%; min-height: 38px; padding: 8px 6px; }
+      .period-diff { width: 100%; box-sizing: border-box; text-align: center; }
+      #chart-stock { min-height: 240px; }
+    }
+    @media (max-width: 420px) {
+      .stock-risk-grid { grid-template-columns: 1fr; }
+      .period-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stock-czk-toggle .toggle-track { width: 38px; height: 20px; }
+      .stock-czk-toggle .toggle-track::after { width: 16px; height: 16px; }
+      .stock-czk-toggle input:checked + .toggle-track::after { transform: translateX(18px); }
     }
   `;
   document.head.appendChild(style);
@@ -2770,35 +2850,29 @@ function loadIndexes() {
     });
 }
 
-function isStockCompareMode() {
-  return !!document.getElementById('stock-compare-index')?.checked;
+function formatRiskPercent(value, decimals = 2) {
+  if (value == null || isNaN(Number(value))) return '—';
+  return `${Number(value).toLocaleString('cs-CZ', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} %`;
 }
-
-function getBenchmarkTickerForStock(row) {
-  // Do budoucna lze načítat z DB, např. AkcieSeznam.BenchmarkTicker.
-  return row?.benchmarkTicker || row?.BenchmarkTicker || '^DJI';
+function setRiskMetric(id, value, decimals = 2, signed = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = formatRiskPercent(value, decimals);
+  el.className = '';
+  if (signed && value != null && !isNaN(Number(value))) el.className = Number(value) >= 0 ? 'pos' : 'neg';
 }
-
+function isStockCompareMode() { return !!document.getElementById('stock-compare-index')?.checked; }
+function getBenchmarkTickerForStock(row) { return row?.benchmarkTicker || row?.BenchmarkTicker || '^DJI'; }
 function normalizeSeriesToBase100(rows, valueGetter) {
-  const cleaned = (rows || [])
-    .map(r => ({ date: r.date, value: valueGetter(r) }))
-    .filter(r => r.value != null && !isNaN(Number(r.value)) && Number(r.value) > 0);
+  const cleaned = (rows || []).map(r => ({ date: r.date, value: valueGetter(r) })).filter(r => r.value != null && !isNaN(Number(r.value)) && Number(r.value) > 0);
   if (cleaned.length < 2) return [];
   const base = Number(cleaned[0].value);
   return cleaned.map(r => ({ date: r.date, value: Number(r.value) / base * 100 }));
 }
-
 function alignBenchmarkToStockDates(stockRows, benchmarkRows, benchmarkGetter) {
-  const benchmarkByDate = new Map(
-    (benchmarkRows || [])
-      .filter(r => benchmarkGetter(r) != null && !isNaN(Number(benchmarkGetter(r))) && Number(benchmarkGetter(r)) > 0)
-      .map(r => [r.date, r])
-  );
-  return (stockRows || [])
-    .map(r => benchmarkByDate.get(r.date))
-    .filter(Boolean);
+  const benchmarkByDate = new Map((benchmarkRows || []).filter(r => benchmarkGetter(r) != null && !isNaN(Number(benchmarkGetter(r))) && Number(benchmarkGetter(r)) > 0).map(r => [r.date, r]));
+  return (stockRows || []).map(r => benchmarkByDate.get(r.date)).filter(Boolean);
 }
-
 async function ensureStockHistory(ticker) {
   if (!apiCache.stocks[ticker]) {
     let data = await cachedJsonFetch(publicDataProxyUrl('stock', ticker));
@@ -2808,271 +2882,158 @@ async function ensureStockHistory(ticker) {
   }
   return apiCache.stocks[ticker];
 }
-
 function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
-  lastChartData = {
-    history: stockSeries,
-    containerId,
-    comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel }
-  };
-
+  lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
   const div = document.getElementById(containerId);
   if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
-
   div.innerHTML = '';
   div.style.position = 'relative';
-
-  const width = div.clientWidth;
+  const width = div.clientWidth || div.parentElement?.clientWidth || 320;
   const height = Math.min(width * 0.65, 320);
   div.style.height = height + 'px';
-
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   div.appendChild(canvas);
-
   const ctx = canvas.getContext('2d');
-  const padding = { top: 24, right: 60, bottom: 34, left: 20 };
+  const padding = { top: 26, right: width < 520 ? 42 : 60, bottom: 34, left: 22 };
   const allValues = [...stockSeries, ...benchmarkSeries].map(p => p.value);
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
   const range = max - min || 1;
-
-  function xy(series, i) {
-    return {
-      x: padding.left + (i / (series.length - 1)) * (width - padding.left - padding.right),
-      y: padding.top + ((max - series[i].value) / range) * (height - padding.top - padding.bottom)
-    };
-  }
-
-  ctx.strokeStyle = '#e6e6e6';
-  ctx.fillStyle = '#666';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'right';
-  for (let i = 0; i <= 5; i++) {
-    const y = padding.top + (i / 5) * (height - padding.top - padding.bottom);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(width - padding.right, y);
-    ctx.stroke();
-    ctx.fillText((max - (i / 5) * range).toFixed(1), width - 8, y + 4);
-  }
-
-  function drawLine(series, color, widthLine) {
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = widthLine;
-    series.forEach((_, i) => {
-      const p = xy(series, i);
-      i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
-    });
-    ctx.stroke();
-  }
-
-  drawLine(benchmarkSeries, '#6c7a89', 1.6);
-  drawLine(stockSeries, '#C9A646', 2.2);
-
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = '#C9A646';
-  ctx.fillText(stockLabel, padding.left, 4);
-  ctx.fillStyle = '#6c7a89';
-  ctx.fillText(benchmarkLabel, padding.left + 130, 4);
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#666';
-  const maxXTicks = width < 500 ? 3 : 5;
-  const step = Math.max(1, Math.floor(stockSeries.length / maxXTicks));
-  for (let i = 0; i < stockSeries.length; i += step) {
-    const p = xy(stockSeries, i);
-    const d = new Date(stockSeries[i].date);
-    ctx.fillText(d.toLocaleDateString('cs-CZ'), p.x, height - padding.bottom + 8);
-  }
+  function xy(series, i) { return { x: padding.left + (i / (series.length - 1)) * (width - padding.left - padding.right), y: padding.top + ((max - series[i].value) / range) * (height - padding.top - padding.bottom) }; }
+  ctx.strokeStyle = '#e6e6e6'; ctx.fillStyle = '#666'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) { const y = padding.top + (i / 5) * (height - padding.top - padding.bottom); ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(width - padding.right, y); ctx.stroke(); ctx.fillText((max - (i / 5) * range).toFixed(1), width - 6, y + 4); }
+  function drawLine(series, color, widthLine) { ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = widthLine; series.forEach((_, i) => { const p = xy(series, i); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); }); ctx.stroke(); }
+  drawLine(benchmarkSeries, '#6c7a89', 1.6); drawLine(stockSeries, '#C9A646', 2.2);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = '#C9A646'; ctx.fillText(stockLabel, padding.left, 4); ctx.fillStyle = '#6c7a89'; ctx.fillText(benchmarkLabel, width < 420 ? padding.left : padding.left + 120, width < 420 ? 16 : 4);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#666'; const maxXTicks = width < 500 ? 3 : 5; const step = Math.max(1, Math.floor(stockSeries.length / maxXTicks));
+  for (let i = 0; i < stockSeries.length; i += step) { const p = xy(stockSeries, i); ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'), p.x, height - padding.bottom + 8); }
 }
 
 function loadStockDetail(ticker) {
   const main = document.getElementById('mainContent');
   if (!main) return;
-
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
-
     <div class="stock-detail-head">
-      <p>
-        <strong id="stock-name"> - </strong><br>
-        <small>ID: ${ticker}</small>
-      </p>
+      <p><strong id="stock-name"> - </strong><br><small>ID: ${ticker}</small></p>
       <div class="stock-detail-actions">
         <label class="stock-czk-toggle" title="Přepne cenu a graf na CZK, pokud je dostupný přepočet.">
-          <input type="checkbox" id="stock-show-czk">
-          <span class="toggle-track" aria-hidden="true"></span>
-          <span class="toggle-text">Zobrazit v CZK</span>
+          <input type="checkbox" id="stock-show-czk" aria-label="Zobrazit v CZK">
+          <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Zobrazit v CZK</span>
         </label>
-        <label class="stock-czk-toggle" title="Porovná vývoj s benchmark indexem. Zatím se používá Dow Jones.">
-          <input type="checkbox" id="stock-compare-index">
-          <span class="toggle-track" aria-hidden="true"></span>
-          <span class="toggle-text">Porovnat s indexem</span>
+        <label class="stock-czk-toggle" title="Porovná vývoj s benchmark indexem.">
+          <input type="checkbox" id="stock-compare-index" aria-label="Porovnat s indexem">
+          <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Porovnat s indexem</span>
         </label>
       </div>
     </div>
-
-<div class="kpi-row">
-  <div class="kpi">
-    <span>Poslední cena</span>
-    <strong id="stock-kpi-last"> - </strong>
-  </div>
-  <div class="kpi">
-    <span>Denní­ změna</span>
-    <strong id="stock-kpi-change"> - </strong>
-  </div>
-  <div class="kpi">
-    <span>Objem</span>
-    <strong id="stock-kpi-volume"> - </strong>
-  </div>
-  <div class="kpi">
-    <span>Burza</span>
-    <strong id="stock-kpi-exchange"> - </strong>
-  </div>
-  <div class="kpi">
-    <span>Dividendy letos</span>
-    <strong id="stock-kpi-dividend-this-year"> - </strong>
-  </div>
-  <div class="kpi">
-    <span>Dividendy loni</span>
-    <strong id="stock-kpi-dividend-last-year"> - </strong>
-  </div>
-</div>
-
+    <div class="kpi-row">
+      <div class="kpi"><span>Poslední cena</span><strong id="stock-kpi-last"> - </strong></div>
+      <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change"> - </strong></div>
+      <div class="kpi"><span>Objem</span><strong id="stock-kpi-volume"> - </strong></div>
+      <div class="kpi"><span>Burza</span><strong id="stock-kpi-exchange"> - </strong></div>
+      <div class="kpi"><span>Dividendy letos</span><strong id="stock-kpi-dividend-this-year"> - </strong></div>
+      <div class="kpi"><span>Dividendy loni</span><strong id="stock-kpi-dividend-last-year"> - </strong></div>
+    </div>
     <p id="stock-meta" class="meta"> - </p>
-
-<div class="period-row">
-  <div class="period-switch">
-      <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
-      <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
-      <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
-      <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
-      <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
-      <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
-  </div>
-  <div id="period-diff" class="period-diff">—</div>
-</div>
-
+    <section class="stock-risk-panel">
+      <h4>Riziko a výnos</h4>
+      <div class="stock-risk-grid">
+        <div class="stock-risk-metric"><span>Volatilita 1Y</span><strong id="stock-risk-vol-1y">—</strong></div>
+        <div class="stock-risk-metric"><span>Volatilita 3Y</span><strong id="stock-risk-vol-3y">—</strong></div>
+        <div class="stock-risk-metric"><span>Max. propad 1Y</span><strong id="stock-risk-dd-1y">—</strong></div>
+        <div class="stock-risk-metric"><span>Div. výnos loni</span><strong id="stock-risk-div-yield">—</strong></div>
+        <div class="stock-risk-metric"><span>Výnos vs index 3Y</span><strong id="stock-risk-vs-index-3y">—</strong></div>
+      </div>
+    </section>
+    <div class="period-row">
+      <div class="period-switch">
+        <button data-period="1M" data-tooltip="Poslední měsíc">1M</button>
+        <button data-period="6M" data-tooltip="Posledních 6 měsíců">6M</button>
+        <button data-period="1Y" data-tooltip="Poslední rok">1Y</button>
+        <button data-period="3Y" data-tooltip="Poslední 3 roky">3Y</button>
+        <button data-period="5Y" data-tooltip="Posledních 5 let">5Y</button>
+        <button data-period="MAX" data-tooltip="Celá historie">MAX</button>
+      </div>
+      <div id="period-diff" class="period-diff">—</div>
+    </div>
     <div id="chart-stock"></div>
-
-<button class="back-btn">
-  ← Zpět
-</button>
+    <button class="back-btn">← Zpět</button>
   `;
-
   document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
-
   document.querySelectorAll('.period-switch button').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.period-switch button')
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadStockData(ticker, btn.dataset.period);
-    };
+    btn.onclick = () => { document.querySelectorAll('.period-switch button').forEach(b => b.classList.remove('active')); btn.classList.add('active'); loadStockData(ticker, btn.dataset.period); };
   });
-
   ensureStockCzkToggleStyle();
-
   const defaultStockPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
   if (defaultStockPeriodBtn) defaultStockPeriodBtn.classList.add('active');
-
   ['stock-show-czk', 'stock-compare-index'].forEach(id => {
     const toggle = document.getElementById(id);
-    if (toggle) {
-      toggle.onchange = () => {
-        const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y';
-        loadStockData(ticker, activePeriod);
-      };
-    }
+    if (toggle) toggle.onchange = () => { const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y'; loadStockData(ticker, activePeriod); };
   });
-
   loadStockData(ticker, '3Y');
 }
 
 function renderStockMeta(data) {
   if (!data.length) return;
-
   const first = data[0];
   const exchangeEl = document.getElementById('stock-kpi-exchange');
   if (exchangeEl) exchangeEl.textContent = first.exchange || ' - ';
-
   document.getElementById('stock-name').textContent = first.name || first.ticker;
   document.getElementById('stock-title').textContent = first.name || first.ticker;
-
   const symbol = first.symbolData || first.ticker;
   const exchange = first.exchange;
-  const url = exchange
-    ? `https://www.tradingview.com/symbols/${exchange}:${symbol}/`
-    : null;
-
+  const url = exchange ? `https://www.tradingview.com/symbols/${exchange}:${symbol}/` : null;
   const meta = document.getElementById('stock-meta');
   if (meta) {
     const sector = first.sector || first.sektor || '';
-    const tradingViewLabel = sector === 'Cryptocurrency'
-      ? 'Detail kryptoměny v TradingView ↗'
-      : sector === 'ETF'
-        ? 'Detail ETF v TradingView ↗'
-        : 'Detail akcie v TradingView ↗';
-    meta.innerHTML = url
-      ? `<div><a href="${url}" target="_blank" rel="noopener" class="tv-link">${tradingViewLabel}</a></div>`
-      : '';
+    const tradingViewLabel = sector === 'Cryptocurrency' ? 'Detail kryptoměny v TradingView ↗' : sector === 'ETF' ? 'Detail ETF v TradingView ↗' : 'Detail akcie v TradingView ↗';
+    meta.innerHTML = url ? `<div><a href="${url}" target="_blank" rel="noopener" class="tv-link">${tradingViewLabel}</a></div>` : '';
   }
+}
+function renderStockRiskMetrics(data) {
+  if (!data || !data.length) return;
+  const first = data[0];
+  setRiskMetric('stock-risk-vol-1y', first.volatility1Y);
+  setRiskMetric('stock-risk-vol-3y', first.volatility3Y);
+  setRiskMetric('stock-risk-dd-1y', first.maxDrawdown1Y, 2, true);
+  setRiskMetric('stock-risk-div-yield', first.dividendYieldLastYear);
+  setRiskMetric('stock-risk-vs-index-3y', first.perfVsBenchmark3Y, 2, true);
+  const compareToggle = document.getElementById('stock-compare-index');
+  if (compareToggle && first.benchmarkTicker) compareToggle.closest('label')?.setAttribute('title', `Porovná vývoj s benchmarkem ${first.benchmarkTicker}.`);
 }
 
 async function loadStockData(ticker, period) {
   const data = await ensureStockHistory(ticker);
-
   const filtered = filterPeriod(data, period);
   const finalData = filtered.length ? filtered : data;
   const useCzk = isStockCzkMode();
   const compareIndex = isStockCompareMode();
   const displayRows = getStockDisplayRows(finalData, useCzk);
   const stockRowsForChart = displayRows.length ? displayRows : finalData;
-
   renderStockMeta(finalData);
   renderStockKPI(stockRowsForChart);
-
-  const chartData = stockRowsForChart
-    .map(d => ({ date: d.date, value: getStockChartValue(d, useCzk) }))
-    .filter(d => d.value != null && !isNaN(Number(d.value)) && Number(d.value) > 0);
-
+  renderStockRiskMetrics(finalData);
+  const chartData = stockRowsForChart.map(d => ({ date: d.date, value: getStockChartValue(d, useCzk) })).filter(d => d.value != null && !isNaN(Number(d.value)) && Number(d.value) > 0);
   renderPeriodDifference(chartData);
-
   if (compareIndex && stockRowsForChart.length) {
     const benchmarkTicker = getBenchmarkTickerForStock(finalData[0]);
     const benchmarkData = await ensureStockHistory(benchmarkTicker);
     const benchmarkFiltered = filterPeriod(benchmarkData, period);
     const benchmarkRows = benchmarkFiltered.length ? benchmarkFiltered : benchmarkData;
     const alignedBenchmarkRows = alignBenchmarkToStockDates(stockRowsForChart, benchmarkRows, r => r.close);
-    const alignedStockRows = stockRowsForChart.filter(r =>
-      alignedBenchmarkRows.some(b => b.date === r.date)
-    );
-
+    const alignedStockRows = stockRowsForChart.filter(r => alignedBenchmarkRows.some(b => b.date === r.date));
     const stockSeries = normalizeSeriesToBase100(alignedStockRows, r => getStockChartValue(r, useCzk));
     const benchmarkSeries = normalizeSeriesToBase100(alignedBenchmarkRows, r => r.close);
-
-    if (stockSeries.length > 1 && benchmarkSeries.length > 1) {
-      renderStockComparisonChart(
-        stockSeries,
-        benchmarkSeries,
-        'chart-stock',
-        finalData[0]?.ticker || ticker,
-        benchmarkTicker
-      );
-      return;
-    }
+    if (stockSeries.length > 1 && benchmarkSeries.length > 1) { renderStockComparisonChart(stockSeries, benchmarkSeries, 'chart-stock', finalData[0]?.ticker || ticker, benchmarkTicker); return; }
   }
-
   renderPortfolioChart(chartData, 'chart-stock');
 }
 
 function renderStockKPI(data) {
   if (!data.length) return;
-
   const useCzk = isStockCzkMode();
   const validRows = getStockDisplayRows(data, useCzk);
   const rowsForPrice = validRows.length ? validRows : data;
@@ -3083,46 +3044,20 @@ function renderStockKPI(data) {
   const originalCurrency = last.currency ?? '';
   const displayCurrency = useCzk ? 'CZK' : originalCurrency;
   const lastValue = getStockChartValue(last, useCzk);
-
-  document.getElementById('stock-kpi-last').textContent =
-    lastValue != null
-      ? `${formatStockMoney(lastValue, displayCurrency, 2)} (${dateStr})`
-      : '—';
-
-  document.getElementById('stock-kpi-volume').textContent =
-    last.volume?.toLocaleString('cs-CZ') ?? ' - ';
-
+  document.getElementById('stock-kpi-last').textContent = lastValue != null ? `${formatStockMoney(lastValue, displayCurrency, 2)} (${dateStr})` : '—';
+  document.getElementById('stock-kpi-volume').textContent = last.volume?.toLocaleString('cs-CZ') ?? ' - ';
   const divThisYearEl = document.getElementById('stock-kpi-dividend-this-year');
   const divLastYearEl = document.getElementById('stock-kpi-dividend-last-year');
-
-  if (divThisYearEl) {
-    const value = useCzk ? first.dividendThisYearCzk : first.dividendThisYear;
-    divThisYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4);
-    divThisYearEl.className = Number(value || 0) > 0 ? 'pos' : '';
-  }
-
-  if (divLastYearEl) {
-    const value = useCzk ? first.dividendLastYearCzk : first.dividendLastYear;
-    divLastYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4);
-    divLastYearEl.className = Number(value || 0) > 0 ? 'pos' : '';
-  }
-
+  if (divThisYearEl) { const value = useCzk ? first.dividendThisYearCzk : first.dividendThisYear; divThisYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4); divThisYearEl.className = Number(value || 0) > 0 ? 'pos' : ''; }
+  if (divLastYearEl) { const value = useCzk ? first.dividendLastYearCzk : first.dividendLastYear; divLastYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4); divLastYearEl.className = Number(value || 0) > 0 ? 'pos' : ''; }
   if (prev) {
     const prevValue = getStockChartValue(prev, useCzk);
     const diff = lastValue != null && prevValue != null ? lastValue - prevValue : null;
     const pct = diff != null && prevValue ? (diff / prevValue) * 100 : null;
     const el = document.getElementById('stock-kpi-change');
-
-    if (diff != null && pct != null) {
-      el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`;
-      el.className = diff >= 0 ? 'pos' : 'neg';
-    } else {
-      el.textContent = ' - ';
-      el.className = '';
-    }
-  } else {
-    document.getElementById('stock-kpi-change').textContent = ' - ';
-  }
+    if (diff != null && pct != null) { el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`; el.className = diff >= 0 ? 'pos' : 'neg'; }
+    else { el.textContent = ' - '; el.className = ''; }
+  } else document.getElementById('stock-kpi-change').textContent = ' - ';
 }
 
 // ===================================================
