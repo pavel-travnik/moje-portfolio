@@ -726,18 +726,24 @@ document.addEventListener('click', e => {
 });
 
 function showTooltip(el) {
-  tooltip.textContent = el.dataset.tooltip;
+  const text = el.dataset.tooltip;
+  if (!text) return;
 
-  const rect = el.getBoundingClientRect();
+  tooltip.textContent = text;
 
-  const top = rect.top + window.scrollY;
-  const left = rect.left + window.scrollX;
+  const section = el.closest('.stock-risk-metric') || el.closest('.kpi') || el;
+  const rect = section.getBoundingClientRect();
+  const viewportPadding = 12;
+  const width = Math.max(160, Math.min(rect.width, window.innerWidth - viewportPadding * 2));
+  const left = Math.min(
+    Math.max(rect.left + window.scrollX, viewportPadding + window.scrollX),
+    window.scrollX + window.innerWidth - width - viewportPadding
+  );
 
-  tooltip.style.left =
-    left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-
-  tooltip.style.top =
-    top - 35 + 'px';
+  tooltip.style.width = width + 'px';
+  tooltip.style.maxWidth = width + 'px';
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = rect.bottom + window.scrollY + 8 + 'px';
 
   tooltip.classList.add('show');
 }
@@ -1551,6 +1557,10 @@ function ensureStockCzkToggleStyle() {
       min-width: 0;
     }
     .stock-risk-metric span { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
+    .stock-risk-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .stock-risk-label > span:first-child { min-width: 0; margin-bottom: 0; }
+    .stock-risk-label .stock-risk-help { width: 18px; height: 18px; min-width: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #3d3d3d; color: #fff; border: 1px solid rgba(201,166,70,.65); font-size: 12px; font-weight: 700; line-height: 1; cursor: help; margin-bottom: 0; }
+    .stock-risk-label .stock-risk-help:hover, .stock-risk-label .stock-risk-help:focus { background: #C9A646; color: #111; outline: none; }
     .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
 
     @media (max-width: 900px) {
@@ -2959,6 +2969,9 @@ function loadStockDetail(ticker) {
   if (!main) return;
 
   const showAdvanced = canShowStockAdvancedDetail();
+  const normalizedPath = location.pathname.replace(/^\/+/, '');
+  const metaItem = (apiCache.stockUniverse || []).find(item => String(item.ticker || '').trim() === String(ticker || '').trim());
+  const isIndexDetail = normalizedPath.startsWith('indexy/') || metaItem?.sector === 'Index';
 
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
@@ -2970,10 +2983,11 @@ function loadStockDetail(ticker) {
           <input type="checkbox" id="stock-show-czk" aria-label="Zobrazit v CZK">
           <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Zobrazit v CZK</span>
         </label>
+        ${!isIndexDetail ? `
         <label class="stock-czk-toggle" title="Porovná vývoj instrumentu s benchmark indexem.">
           <input type="checkbox" id="stock-compare-index" aria-label="Porovnat s indexem">
           <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Porovnat s indexem</span>
-        </label>
+        </label>` : ''}
       </div>` : ''}
     </div>
 
@@ -2982,8 +2996,9 @@ function loadStockDetail(ticker) {
       <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change"> - </strong></div>
       <div class="kpi"><span>Objem</span><strong id="stock-kpi-volume"> - </strong></div>
       <div class="kpi"><span>Burza</span><strong id="stock-kpi-exchange"> - </strong></div>
+      ${!isIndexDetail ? `
       <div class="kpi"><span>Dividendy letos</span><strong id="stock-kpi-dividend-this-year"> - </strong></div>
-      <div class="kpi"><span>Dividendy loni</span><strong id="stock-kpi-dividend-last-year"> - </strong></div>
+      <div class="kpi"><span>Dividendy loni</span><strong id="stock-kpi-dividend-last-year"> - </strong></div>` : ''}
     </div>
 
     <p id="stock-meta" class="meta"> - </p>
@@ -2992,11 +3007,12 @@ function loadStockDetail(ticker) {
     <section class="stock-risk-panel">
       <h4>Riziko a výnos</h4>
       <div class="stock-risk-grid">
-        <div class="stock-risk-metric" data-tooltip="Volatilita vyjadřuje, jak výrazně a často kolísá cena v čase. Čím je vyšší, tím větší je nejistota budoucího vývoje ceny, a tedy i potenciál jak vyšších zisků, tak vyšších ztrát."><span>Volatilita 1Y</span><strong id="stock-risk-vol-1y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Volatilita vyjadřuje, jak výrazně a často kolísá cena v čase. Čím je vyšší, tím větší je nejistota budoucího vývoje ceny, a tedy i potenciál jak vyšších zisků, tak vyšších ztrát."><span>Volatilita 3Y</span><strong id="stock-risk-vol-3y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období."><span>Max. propad 1Y</span><strong id="stock-risk-dd-1y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku."><span>Div. výnos loni</span><strong id="stock-risk-div-yield">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index."><span>Výnos vs index 3Y</span><strong id="stock-risk-vs-index-3y">—</strong></div>
+        <div class="stock-risk-metric"><div class="stock-risk-label"><span>Volatilita 1Y</span><span class="stock-risk-help" data-tooltip="Volatilita vyjadřuje, jak výrazně a často kolísá cena v čase. Čím je vyšší, tím větší je nejistota budoucího vývoje ceny, a tedy i potenciál jak vyšších zisků, tak vyšších ztrát." aria-label="Vysvětlení metriky Volatilita 1Y" role="button" tabindex="0">?</span></div><strong id="stock-risk-vol-1y">—</strong></div>
+        <div class="stock-risk-metric"><div class="stock-risk-label"><span>Volatilita 3Y</span><span class="stock-risk-help" data-tooltip="Volatilita vyjadřuje, jak výrazně a často kolísá cena v čase. Čím je vyšší, tím větší je nejistota budoucího vývoje ceny, a tedy i potenciál jak vyšších zisků, tak vyšších ztrát." aria-label="Vysvětlení metriky Volatilita 3Y" role="button" tabindex="0">?</span></div><strong id="stock-risk-vol-3y">—</strong></div>
+        <div class="stock-risk-metric"><div class="stock-risk-label"><span>Max. propad 1Y</span><span class="stock-risk-help" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období." aria-label="Vysvětlení metriky Max. propad 1Y" role="button" tabindex="0">?</span></div><strong id="stock-risk-dd-1y">—</strong></div>
+        ${!isIndexDetail ? `
+        <div class="stock-risk-metric"><div class="stock-risk-label"><span>Div. výnos loni</span><span class="stock-risk-help" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku." aria-label="Vysvětlení metriky Div. výnos loni" role="button" tabindex="0">?</span></div><strong id="stock-risk-div-yield">—</strong></div>
+        <div class="stock-risk-metric"><div class="stock-risk-label"><span>Výnos vs index 3Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index." aria-label="Vysvětlení metriky Výnos vs index 3Y" role="button" tabindex="0">?</span></div><strong id="stock-risk-vs-index-3y">—</strong></div>` : ''}
       </div>
     </section>` : ''}
 
