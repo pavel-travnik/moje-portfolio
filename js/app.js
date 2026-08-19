@@ -728,18 +728,33 @@ document.addEventListener('click', e => {
 function showTooltip(el) {
   tooltip.textContent = el.dataset.tooltip;
 
-  const rect = el.getBoundingClientRect();
-
+  const metricBox = el.closest('.stock-risk-metric');
+  const anchor = metricBox || el;
+  const rect = anchor.getBoundingClientRect();
   const top = rect.top + window.scrollY;
   const left = rect.left + window.scrollX;
 
-  tooltip.style.left =
-    left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-
-  tooltip.style.top =
-    top - 35 + 'px';
-
-  tooltip.classList.add('show');
+  if (metricBox) {
+    tooltip.classList.add('tooltip-risk-metric');
+    tooltip.style.width = rect.width + 'px';
+    tooltip.style.maxWidth = rect.width + 'px';
+    tooltip.style.whiteSpace = 'normal';
+    tooltip.style.textAlign = 'left';
+    tooltip.style.boxSizing = 'border-box';
+    tooltip.style.left = left + 'px';
+    tooltip.classList.add('show');
+    tooltip.style.top = Math.max(8, top - tooltip.offsetHeight - 8) + 'px';
+  } else {
+    tooltip.classList.remove('tooltip-risk-metric');
+    tooltip.style.width = '';
+    tooltip.style.maxWidth = '';
+    tooltip.style.whiteSpace = '';
+    tooltip.style.textAlign = '';
+    tooltip.style.boxSizing = '';
+    tooltip.classList.add('show');
+    tooltip.style.left = left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+    tooltip.style.top = top - 35 + 'px';
+  }
 }
 
 function hideTooltip() {
@@ -1552,6 +1567,39 @@ function ensureStockCzkToggleStyle() {
     }
     .stock-risk-metric span { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
     .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
+    .stock-risk-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .stock-risk-label > span:first-child {
+      margin-bottom: 0;
+      min-width: 0;
+    }
+    .stock-risk-help {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      border-radius: 999px;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0 !important;
+      border: 1px solid rgba(201, 166, 70, 0.7);
+      background: rgba(201, 166, 70, 0.14);
+      color: #0f3d2e !important;
+      font-size: 12px !important;
+      font-weight: 800;
+      line-height: 1;
+      cursor: help;
+      flex: 0 0 auto;
+    }
+    .tooltip.tooltip-risk-metric {
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
 
     @media (max-width: 900px) {
       .stock-risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2992,11 +3040,11 @@ function loadStockDetail(ticker) {
     <section class="stock-risk-panel">
       <h4>Riziko a výnos</h4>
       <div class="stock-risk-grid">
-        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><span>Volatilita 1Y</span><strong id="stock-risk-vol-1y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><span>Volatilita 3Y</span><strong id="stock-risk-vol-3y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období."><span>Max. propad 1Y</span><strong id="stock-risk-dd-1y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku."><span>Div. výnos loni</span><strong id="stock-risk-div-yield">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index."><span>Výnos vs index 3Y</span><strong id="stock-risk-vs-index-3y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><div class="stock-risk-label"><span>Volatilita 1Y</span><span class="stock-risk-help" data-tooltip="Roční volatilita za poslední rok. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů." aria-label="Vysvětlení metriky Volatilita 1Y">?</span></div><strong id="stock-risk-vol-1y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů."><div class="stock-risk-label"><span>Volatilita 3Y</span><span class="stock-risk-help" data-tooltip="Roční volatilita za poslední 3 roky. Počítá se jako směrodatná odchylka denních výnosů vynásobená odmocninou z 252 obchodních dnů." aria-label="Vysvětlení metriky Volatilita 3Y">?</span></div><strong id="stock-risk-vol-3y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období."><div class="stock-risk-label"><span>Max. propad 1Y</span><span class="stock-risk-help" data-tooltip="Největší pokles od průběžného maxima za poslední rok. Ukazuje historicky nejhlubší propad v daném období." aria-label="Vysvětlení metriky Max. propad 1Y">?</span></div><strong id="stock-risk-dd-1y">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku."><div class="stock-risk-label"><span>Div. výnos loni</span><span class="stock-risk-help" data-tooltip="Dividendový výnos za minulý kalendářní rok. Počítá se jako součet dividend za minulý rok dělený cenou instrumentu ke konci minulého roku." aria-label="Vysvětlení metriky Div. výnos loni">?</span></div><strong id="stock-risk-div-yield">—</strong></div>
+        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index."><div class="stock-risk-label"><span>Výnos vs index 3Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 3letým výnosem instrumentu a 3letým výnosem benchmark indexu. Kladná hodnota znamená lepší vývoj než index." aria-label="Vysvětlení metriky Výnos vs index 3Y">?</span></div><strong id="stock-risk-vs-index-3y">—</strong></div>
       </div>
     </section>` : ''}
 

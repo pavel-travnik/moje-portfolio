@@ -1064,6 +1064,37 @@ function firstNonEmpty(...values) {
   return null;
 }
 
+function looksLikeIsin(value) {
+  return /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/i.test(String(value || '').trim());
+}
+function getDirectTickerFromPosition(position) {
+  return firstNonEmpty(
+    position?.ticker,
+    position?.Ticker,
+    position?.symbol,
+    position?.Symbol,
+    position?.asset_ticker,
+    position?.assetTicker,
+    position?.asset_code,
+    position?.assetCode,
+    position?.code
+  );
+}
+async function resolveTickerFromIsin(assetType, isin) {
+  const rawIsin = String(isin || '').trim();
+  if (!looksLikeIsin(rawIsin)) return rawIsin;
+  try {
+    const list = await loadAssetsByType(assetType);
+    const match = (Array.isArray(list) ? list : []).find(x =>
+      String(x?.isin || x?.ISIN || '').trim().toUpperCase() === rawIsin.toUpperCase()
+    );
+    return firstNonEmpty(match?.ticker, match?.Ticker, match?.symbol, match?.Symbol, match?.symbolData, rawIsin);
+  } catch (err) {
+    console.warn('Nepodařilo se převést ISIN na ticker:', { assetType, isin: rawIsin, err });
+    return rawIsin;
+  }
+}
+
 function normalizePortfolioAssetType(assetType) {
   return String(assetType || '').trim().toUpperCase();
 }
@@ -1072,18 +1103,14 @@ function resolvePortfolioAssetId(position) {
   const type = normalizePortfolioAssetType(position?.asset_type || position?.assetType || position?.type);
 
   if (type === 'STOCK' || type === 'AKCIE' || type === 'ETF' || type === 'CRYPTO' || type === 'CRYPTOCURRENCY' || type === 'INDEX') {
+    // Pro tržní instrumenty musí detail dostat ticker. ISIN používáme jen jako fallback,
+    // openAssetDetail ho případně zkusí převést přes veřejný seznam instrumentů.
     return firstNonEmpty(
-      position?.ticker,
-      position?.Ticker,
-      position?.symbol,
-      position?.Symbol,
-      position?.asset_ticker,
-      position?.assetTicker,
-      position?.asset_code,
-      position?.assetCode,
-      position?.code,
+      getDirectTickerFromPosition(position),
       position?.asset_id,
-      position?.assetId
+      position?.assetId,
+      position?.isin,
+      position?.ISIN
     );
   }
 
@@ -1113,14 +1140,16 @@ function resolvePortfolioAssetId(position) {
   );
 }
 
-function openAssetDetail(assetType, assetId) {
+async function openAssetDetail(assetType, assetId) {
   const type = normalizePortfolioAssetType(assetType);
-  const id = String(assetId || '').trim();
+  let id = String(assetId || '').trim();
   if (!id) {
     console.warn('Nelze otevřít detail instrumentu, chybí ticker/ISIN:', { assetType, assetId });
     return;
   }
-
+  if (type === 'STOCK' || type === 'AKCIE' || type === 'ETF' || type === 'CRYPTO' || type === 'CRYPTOCURRENCY' || type === 'INDEX') {
+    id = await resolveTickerFromIsin(type === 'AKCIE' ? 'STOCK' : type, id);
+  }
   let path;
   switch (type) {
     case 'ETF':
@@ -1148,7 +1177,6 @@ function openAssetDetail(assetType, assetId) {
       console.warn('Neznámý typ instrumentu pro detail:', { assetType, assetId });
       return;
   }
-
   if (typeof loadPage === 'function') {
     loadPage(path);
   } else {
@@ -1885,13 +1913,17 @@ function openTransactionModal(portfolioId) {
       assetIdEl.innerHTML = `<option value="">— vyber —</option>`;
 
       list.forEach(a => {
-        const id = a.isin || a.ticker;
+        const id = (type === 'STOCK' || type === 'ETF' || type === 'CRYPTO')
+          ? (a.ticker || a.Ticker || a.symbol || a.Symbol || a.symbolData || a.isin)
+          : (a.isin || a.ISIN || a.ticker);
         if (!id) return;
 
         const opt = document.createElement('option');
         opt.value = id;
         opt.textContent = a.name || id;
         opt.dataset.currency = a.currency || '';
+        opt.dataset.isin = a.isin || a.ISIN || '';
+        opt.dataset.ticker = a.ticker || a.Ticker || a.symbol || a.Symbol || a.symbolData || '';
         assetIdEl.appendChild(opt);
       });
     } catch (e) {
