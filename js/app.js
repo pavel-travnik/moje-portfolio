@@ -728,33 +728,18 @@ document.addEventListener('click', e => {
 function showTooltip(el) {
   tooltip.textContent = el.dataset.tooltip;
 
-  const metricBox = el.closest('.stock-risk-metric');
-  const anchor = metricBox || el;
-  const rect = anchor.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+
   const top = rect.top + window.scrollY;
   const left = rect.left + window.scrollX;
 
-  if (metricBox) {
-    tooltip.classList.add('tooltip-risk-metric');
-    tooltip.style.width = rect.width + 'px';
-    tooltip.style.maxWidth = rect.width + 'px';
-    tooltip.style.whiteSpace = 'normal';
-    tooltip.style.textAlign = 'left';
-    tooltip.style.boxSizing = 'border-box';
-    tooltip.style.left = left + 'px';
-    tooltip.classList.add('show');
-    tooltip.style.top = Math.max(8, top - tooltip.offsetHeight - 8) + 'px';
-  } else {
-    tooltip.classList.remove('tooltip-risk-metric');
-    tooltip.style.width = '';
-    tooltip.style.maxWidth = '';
-    tooltip.style.whiteSpace = '';
-    tooltip.style.textAlign = '';
-    tooltip.style.boxSizing = '';
-    tooltip.classList.add('show');
-    tooltip.style.left = left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-    tooltip.style.top = top - 35 + 'px';
-  }
+  tooltip.style.left =
+    left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+
+  tooltip.style.top =
+    top - 35 + 'px';
+
+  tooltip.classList.add('show');
 }
 
 function hideTooltip() {
@@ -1567,39 +1552,6 @@ function ensureStockCzkToggleStyle() {
     }
     .stock-risk-metric span { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
     .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
-    .stock-risk-label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-    .stock-risk-label > span:first-child {
-      margin-bottom: 0;
-      min-width: 0;
-    }
-    .stock-risk-help {
-      width: 18px;
-      height: 18px;
-      min-width: 18px;
-      border-radius: 999px;
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0 !important;
-      border: 1px solid rgba(201, 166, 70, 0.7);
-      background: rgba(201, 166, 70, 0.14);
-      color: #0f3d2e !important;
-      font-size: 12px !important;
-      font-weight: 800;
-      line-height: 1;
-      cursor: help;
-      flex: 0 0 auto;
-    }
-    .tooltip.tooltip-risk-metric {
-      line-height: 1.35;
-      overflow-wrap: break-word;
-    }
 
     @media (max-width: 900px) {
       .stock-risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
