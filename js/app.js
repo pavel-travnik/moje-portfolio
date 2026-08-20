@@ -1,4 +1,61 @@
 // ===================================================
+// GLOBALNI LOADER PRO VSECHNA VOLANI SLUZEB
+// ===================================================
+const serviceLoader = (() => {
+  let activeRequests = 0, showTimer = null, hideTimer = null, overlay = null;
+  function ensureOverlay() {
+    if (overlay && document.body.contains(overlay)) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'service-loader';
+    overlay.setAttribute('role', 'status');
+    overlay.setAttribute('aria-live', 'polite');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `<div class="service-loader-card"><div class="service-loader-coin" aria-hidden="true"><span class="coin-face coin-front">P</span><span class="coin-face coin-back">K</span></div><strong class="service-loader-title">Načítám data</strong><span class="service-loader-text">Chvilku strpení, prosím…</span></div>`;
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+  function messageFor(url, options = {}) {
+    const method = String(options.method || 'GET').toUpperCase();
+    const value = String(url || '').toLowerCase();
+    if (value.includes('login_user')) return 'Ověřuji přihlašovací údaje…';
+    if (value.includes('save_user')) return 'Ukládám údaje…';
+    if (method !== 'GET' && method !== 'HEAD') return 'Ukládám změny…';
+    return 'Načítám data…';
+  }
+  function start(message = 'Pracuji…') {
+    activeRequests += 1; clearTimeout(hideTimer);
+    const el = ensureOverlay();
+    const text = el.querySelector('.service-loader-text');
+    if (text) text.textContent = message;
+    if (activeRequests === 1) {
+      clearTimeout(showTimer);
+      showTimer = setTimeout(() => { if (activeRequests > 0) { el.classList.add('is-visible'); el.setAttribute('aria-hidden', 'false'); } }, 180);
+    }
+  }
+  function stop() {
+    activeRequests = Math.max(0, activeRequests - 1);
+    if (activeRequests !== 0) return;
+    clearTimeout(showTimer);
+    hideTimer = setTimeout(() => { if (overlay && activeRequests === 0) { overlay.classList.remove('is-visible'); overlay.setAttribute('aria-hidden', 'true'); } }, 120);
+  }
+  return { start, stop, messageFor };
+})();
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async function fetchWithServiceLoader(input, options = {}) {
+  const url = typeof input === 'string' ? input : input?.url;
+  serviceLoader.start(serviceLoader.messageFor(url, options));
+  try { return await nativeFetch(input, options); } finally { serviceLoader.stop(); }
+};
+window.serviceLoader = serviceLoader;
+function showAuthMessage(text, type = 'info') {
+  const el = document.querySelector('.auth-modal #auth-message');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = `auth-message ${type}`;
+  el.style.display = text ? 'block' : 'none';
+}
+
+// ===================================================
 // HLAVNi KONTEJNER
 // ===================================================
 
@@ -3739,7 +3796,7 @@ async function loginUser() {
     const password = document.getElementById("login-password")?.value;
 
     if (!email || !password) {
-        alert("Vyplň email a heslo");
+        showAuthMessage("Doplňte prosím e-mail i heslo, ať vás můžeme bezpečně přihlásit.", "error");
         return false;
     }
 
@@ -3751,7 +3808,10 @@ async function loginUser() {
         });
 
         if (!res.ok || !data.access_token) {
-            alert(data.error || "Login failed");
+            const wrongCredentials = res.status === 400 || res.status === 401 || res.status === 403;
+            showAuthMessage(wrongCredentials ? "Tohle heslo nesedí. Zkuste ho prosím zadat znovu, nebo použijte možnost Zapomněl jsem heslo." : "Přihlášení se teď nepodařilo. Zkuste to prosím za chvíli znovu.", "error");
+            const passwordInput = document.getElementById("login-password");
+            if (passwordInput) { passwordInput.value = ""; passwordInput.focus(); passwordInput.classList.add("input-error"); setTimeout(() => passwordInput.classList.remove("input-error"), 700); }
             return false;
         }
 
@@ -3762,7 +3822,7 @@ async function loginUser() {
         return true;
     } catch (err) {
         console.error("LOGIN ERROR:", err);
-        alert("Chyba přihlášení");
+        showAuthMessage("Se serverem se teď nepodařilo spojit. Zkontrolujte připojení a zkuste to prosím znovu.", "error");
         return false;
     }
 }
