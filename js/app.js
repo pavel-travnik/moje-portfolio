@@ -72,7 +72,7 @@ function ensurePageIntro(page) {
     'etf': { icon: '◎', title: 'ETF', text: 'Přehled <a href="/info-etf" data-page="info-etf">ETF</a> zobrazuje vybrané burzovně obchodované fondy odděleně od jednotlivých akcií. V detailu ETF najdete historický vývoj ceny, poslední dostupnou hodnotu a základní údaje pro srovnání. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejných zdrojů a mají informativní charakter — neposkytujeme investiční ani jiné finanční poradenství.' },
     'crypto': { icon: '₿', title: 'Crypto', text: 'Sekce Crypto nabízí přehled vybraných <a href="/info-crypto" data-page="info-crypto">kryptoměn</a> a digitálních aktiv odděleně od akcií a ETF. V detailu kryptoměny najdete historický vývoj ceny, poslední dostupnou hodnotu a základní tržní údaje pro rychlou orientaci. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled. Neposkytujeme investiční ani jiné finanční poradenství.' },
     'meny': { icon: '¤', title: 'Měny', text: 'Sekce měny nabízí přehled vybraných <a href="/info-meny" data-page="info-meny">měnových kurzů</a> a jejich historického vývoje vůči CZK. Kliknutím na konkrétní měnu otevřete detail s posledním dostupným kurzem, změnou za vybrané období a grafem vývoje. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze pro informativní přehled — neposkytujeme měnové, investiční ani jiné finanční poradenství.' },
-    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových <a href="/info-index" data-page="info-index">akciových indexů</a>. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
+    'indexy': { icon: '▦', title: 'Indexy', text: 'Sekce indexy nabízí přehled vybraných světových akciových indexů. Kliknutím na konkrétní index otevřete detail s historickým vývojem hodnoty a posledním dostupným oceněním. <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a> z veřejně dostupných zdrojů a slouží pouze jako informační přehled — nejde o investiční doporučení ani poradenství.' }
   };
   const intro = intros[page];
   if (!intro) return;
@@ -374,7 +374,7 @@ function saveCookieConsent(choice) {
     necessary: true,
     analytics: safeChoice === 'all' || safeChoice === 'analytics',
     savedAt: new Date().toISOString(),
-    version: COOKIE_CONSENT_VERSION
+    version: 1
   };
 
   try {
@@ -538,15 +538,11 @@ function ensureCookieConsentStyle() {
 }
 
 function initCookieConsent() {
-  // Ochrana proti opakované inicializaci při případném vícenásobném načtení skriptu.
-  if (window.__cookieConsentInitialized) return;
-  window.__cookieConsentInitialized = true;
-
   ensureCookieConsentStyle();
   window.showCookieBanner = () => showCookieBanner(true);
   window.resetCookieConsent = resetCookieConsent;
   if (!getCookieConsent()) {
-    showCookieBanner(false);
+    setTimeout(() => showCookieBanner(false), 500);
   } else {
     const consent = getCookieConsent();
     if (consent?.choice) setCookieConsentCookie(consent.choice);
@@ -819,7 +815,7 @@ function hideTooltip() {
 
 
 function decorateSideCards() {
-  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'crypto':'₿', 'meny':'¤', 'indexy':'▦', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-crypto':'₿', 'info-meny':'¤', 'info-index':'▦' };
+  const icons = { 'penze':'♧', 'podilove-fondy':'◈', 'akcie':'↗', 'etf':'◎', 'crypto':'₿', 'meny':'¤', 'indexy':'▦', 'aktualizace':'↻', 'info-penze':'♧', 'info-podilove-fondy':'◈', 'info-akcie':'↗', 'info-etf':'◎', 'info-crypto':'₿', 'info-meny':'¤' };
   document.querySelectorAll('.side-card').forEach(card => {
     if (card.querySelector('.side-card-icon')) return;
     const icon = icons[card.dataset.page] || '›';
@@ -862,10 +858,6 @@ if (!path || path === 'index.html') {
 }
 
 
-
- // Inicializovat souhlas hned při prvním otevření stránky.
- // Pokud uživatel ještě volbu neuložil, banner se zobrazí automaticky.
- initCookieConsent();
 
  updateMenu();
  initDropdownControls();
