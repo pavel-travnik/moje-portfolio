@@ -374,7 +374,7 @@ function saveCookieConsent(choice) {
     necessary: true,
     analytics: safeChoice === 'all' || safeChoice === 'analytics',
     savedAt: new Date().toISOString(),
-    version: 1
+    version: COOKIE_CONSENT_VERSION
   };
 
   try {
@@ -546,7 +546,7 @@ function initCookieConsent() {
   window.showCookieBanner = () => showCookieBanner(true);
   window.resetCookieConsent = resetCookieConsent;
   if (!getCookieConsent()) {
-    setTimeout(() => showCookieBanner(false), 500);
+    showCookieBanner(false);
   } else {
     const consent = getCookieConsent();
     if (consent?.choice) setCookieConsentCookie(consent.choice);
