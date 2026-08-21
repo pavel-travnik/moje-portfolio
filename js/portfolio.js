@@ -1485,11 +1485,16 @@ function formatSignedPortfolioMoney(value) {
   return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
 }
 function transactionInvestmentValue(trade) {
-  const direct = nullablePortfolioNumber(trade?.investment_value, trade?.input_investment, trade?.invested_amount, trade?.trade_amount);
-  if (direct !== null && direct > 0) return direct;
-  const quantity = nullablePortfolioNumber(trade?.quantity);
-  const unitPrice = nullablePortfolioNumber(trade?.price);
-  return quantity !== null && quantity > 0 && unitPrice !== null && unitPrice > 0 ? quantity * unitPrice : null;
+  // API vrací celkovou vstupní investici. Hodnotu proto nijak
+  // nenásobíme množstvím ani nepřepočítáváme na cenu za kus.
+  const value = nullablePortfolioNumber(
+    trade?.investment_value,
+    trade?.input_investment,
+    trade?.invested_amount,
+    trade?.trade_amount,
+    trade?.price
+  );
+  return value !== null && value > 0 ? value : null;
 }
 
 function formatPortfolioDate(value) {
@@ -2085,16 +2090,23 @@ function openTransactionModal(portfolioId) {
 
     const quantity = Number(String(quantityEl.value).replace(',', '.'));
     const investmentText = String(investmentEl.value || '').trim().replace(/\s/g, '').replace(',', '.');
-    const investmentValue = investmentText === '' ? null : Number(investmentText);
+    const parsedInvestment = investmentText === '' ? null : Number(investmentText);
+    const investmentValue = parsedInvestment !== null && Number.isFinite(parsedInvestment) && parsedInvestment > 0
+      ? parsedInvestment
+      : null;
     const trade = {
       asset_type: assetTypeEl.value,
       asset_id: assetIdEl.value,
       trade_type: directionEl.value,
       quantity,
-      // API nadale prijima cenu za kus; UI ale zadava celkovou vstupni investici.
-      // Prazdna investice zustane null, aby se nezamenila za nulovy vklad.
-      price: investmentValue === null || !Number.isFinite(investmentValue) ? null : investmentValue / quantity,
-      investment_value: investmentValue,
+      // API přijímá a vrací celkovou vstupní investici. Bez přepočtu na kus.
+      // Prázdná nebo nulová investice zůstane null, aby se z ní nepočítal zisk.
+      price: investmentValue !== null && Number.isFinite(investmentValue) && investmentValue > 0
+        ? investmentValue
+        : null,
+      investment_value: investmentValue !== null && Number.isFinite(investmentValue) && investmentValue > 0
+        ? investmentValue
+        : null,
       currency: currencyEl.value || 'CZK',
       trade_date: dateEl.value
     };
@@ -2107,8 +2119,8 @@ function openTransactionModal(portfolioId) {
       alert('Množství musí být větší než nula.');
       return;
     }
-    if (investmentValue !== null && (!Number.isFinite(investmentValue) || investmentValue <= 0)) {
-      alert('Vstupní investice musí být kladné číslo, nebo může zůstat prázdná.');
+    if (investmentText !== '' && parsedInvestment !== null && !Number.isFinite(parsedInvestment)) {
+      alert('Vstupní investice musí být číslo, nebo může zůstat prázdná.');
       return;
     }
 
