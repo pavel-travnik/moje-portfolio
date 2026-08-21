@@ -4,16 +4,47 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-21-1515-investment-field-fix-v4';
+const PORTFOLIO_BUILD = '2026-08-21-1540-zero-investment-userid-v5';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
 window.PORTFOLIO_API = PORTFOLIO_API;
 
 function getCurrentUserId() {
-    // Nepoužívat jako bezpečnostní vstup. User ID musí backend brát z JWT.
-    // Funkce zůstává jen kvůli případné dočasné kompatibilitě UI.
-    return null;
+    // Primární autorizace stále probíhá přes Bearer JWT. user_id posíláme pouze
+    // kvůli kompatibilitě se starší verzí endpointu create_portfolio.
+    const direct = firstNonEmpty(
+      localStorage.getItem('user_id'),
+      localStorage.getItem('userId'),
+      sessionStorage.getItem('user_id'),
+      sessionStorage.getItem('userId')
+    );
+    if (direct) return direct;
+
+    const token = window.getAccessToken
+      ? window.getAccessToken()
+      : localStorage.getItem('access_token');
+    if (!token) return null;
+
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return null;
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      const claims = JSON.parse(decodeURIComponent(
+        Array.from(atob(padded), c => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join('')
+      ));
+      return firstNonEmpty(
+        claims.user_id,
+        claims.userId,
+        claims.uid,
+        claims.oid,
+        claims.sub
+      );
+    } catch (error) {
+      console.warn('Nepodařilo se načíst user_id z přihlašovacího tokenu:', error);
+      return null;
+    }
 }
 
 function requireAccessToken() {
@@ -77,7 +108,6 @@ function assetTypeLabel(assetType) {
 }
 
 function ensurePortfolioUiStyles() {
-  document.documentElement.dataset.portfolioBuild = PORTFOLIO_BUILD;
   if (document.getElementById('portfolio-ui-styles')) return;
 
   const style = document.createElement('style');
@@ -1289,8 +1319,19 @@ async function fetchPortfolioTransactions(portfolioId) {
 }
 
 async function createPortfolio(name) {
+    const cleanName = String(name || '').trim();
+    const userId = getCurrentUserId();
+
+    if (!cleanName) {
+        throw new Error('Název portfolia je povinný.');
+    }
+    if (!userId) {
+        throw new Error('Nepodařilo se zjistit user_id přihlášeného uživatele. Přihlaste se prosím znovu.');
+    }
+
     const payload = {
-        name: name,
+        user_id: userId,
+        name: cleanName,
         base_ccy: "CZK"
     };
 
@@ -1474,30 +1515,29 @@ function positionReturn3Y(position) {
   return Math.abs(raw) > 3 ? raw / 100 : raw;
 }
 function positionInvestmentValue(position) {
-  // API vrací celkovou vstupní investici přímo v avg_cost.
-  // cost_value nepoužíváme, protože je na backendu odvozené jako
-  // quantity × avg_cost a při této datové definici by investici násobilo podruhé.
   const value = nullablePortfolioNumber(
     position?.investment_value,
     position?.input_investment,
     position?.invested_amount,
-    position?.avg_cost,
+    position?.cost_value,
     position?.purchase_value,
     position?.book_cost
   );
-  return value !== null && value > 0 ? value : null;
+  // Nula znamená, že vstupní investice není zadaná. Zisk se nepočítá.
+  return value !== null && Number.isFinite(value) && value > 0 ? value : null;
 }
 function formatSignedPortfolioMoney(value) {
   if (!Number.isFinite(value)) return '—';
   return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
 }
 function transactionInvestmentValue(trade) {
-  // API vrací celkovou vstupní investici přímo v price.
-  // trade_amount nepoužíváme, protože je odvozené jako quantity × price.
+  // API vrací celkovou vstupní investici. Hodnotu proto nijak
+  // nenásobíme množstvím ani nepřepočítáváme na cenu za kus.
   const value = nullablePortfolioNumber(
     trade?.investment_value,
     trade?.input_investment,
     trade?.invested_amount,
+    trade?.trade_amount,
     trade?.price
   );
   return value !== null && value > 0 ? value : null;
