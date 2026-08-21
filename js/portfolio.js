@@ -311,8 +311,8 @@ function ensurePortfolioUiStyles() {
       text-align: right;
       white-space: nowrap;
     }
-    #transactions-table th[data-key="price"],
-    #transactions-table td[data-label="Cena"] {
+    #transactions-table th[data-key="investment"],
+    #transactions-table td[data-label="Vstupní investice"] {
       width: 20%;
       text-align: right;
       white-space: nowrap;
@@ -326,58 +326,71 @@ function ensurePortfolioUiStyles() {
       width: 100%;
     }
     #instruments-table th[data-key="type"],
-    #instruments-table td[data-label="Typ"] { width: 7%; white-space: nowrap; }
+    #instruments-table td[data-label="Typ"] {
+      width: 9%;
+      white-space: nowrap;
+    }
     #instruments-table th[data-key="name"],
-    #instruments-table td[data-label="Název"] { width: 21%; }
+    #instruments-table td[data-label="Název"] {
+      width: 34%;
+    }
     #instruments-table th[data-key="quantity"],
-    #instruments-table td[data-label="Počet kusů"] { width: 8%; text-align: right; }
-    #instruments-table th[data-key="value"],
-    #instruments-table td[data-label="Hodnota"] { width: 14%; text-align: right; white-space: nowrap; }
-    #instruments-table th[data-key="return3y"],
-    #instruments-table td[data-label="Výnos 3Y"] { width: 9%; text-align: right; white-space: nowrap; }
-    #instruments-table th[data-key="weight"],
-    #instruments-table td[data-label="Podíl"] { width: 8%; text-align: right; white-space: nowrap; }
-    #instruments-table th[data-key="unrealizedPnl"],
-    #instruments-table td[data-label="Nerealizovaný zisk"] { width: 16%; text-align: right; white-space: nowrap; }
-    #instruments-table th[data-key="lastValuation"],
-    #instruments-table td[data-label="Poslední ocenění"] { width: 17%; white-space: nowrap; }
-    #instruments-table th[data-key="quantity"],
-    #instruments-table th[data-key="value"],
-    #instruments-table th[data-key="return3y"],
-    #instruments-table th[data-key="weight"],
-    #instruments-table th[data-key="unrealizedPnl"] {
+    #instruments-table td[data-label="Počet kusů"] {
+      width: 12%;
       text-align: right;
-      padding-left: 22px;
-      padding-right: 8px;
     }
-    #instruments-table th[data-key="quantity"].sort-asc::after,
-    #instruments-table th[data-key="quantity"].sort-desc::after,
-    #instruments-table th[data-key="value"].sort-asc::after,
-    #instruments-table th[data-key="value"].sort-desc::after,
-    #instruments-table th[data-key="return3y"].sort-asc::after,
-    #instruments-table th[data-key="return3y"].sort-desc::after,
-    #instruments-table th[data-key="weight"].sort-asc::after,
-    #instruments-table th[data-key="weight"].sort-desc::after,
-    #instruments-table th[data-key="unrealizedPnl"].sort-asc::after,
-    #instruments-table th[data-key="unrealizedPnl"].sort-desc::after {
-      left: 7px;
-      right: auto;
-      margin-left: 0;
+    #instruments-table th[data-key="value"],
+    #instruments-table td[data-label="Hodnota"] {
+      width: 27%;
+      text-align: right;
+      white-space: nowrap;
     }
-    .portfolio-kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 12px;
+    #instruments-table th[data-key="lastValuation"],
+    #instruments-table td[data-label="Poslední ocenění"] {
+      width: 18%;
+      white-space: nowrap;
     }
+
+    /* Portfolio KPI: Hodnota samostatne, denni zmena a oceneni spolu */
+    .portfolio-kpi-grid { display: grid; gap: 12px; margin: 16px 0; }
+    .portfolio-kpi-primary { display: grid; grid-template-columns: minmax(170px, 1fr); }
+    .portfolio-kpi-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .portfolio-kpi-secondary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
     .portfolio-kpi-grid .kpi { min-width: 0; }
-    .portfolio-kpi-grid .kpi small {
-      display: block;
-      margin-top: 4px;
-      color: #666;
-      font-size: 11px;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
+    .portfolio-kpi-grid .kpi small { display:block; margin-top:4px; color:#666; font-size:11px; line-height:1.35; overflow-wrap:anywhere; }
+
+    /* Sipka zustava vzdy vpravo. U ciselnych hlavicek posun text o 3 mm doleva. */
+    #instruments-table th[data-key="quantity"],
+    #instruments-table th[data-key="value"],
+    #instruments-table th[data-key="return3y"],
+    #instruments-table th[data-key="weight"],
+    #instruments-table th[data-key="unrealizedPnl"],
+    #transactions-table th[data-key="quantity"],
+    #transactions-table th[data-key="investment"] {
+      text-align: right;
+      padding-right: calc(22px + 3mm);
     }
+    #instruments-table th.sort-asc::after,
+    #instruments-table th.sort-desc::after,
+    #transactions-table th.sort-asc::after,
+    #transactions-table th.sort-desc::after {
+      left: auto !important;
+      right: 6px !important;
+      margin-left: 0 !important;
+    }
+    #instruments-table th[data-key="type"], #instruments-table td[data-label="Typ"] { width: 7%; }
+    #instruments-table th[data-key="name"], #instruments-table td[data-label="Název"] { width: 21%; }
+    #instruments-table th[data-key="quantity"], #instruments-table td[data-label="Počet kusů"] { width: 8%; text-align:right; }
+    #instruments-table th[data-key="value"], #instruments-table td[data-label="Hodnota"] { width: 14%; text-align:right; white-space:nowrap; }
+    #instruments-table th[data-key="return3y"], #instruments-table td[data-label="Výnos 3Y"] { width: 9%; text-align:right; white-space:nowrap; }
+    #instruments-table th[data-key="weight"], #instruments-table td[data-label="Podíl"] { width: 8%; text-align:right; white-space:nowrap; }
+    #instruments-table th[data-key="unrealizedPnl"], #instruments-table td[data-label="Nerealizovaný zisk"] { width: 16%; text-align:right; white-space:nowrap; }
+    #instruments-table th[data-key="lastValuation"], #instruments-table td[data-label="Poslední ocenění"] { width: 17%; white-space:nowrap; }
+    @media (max-width: 640px) {
+      .portfolio-kpi-pair { grid-template-columns: 1fr 1fr; }
+      .portfolio-kpi-secondary { grid-template-columns: 1fr; }
+    }
+
     .portfolio-switch-modal {
       width: min(720px, calc(100vw - 2rem));
       max-height: calc(100vh - 2rem);
@@ -650,14 +663,20 @@ function openCreatePortfolioModal() {
             </div>
           </div>
         </div>
-        <div class="kpi-row portfolio-kpi-grid">
-          <div class="kpi"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
-          <div class="kpi"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
-          <div class="kpi"><span>Vážený výnos 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
-          <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
-          <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
-          <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
-          <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
+        <div class="portfolio-kpi-grid">
+          <div class="portfolio-kpi-primary">
+            <div class="kpi"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+          </div>
+          <div class="portfolio-kpi-pair">
+            <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
+            <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
+          </div>
+          <div class="portfolio-kpi-secondary">
+            <div class="kpi"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
+            <div class="kpi"><span>Vážený výnos 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
+            <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
+            <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
+          </div>
         </div>
         <div class="overview-right">
           <div id="portfolio-allocation-chart"></div>
@@ -707,7 +726,7 @@ function openCreatePortfolioModal() {
             <option value="instrument">Typ</option>
             <option value="type">Směr</option>
             <option value="quantity">Počet kusů</option>
-            <option value="price">Cena</option>
+            <option value="investment">Vstupní investice</option>
           </select>
           <button id="tx-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
@@ -717,7 +736,7 @@ function openCreatePortfolioModal() {
             <th data-key="instrument">Typ</th>
             <th data-key="type">Směr</th>
             <th data-key="quantity">Počet kusů</th>
-            <th data-key="price">Cena</th>
+            <th data-key="investment">Vstupní investice</th>
           </tr></thead>
           <tbody id="portfolio-transactions"></tbody>
         </table>
@@ -761,30 +780,27 @@ function openCreatePortfolioModal() {
     const detail = await fetchPortfolioDetail(portfolioId);
     const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
     setPortfolioTitle(detail, currentPortfolio, portfolioId);
-    try { renderPortfolioOverview(detail); }
-    catch (error) { console.error('Chyba vykreslení souhrnu portfolia:', error); }
-    try { renderPortfolioSettings(detail, portfolioId); }
-    catch (error) { console.error('Chyba vykreslení nastavení portfolia:', error); }
+    try { renderPortfolioOverview(detail); } catch (error) { console.error('Chyba vykreslení souhrnu portfolia:', error); }
+    try { renderPortfolioSettings(detail, portfolioId); } catch (error) { console.error('Chyba vykreslení nastavení portfolia:', error); }
 
     CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
     portfolioInstrumentFilter = null;
-    try { renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS); }
-    catch (error) { console.error('Chyba vykreslení pozic portfolia:', error); }
+    try { renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS); } catch (error) { console.error('Chyba vykreslení pozic portfolia:', error); }
 
-    try {
-      const raw = Array.isArray(detail?.valuation_by_asset_type) ? detail.valuation_by_asset_type : [];
-      const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
-      const allocation = raw.map(x => {
-        const value = Number(x.value) || 0;
-        return { label: assetTypeLabel(x.asset_type), value, pct: total > 0 ? value / total : 0 };
-      }).filter(x => x.value > 0);
-      renderAllocationDonut(allocation, 'portfolio-allocation-chart', detail?.valuation?.gross_value_base);
-    } catch (error) { console.error('Chyba vykreslení grafu portfolia:', error); }
+    const raw = detail.valuation_by_asset_type || [];
+    const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
+    const allocation = raw.map(x => {
+      const value = Number(x.value) || 0;
+      return {
+        label: assetTypeLabel(x.asset_type),
+        value,
+        pct: total > 0 ? value / total : 0
+      };
+    });
+    renderAllocationDonut(allocation, 'portfolio-allocation-chart', detail?.valuation?.gross_value_base);
 
-    try {
-      const trades = await fetchPortfolioTransactions(portfolioId);
-      renderPortfolioTransactions(trades);
-    } catch (error) { console.error('Chyba načtení transakcí portfolia:', error); }
+    const trades = await fetchPortfolioTransactions(portfolioId);
+    renderPortfolioTransactions(trades);
   }
 };
 
@@ -1448,31 +1464,32 @@ function nullablePortfolioNumber(...values) {
   }
   return null;
 }
-
 function positionReturn3Y(position) {
-  const raw = nullablePortfolioNumber(
-    position?.perf_3y,
-    position?.perf3Y,
-    position?.Perf3Y,
-    position?.return_3y,
-    position?.performance_3y
-  );
+  const raw = nullablePortfolioNumber(position?.perf_3y, position?.perf3Y, position?.Perf3Y, position?.return_3y, position?.performance_3y);
   if (raw === null) return null;
   return Math.abs(raw) > 3 ? raw / 100 : raw;
 }
-
-function positionCostValue(position) {
-  return nullablePortfolioNumber(
+function positionInvestmentValue(position) {
+  const value = nullablePortfolioNumber(
+    position?.investment_value,
+    position?.input_investment,
+    position?.invested_amount,
     position?.cost_value,
     position?.purchase_value,
-    position?.book_cost,
-    position?.invested_amount
+    position?.book_cost
   );
+  return value !== null && value > 0 ? value : null;
 }
-
 function formatSignedPortfolioMoney(value) {
   if (!Number.isFinite(value)) return '—';
   return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
+}
+function transactionInvestmentValue(trade) {
+  const direct = nullablePortfolioNumber(trade?.investment_value, trade?.input_investment, trade?.invested_amount, trade?.trade_amount);
+  if (direct !== null && direct > 0) return direct;
+  const quantity = nullablePortfolioNumber(trade?.quantity);
+  const unitPrice = nullablePortfolioNumber(trade?.price);
+  return quantity !== null && quantity > 0 && unitPrice !== null && unitPrice > 0 ? quantity * unitPrice : null;
 }
 
 function formatPortfolioDate(value) {
@@ -1552,9 +1569,8 @@ function renderPortfolioList(portfolios, containerId = 'portfolioList') {
 function renderPortfolioOverview(data) {
   const val = data?.valuation || {};
   const positions = Array.isArray(data?.positions) ? data.positions : [];
-  const sumPositions = positions.reduce((sum, p) => sum + positionCurrentValue(p), 0);
-  const portfolioValue = nullablePortfolioNumber(val.gross_value_base, val.gross_value_czk, sumPositions) ?? 0;
-
+  const positionsValue = positions.reduce((sum, p) => sum + positionCurrentValue(p), 0);
+  const portfolioValue = nullablePortfolioNumber(val.gross_value_base, val.gross_value_czk, positionsValue) ?? 0;
   const valueEl = document.getElementById('pf-kpi-value');
   if (valueEl) valueEl.textContent = `${fmtNumber(portfolioValue)} CZK`;
 
@@ -1562,65 +1578,44 @@ function renderPortfolioOverview(data) {
   const dailyDiff = nullablePortfolioNumber(val.pnl_day_czk);
   const dailyPct = nullablePortfolioNumber(val.pnl_day_pct);
   if (dailyEl) {
-    dailyEl.textContent = dailyDiff === null
-      ? '—'
-      : `${formatSignedPortfolioMoney(dailyDiff)}${dailyPct === null ? '' : ` (${dailyPct > 0 ? '+' : ''}${fmtNumber(dailyPct * 100)} %)`}`;
+    dailyEl.textContent = dailyDiff === null ? '—' : `${formatSignedPortfolioMoney(dailyDiff)}${dailyPct === null ? '' : ` (${dailyPct > 0 ? '+' : ''}${fmtNumber(dailyPct * 100)} %)`}`;
     dailyEl.className = dailyDiff === null ? '' : dailyDiff >= 0 ? 'pos' : 'neg';
   }
+  const lastEl = document.getElementById('pf-kpi-last-valuation');
+  if (lastEl) lastEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
 
-  const withCost = positions
-    .map(p => ({ value: positionCurrentValue(p), cost: positionCostValue(p) }))
-    .filter(x => x.cost !== null);
-  const totalCost = withCost.reduce((sum, x) => sum + x.cost, 0);
-  const coveredValue = withCost.reduce((sum, x) => sum + x.value, 0);
-  const unrealized = withCost.length ? coveredValue - totalCost : null;
-  const unrealizedPct = unrealized !== null && totalCost > 0 ? unrealized / totalCost : null;
+  const withInvestment = positions.map(p => ({ value: positionCurrentValue(p), investment: positionInvestmentValue(p) })).filter(x => x.investment !== null);
+  const totalInvestment = withInvestment.reduce((sum, x) => sum + x.investment, 0);
+  const coveredValue = withInvestment.reduce((sum, x) => sum + x.value, 0);
+  const unrealized = withInvestment.length > 0 && totalInvestment > 0 ? coveredValue - totalInvestment : null;
+  const unrealizedPct = unrealized !== null ? unrealized / totalInvestment : null;
   const unrealizedEl = document.getElementById('pf-kpi-unrealized');
   const unrealizedPctEl = document.getElementById('pf-kpi-unrealized-pct');
   if (unrealizedEl) {
     unrealizedEl.textContent = formatSignedPortfolioMoney(unrealized);
     unrealizedEl.className = unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg';
   }
-  if (unrealizedPctEl) {
-    unrealizedPctEl.textContent = unrealizedPct === null
-      ? 'Pořizovací hodnota není dostupná'
-      : `${unrealizedPct > 0 ? '+' : ''}${fmtNumber(unrealizedPct * 100)} % z pořizovací hodnoty`;
-  }
+  if (unrealizedPctEl) unrealizedPctEl.textContent = unrealizedPct === null ? 'Vstupní investice není dostupná' : `${unrealizedPct > 0 ? '+' : ''}${fmtNumber(unrealizedPct * 100)} % ze vstupní investice`;
 
-  const withPerf = positions
-    .map(p => ({ value: positionCurrentValue(p), perf: positionReturn3Y(p) }))
-    .filter(x => x.perf !== null && x.value > 0);
-  const perfCoveredValue = withPerf.reduce((sum, x) => sum + x.value, 0);
-  const weightedPerf = perfCoveredValue > 0
-    ? withPerf.reduce((sum, x) => sum + x.value * x.perf, 0) / perfCoveredValue
-    : null;
-  const coverage = portfolioValue > 0 ? perfCoveredValue / portfolioValue : null;
+  const withPerf = positions.map(p => ({ value: positionCurrentValue(p), perf: positionReturn3Y(p) })).filter(x => x.perf !== null && x.value > 0);
+  const perfValue = withPerf.reduce((sum, x) => sum + x.value, 0);
+  const weightedPerf = perfValue > 0 ? withPerf.reduce((sum, x) => sum + x.value * x.perf, 0) / perfValue : null;
+  const coverage = portfolioValue > 0 ? perfValue / portfolioValue : null;
   const perfEl = document.getElementById('pf-kpi-3y');
   const coverageEl = document.getElementById('pf-kpi-3y-coverage');
-  if (perfEl) {
-    perfEl.textContent = weightedPerf === null ? '—' : `${weightedPerf > 0 ? '+' : ''}${fmtNumber(weightedPerf * 100)} %`;
-    perfEl.className = weightedPerf === null ? '' : weightedPerf >= 0 ? 'pos' : 'neg';
-  }
+  if (perfEl) { perfEl.textContent = weightedPerf === null ? '—' : `${weightedPerf > 0 ? '+' : ''}${fmtNumber(weightedPerf * 100)} %`; perfEl.className = weightedPerf === null ? '' : weightedPerf >= 0 ? 'pos' : 'neg'; }
   if (coverageEl) coverageEl.textContent = coverage === null ? 'Pokrytí dat: —' : `Pokrytí dat: ${fmtNumber(Math.min(coverage, 1) * 100, 1)} %`;
 
-  const ranked = positions
-    .map(p => ({ name: positionDisplayName(p), value: positionCurrentValue(p) }))
-    .filter(x => x.value > 0)
-    .sort((a, b) => b.value - a.value);
+  const ranked = positions.map(p => ({ name: positionDisplayName(p), value: positionCurrentValue(p) })).filter(x => x.value > 0).sort((x,y) => y.value-x.value);
   const largest = ranked[0] || null;
   const largestWeight = largest && portfolioValue > 0 ? largest.value / portfolioValue : null;
-  const top3Weight = portfolioValue > 0 && ranked.length
-    ? ranked.slice(0, 3).reduce((sum, x) => sum + x.value, 0) / portfolioValue
-    : null;
+  const top3Weight = portfolioValue > 0 && ranked.length ? ranked.slice(0,3).reduce((sum,x) => sum+x.value,0) / portfolioValue : null;
   const largestEl = document.getElementById('pf-kpi-largest');
   const largestNameEl = document.getElementById('pf-kpi-largest-name');
   const top3El = document.getElementById('pf-kpi-top3');
   if (largestEl) largestEl.textContent = largestWeight === null ? '—' : `${fmtNumber(largestWeight * 100, 1)} %`;
   if (largestNameEl) largestNameEl.textContent = largest?.name || '—';
-  if (top3El) top3El.textContent = top3Weight === null ? '—' : `${fmtNumber(Math.min(top3Weight, 1) * 100, 1)} %`;
-
-  const lastEl = document.getElementById('pf-kpi-last-valuation');
-  if (lastEl) lastEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
+  if (top3El) top3El.textContent = top3Weight === null ? '—' : `${fmtNumber(Math.min(top3Weight,1)*100,1)} %`;
 }
 function renderPortfolioInstrumentFilterBar(filterLabel, visibleCount, totalCount) {
   const filterEl = document.getElementById('portfolio-instruments-filter');
@@ -1671,13 +1666,11 @@ function renderPortfolioInstruments(positions, options = {}) {
         return p.quantity || 0;
       case 'value':
         return positionCurrentValue(p);
-      case 'return3y':
-        return positionReturn3Y(p) ?? Number.NEGATIVE_INFINITY;
-      case 'weight':
-        return totalPortfolioValue > 0 ? positionCurrentValue(p) / totalPortfolioValue : 0;
+      case 'return3y': return positionReturn3Y(p) ?? Number.NEGATIVE_INFINITY;
+      case 'weight': return totalPortfolioValue > 0 ? positionCurrentValue(p) / totalPortfolioValue : 0;
       case 'unrealizedPnl': {
-        const cost = positionCostValue(p);
-        return cost === null ? Number.NEGATIVE_INFINITY : positionCurrentValue(p) - cost;
+        const investment = positionInvestmentValue(p);
+        return investment === null ? Number.NEGATIVE_INFINITY : positionCurrentValue(p) - investment;
       }
       case 'lastValuation': {
         const d = new Date(positionLastValuationDate(p));
@@ -1714,8 +1707,8 @@ function renderPortfolioInstruments(positions, options = {}) {
       const instrumentValue = positionCurrentValue(p);
       const perf3Y = positionReturn3Y(p);
       const weight = totalPortfolioValue > 0 ? instrumentValue / totalPortfolioValue : null;
-      const cost = positionCostValue(p);
-      const unrealized = cost === null ? null : instrumentValue - cost;
+      const investment = positionInvestmentValue(p);
+      const unrealized = investment === null ? null : instrumentValue - investment;
 
       tr.innerHTML = `
         <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
@@ -1723,18 +1716,10 @@ function renderPortfolioInstruments(positions, options = {}) {
         <td data-label="Počet kusů">
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
         </td>
-        <td data-label="Hodnota">
-          ${Number.isFinite(instrumentValue) ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
-        </td>
-        <td data-label="Výnos 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">
-          ${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtNumber(perf3Y * 100, 2) + ' %'}
-        </td>
-        <td data-label="Podíl">
-          ${weight === null ? '—' : fmtNumber(weight * 100, 2) + ' %'}
-        </td>
-        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">
-          ${formatSignedPortfolioMoney(unrealized)}
-        </td>
+        <td data-label="Hodnota">${Number.isFinite(instrumentValue) ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}</td>
+        <td data-label="Výnos 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtNumber(perf3Y * 100, 2) + ' %'}</td>
+        <td data-label="Podíl">${weight === null ? '—' : fmtNumber(weight * 100, 2) + ' %'}</td>
+        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">${formatSignedPortfolioMoney(unrealized)}</td>
         <td data-label="Poslední ocenění">
           ${formatPortfolioDate(positionLastValuationDate(p))}
         </td>
@@ -1803,7 +1788,7 @@ function renderPortfolioTransactions(trades) {
       case 'instrument': return `${t.asset_type || ''} · ${positionDisplayName(t)}`.toLowerCase();
       case 'type': return t.trade_type || '';
       case 'quantity': return Number(t.quantity) || 0;
-      case 'price': return Number(t.price) || 0;
+      case 'investment': return transactionInvestmentValue(t) ?? Number.NEGATIVE_INFINITY;
       default: return '';
     }
   }
@@ -1832,7 +1817,7 @@ function renderPortfolioTransactions(trades) {
       tr.className = 'clickable';
 
       const quantity = Number(t.quantity) || 0;
-      const price = Number(t.price);
+      const investment = transactionInvestmentValue(t);
       const currency = t.currency || 'CZK';
       const tradeDate = t.trade_date ? new Date(t.trade_date) : null;
       const tradeDateText = tradeDate && !Number.isNaN(tradeDate.getTime())
@@ -1854,8 +1839,8 @@ function renderPortfolioTransactions(trades) {
         <td data-label="Množství">
           ${fmtNumber(quantity, 1)}
         </td>
-        <td data-label="Cena">
-          ${Number.isFinite(price) ? fmtNumber(price, 2) + ' ' + currency : '—'}
+        <td data-label="Vstupní investice">
+          ${investment === null ? '—' : fmtNumber(investment, 2) + ' ' + currency}
         </td>
       `;
 
@@ -1881,10 +1866,10 @@ function renderPortfolioTransactions(trades) {
   const mobileSelect = document.getElementById('tx-sort');
   const mobileDir = document.getElementById('tx-sort-dir');
   if (mobileSelect && mobileDir) {
-    if (![...mobileSelect.options].some(o => o.value === 'price')) {
+    if (![...mobileSelect.options].some(o => o.value === 'investment')) {
       const opt = document.createElement('option');
-      opt.value = 'price';
-      opt.textContent = 'Cena';
+      opt.value = 'investment';
+      opt.textContent = 'Vstupní investice';
       mobileSelect.appendChild(opt);
     }
 
@@ -1992,8 +1977,8 @@ function openTransactionModal(portfolioId) {
     <label>Množství</label>
     <input id="tx-quantity" type="number" inputmode="decimal" step="any" min="0">
 
-    <label>Nákupní/prodejní cena za kus</label>
-    <input id="tx-price" type="number" inputmode="decimal" step="any" min="0" placeholder="Např. 123,45">
+    <label>Vstupní investice</label>
+    <input id="tx-investment" type="number" inputmode="decimal" step="any" min="0" placeholder="Např. 10 000">
 
     <label>Měna</label>
     <input id="tx-currency" disabled>
@@ -2020,7 +2005,7 @@ function openTransactionModal(portfolioId) {
   const directionEl = document.getElementById('tx-direction');
   const dateEl = document.getElementById('tx-date');
   const quantityEl = document.getElementById('tx-quantity');
-  const priceEl = document.getElementById('tx-price');
+  const investmentEl = document.getElementById('tx-investment');
   const currencyEl = document.getElementById('tx-currency');
   const cancelBtn = document.getElementById('tx-cancel');
   const saveBtn = document.getElementById('tx-save');
@@ -2039,7 +2024,7 @@ function openTransactionModal(portfolioId) {
     modal.classList.toggle('tx-busy', saving);
     savingStatus.classList.toggle('active', saving);
 
-    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, priceEl, cancelBtn, saveBtn].forEach(el => {
+    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, investmentEl, cancelBtn, saveBtn].forEach(el => {
       if (el) el.disabled = saving;
     });
 
@@ -2098,12 +2083,18 @@ function openTransactionModal(portfolioId) {
   saveBtn.onclick = async () => {
     if (isSaving) return; // ochrana proti dvojkliku / opakovanému submitu
 
+    const quantity = Number(String(quantityEl.value).replace(',', '.'));
+    const investmentText = String(investmentEl.value || '').trim().replace(/\s/g, '').replace(',', '.');
+    const investmentValue = investmentText === '' ? null : Number(investmentText);
     const trade = {
       asset_type: assetTypeEl.value,
       asset_id: assetIdEl.value,
       trade_type: directionEl.value,
-      quantity: Number(String(quantityEl.value).replace(',', '.')),
-      price: Number(String(priceEl.value || '0').replace(',', '.')),
+      quantity,
+      // API nadale prijima cenu za kus; UI ale zadava celkovou vstupni investici.
+      // Prazdna investice zustane null, aby se nezamenila za nulovy vklad.
+      price: investmentValue === null || !Number.isFinite(investmentValue) ? null : investmentValue / quantity,
+      investment_value: investmentValue,
       currency: currencyEl.value || 'CZK',
       trade_date: dateEl.value
     };
@@ -2116,8 +2107,8 @@ function openTransactionModal(portfolioId) {
       alert('Množství musí být větší než nula.');
       return;
     }
-    if (Number.isNaN(trade.price) || trade.price < 0) {
-      alert('Cena musí být číslo od nuly výše.');
+    if (investmentValue !== null && (!Number.isFinite(investmentValue) || investmentValue <= 0)) {
+      alert('Vstupní investice musí být kladné číslo, nebo může zůstat prázdná.');
       return;
     }
 
