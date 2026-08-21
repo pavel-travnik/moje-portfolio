@@ -4,6 +4,9 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
+const PORTFOLIO_BUILD = '2026-08-21-1345-investment-v3';
+window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
+console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
 window.PORTFOLIO_API = PORTFOLIO_API;
 
@@ -74,6 +77,7 @@ function assetTypeLabel(assetType) {
 }
 
 function ensurePortfolioUiStyles() {
+  document.documentElement.dataset.portfolioBuild = PORTFOLIO_BUILD;
   if (document.getElementById('portfolio-ui-styles')) return;
 
   const style = document.createElement('style');
