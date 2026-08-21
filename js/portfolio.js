@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-21-1345-investment-v3';
+const PORTFOLIO_BUILD = '2026-08-21-1515-investment-field-fix-v4';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -1474,11 +1474,14 @@ function positionReturn3Y(position) {
   return Math.abs(raw) > 3 ? raw / 100 : raw;
 }
 function positionInvestmentValue(position) {
+  // API vrací celkovou vstupní investici přímo v avg_cost.
+  // cost_value nepoužíváme, protože je na backendu odvozené jako
+  // quantity × avg_cost a při této datové definici by investici násobilo podruhé.
   const value = nullablePortfolioNumber(
     position?.investment_value,
     position?.input_investment,
     position?.invested_amount,
-    position?.cost_value,
+    position?.avg_cost,
     position?.purchase_value,
     position?.book_cost
   );
@@ -1489,13 +1492,12 @@ function formatSignedPortfolioMoney(value) {
   return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
 }
 function transactionInvestmentValue(trade) {
-  // API vrací celkovou vstupní investici. Hodnotu proto nijak
-  // nenásobíme množstvím ani nepřepočítáváme na cenu za kus.
+  // API vrací celkovou vstupní investici přímo v price.
+  // trade_amount nepoužíváme, protože je odvozené jako quantity × price.
   const value = nullablePortfolioNumber(
     trade?.investment_value,
     trade?.input_investment,
     trade?.invested_amount,
-    trade?.trade_amount,
     trade?.price
   );
   return value !== null && value > 0 ? value : null;
