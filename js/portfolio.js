@@ -326,29 +326,57 @@ function ensurePortfolioUiStyles() {
       width: 100%;
     }
     #instruments-table th[data-key="type"],
-    #instruments-table td[data-label="Typ"] {
-      width: 9%;
-      white-space: nowrap;
-    }
+    #instruments-table td[data-label="Typ"] { width: 7%; white-space: nowrap; }
     #instruments-table th[data-key="name"],
-    #instruments-table td[data-label="Název"] {
-      width: 34%;
-    }
+    #instruments-table td[data-label="Název"] { width: 21%; }
     #instruments-table th[data-key="quantity"],
-    #instruments-table td[data-label="Počet kusů"] {
-      width: 12%;
-      text-align: right;
-    }
+    #instruments-table td[data-label="Počet kusů"] { width: 8%; text-align: right; }
     #instruments-table th[data-key="value"],
-    #instruments-table td[data-label="Hodnota"] {
-      width: 27%;
-      text-align: right;
-      white-space: nowrap;
-    }
+    #instruments-table td[data-label="Hodnota"] { width: 14%; text-align: right; white-space: nowrap; }
+    #instruments-table th[data-key="return3y"],
+    #instruments-table td[data-label="Výnos 3Y"] { width: 9%; text-align: right; white-space: nowrap; }
+    #instruments-table th[data-key="weight"],
+    #instruments-table td[data-label="Podíl"] { width: 8%; text-align: right; white-space: nowrap; }
+    #instruments-table th[data-key="unrealizedPnl"],
+    #instruments-table td[data-label="Nerealizovaný zisk"] { width: 16%; text-align: right; white-space: nowrap; }
     #instruments-table th[data-key="lastValuation"],
-    #instruments-table td[data-label="Poslední ocenění"] {
-      width: 18%;
-      white-space: nowrap;
+    #instruments-table td[data-label="Poslední ocenění"] { width: 17%; white-space: nowrap; }
+    #instruments-table th[data-key="quantity"],
+    #instruments-table th[data-key="value"],
+    #instruments-table th[data-key="return3y"],
+    #instruments-table th[data-key="weight"],
+    #instruments-table th[data-key="unrealizedPnl"] {
+      text-align: right;
+      padding-left: 22px;
+      padding-right: 8px;
+    }
+    #instruments-table th[data-key="quantity"].sort-asc::after,
+    #instruments-table th[data-key="quantity"].sort-desc::after,
+    #instruments-table th[data-key="value"].sort-asc::after,
+    #instruments-table th[data-key="value"].sort-desc::after,
+    #instruments-table th[data-key="return3y"].sort-asc::after,
+    #instruments-table th[data-key="return3y"].sort-desc::after,
+    #instruments-table th[data-key="weight"].sort-asc::after,
+    #instruments-table th[data-key="weight"].sort-desc::after,
+    #instruments-table th[data-key="unrealizedPnl"].sort-asc::after,
+    #instruments-table th[data-key="unrealizedPnl"].sort-desc::after {
+      left: 7px;
+      right: auto;
+      margin-left: 0;
+    }
+    .portfolio-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+    }
+    .portfolio-kpi-grid .kpi { min-width: 0; }
+    .portfolio-kpi-grid .kpi small {
+      display: block;
+      margin-top: 4px;
+      color: #666;
+      font-size: 11px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
     }
     .portfolio-switch-modal {
       width: min(720px, calc(100vw - 2rem));
@@ -622,8 +650,12 @@ function openCreatePortfolioModal() {
             </div>
           </div>
         </div>
-        <div class="kpi-row">
+        <div class="kpi-row portfolio-kpi-grid">
           <div class="kpi"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+          <div class="kpi"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
+          <div class="kpi"><span>Vážený výnos 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
+          <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
+          <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
           <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
           <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
         </div>
@@ -641,6 +673,9 @@ function openCreatePortfolioModal() {
             <option value="value" selected>Hodnota</option>
             <option value="type">Typ</option>
             <option value="name">Název</option>
+            <option value="return3y">Výnos 3Y</option>
+            <option value="weight">Podíl</option>
+            <option value="unrealizedPnl">Nerealizovaný zisk</option>
             <option value="lastValuation">Poslední ocenění</option>
           </select>
           <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
@@ -651,6 +686,9 @@ function openCreatePortfolioModal() {
             <th data-key="name">Název</th>
             <th data-key="quantity">Počet kusů</th>
             <th data-key="value">Hodnota</th>
+            <th data-key="return3y">Výnos 3Y</th>
+            <th data-key="weight">Podíl</th>
+            <th data-key="unrealizedPnl">Nerealizovaný zisk</th>
             <th data-key="lastValuation">Poslední ocenění</th>
           </tr></thead>
           <tbody id="portfolio-instruments"></tbody>
@@ -723,61 +761,30 @@ function openCreatePortfolioModal() {
     const detail = await fetchPortfolioDetail(portfolioId);
     const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
     setPortfolioTitle(detail, currentPortfolio, portfolioId);
-
-    // Doplňkové části vykreslujeme odděleně. Chyba v jedné části nesmí
-    // zastavit graf, tabulku pozic ani transakce.
-    try {
-      renderPortfolioOverview(detail);
-    } catch (error) {
-      console.error('Chyba vykreslení souhrnu portfolia:', error);
-    }
-
-    try {
-      renderPortfolioSettings(detail, portfolioId);
-    } catch (error) {
-      console.error('Chyba vykreslení nastavení portfolia:', error);
-    }
+    try { renderPortfolioOverview(detail); }
+    catch (error) { console.error('Chyba vykreslení souhrnu portfolia:', error); }
+    try { renderPortfolioSettings(detail, portfolioId); }
+    catch (error) { console.error('Chyba vykreslení nastavení portfolia:', error); }
 
     CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
     portfolioInstrumentFilter = null;
+    try { renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS); }
+    catch (error) { console.error('Chyba vykreslení pozic portfolia:', error); }
 
     try {
-      renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS);
-    } catch (error) {
-      console.error('Chyba vykreslení pozic portfolia:', error);
-      const tbody = document.getElementById('portfolio-instruments');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="8">Detail pozic se nepodařilo vykreslit.</td></tr>';
-    }
-
-    try {
-      const raw = Array.isArray(detail?.valuation_by_asset_type)
-        ? detail.valuation_by_asset_type
-        : [];
+      const raw = Array.isArray(detail?.valuation_by_asset_type) ? detail.valuation_by_asset_type : [];
       const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
       const allocation = raw.map(x => {
         const value = Number(x.value) || 0;
-        return {
-          label: assetTypeLabel(x.asset_type),
-          value,
-          pct: total > 0 ? value / total : 0
-        };
+        return { label: assetTypeLabel(x.asset_type), value, pct: total > 0 ? value / total : 0 };
       }).filter(x => x.value > 0);
-
-      renderAllocationDonut(
-        allocation,
-        'portfolio-allocation-chart',
-        detail?.valuation?.gross_value_base
-      );
-    } catch (error) {
-      console.error('Chyba vykreslení grafu portfolia:', error);
-    }
+      renderAllocationDonut(allocation, 'portfolio-allocation-chart', detail?.valuation?.gross_value_base);
+    } catch (error) { console.error('Chyba vykreslení grafu portfolia:', error); }
 
     try {
       const trades = await fetchPortfolioTransactions(portfolioId);
       renderPortfolioTransactions(trades);
-    } catch (error) {
-      console.error('Chyba načtení transakcí portfolia:', error);
-    }
+    } catch (error) { console.error('Chyba načtení transakcí portfolia:', error); }
   }
 };
 
@@ -1433,6 +1440,41 @@ function positionCurrentValue(position) {
   ) || 0;
 }
 
+function nullablePortfolioNumber(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    const number = Number(value);
+    if (Number.isFinite(number)) return number;
+  }
+  return null;
+}
+
+function positionReturn3Y(position) {
+  const raw = nullablePortfolioNumber(
+    position?.perf_3y,
+    position?.perf3Y,
+    position?.Perf3Y,
+    position?.return_3y,
+    position?.performance_3y
+  );
+  if (raw === null) return null;
+  return Math.abs(raw) > 3 ? raw / 100 : raw;
+}
+
+function positionCostValue(position) {
+  return nullablePortfolioNumber(
+    position?.cost_value,
+    position?.purchase_value,
+    position?.book_cost,
+    position?.invested_amount
+  );
+}
+
+function formatSignedPortfolioMoney(value) {
+  if (!Number.isFinite(value)) return '—';
+  return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
+}
+
 function formatPortfolioDate(value) {
   if (!value) return '—';
   const d = new Date(value);
@@ -1509,17 +1551,76 @@ function renderPortfolioList(portfolios, containerId = 'portfolioList') {
 
 function renderPortfolioOverview(data) {
   const val = data?.valuation || {};
-  document.getElementById('pf-kpi-value').textContent =
-    `${fmtNumber(val.gross_value_base)} CZK`;
-  const el = document.getElementById('pf-kpi-daily');
-  const diff = val.pnl_day_czk;
-  const pct = val.pnl_day_pct * 100;
-  el.textContent = `${fmtNumber(diff)} (${fmtNumber(pct)} %)`;
-  el.className = diff >= 0 ? 'pos' : 'neg';
-  const lastValuationEl = document.getElementById('pf-kpi-last-valuation');
-  if (lastValuationEl) {
-    lastValuationEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
+  const positions = Array.isArray(data?.positions) ? data.positions : [];
+  const sumPositions = positions.reduce((sum, p) => sum + positionCurrentValue(p), 0);
+  const portfolioValue = nullablePortfolioNumber(val.gross_value_base, val.gross_value_czk, sumPositions) ?? 0;
+
+  const valueEl = document.getElementById('pf-kpi-value');
+  if (valueEl) valueEl.textContent = `${fmtNumber(portfolioValue)} CZK`;
+
+  const dailyEl = document.getElementById('pf-kpi-daily');
+  const dailyDiff = nullablePortfolioNumber(val.pnl_day_czk);
+  const dailyPct = nullablePortfolioNumber(val.pnl_day_pct);
+  if (dailyEl) {
+    dailyEl.textContent = dailyDiff === null
+      ? '—'
+      : `${formatSignedPortfolioMoney(dailyDiff)}${dailyPct === null ? '' : ` (${dailyPct > 0 ? '+' : ''}${fmtNumber(dailyPct * 100)} %)`}`;
+    dailyEl.className = dailyDiff === null ? '' : dailyDiff >= 0 ? 'pos' : 'neg';
   }
+
+  const withCost = positions
+    .map(p => ({ value: positionCurrentValue(p), cost: positionCostValue(p) }))
+    .filter(x => x.cost !== null);
+  const totalCost = withCost.reduce((sum, x) => sum + x.cost, 0);
+  const coveredValue = withCost.reduce((sum, x) => sum + x.value, 0);
+  const unrealized = withCost.length ? coveredValue - totalCost : null;
+  const unrealizedPct = unrealized !== null && totalCost > 0 ? unrealized / totalCost : null;
+  const unrealizedEl = document.getElementById('pf-kpi-unrealized');
+  const unrealizedPctEl = document.getElementById('pf-kpi-unrealized-pct');
+  if (unrealizedEl) {
+    unrealizedEl.textContent = formatSignedPortfolioMoney(unrealized);
+    unrealizedEl.className = unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg';
+  }
+  if (unrealizedPctEl) {
+    unrealizedPctEl.textContent = unrealizedPct === null
+      ? 'Pořizovací hodnota není dostupná'
+      : `${unrealizedPct > 0 ? '+' : ''}${fmtNumber(unrealizedPct * 100)} % z pořizovací hodnoty`;
+  }
+
+  const withPerf = positions
+    .map(p => ({ value: positionCurrentValue(p), perf: positionReturn3Y(p) }))
+    .filter(x => x.perf !== null && x.value > 0);
+  const perfCoveredValue = withPerf.reduce((sum, x) => sum + x.value, 0);
+  const weightedPerf = perfCoveredValue > 0
+    ? withPerf.reduce((sum, x) => sum + x.value * x.perf, 0) / perfCoveredValue
+    : null;
+  const coverage = portfolioValue > 0 ? perfCoveredValue / portfolioValue : null;
+  const perfEl = document.getElementById('pf-kpi-3y');
+  const coverageEl = document.getElementById('pf-kpi-3y-coverage');
+  if (perfEl) {
+    perfEl.textContent = weightedPerf === null ? '—' : `${weightedPerf > 0 ? '+' : ''}${fmtNumber(weightedPerf * 100)} %`;
+    perfEl.className = weightedPerf === null ? '' : weightedPerf >= 0 ? 'pos' : 'neg';
+  }
+  if (coverageEl) coverageEl.textContent = coverage === null ? 'Pokrytí dat: —' : `Pokrytí dat: ${fmtNumber(Math.min(coverage, 1) * 100, 1)} %`;
+
+  const ranked = positions
+    .map(p => ({ name: positionDisplayName(p), value: positionCurrentValue(p) }))
+    .filter(x => x.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const largest = ranked[0] || null;
+  const largestWeight = largest && portfolioValue > 0 ? largest.value / portfolioValue : null;
+  const top3Weight = portfolioValue > 0 && ranked.length
+    ? ranked.slice(0, 3).reduce((sum, x) => sum + x.value, 0) / portfolioValue
+    : null;
+  const largestEl = document.getElementById('pf-kpi-largest');
+  const largestNameEl = document.getElementById('pf-kpi-largest-name');
+  const top3El = document.getElementById('pf-kpi-top3');
+  if (largestEl) largestEl.textContent = largestWeight === null ? '—' : `${fmtNumber(largestWeight * 100, 1)} %`;
+  if (largestNameEl) largestNameEl.textContent = largest?.name || '—';
+  if (top3El) top3El.textContent = top3Weight === null ? '—' : `${fmtNumber(Math.min(top3Weight, 1) * 100, 1)} %`;
+
+  const lastEl = document.getElementById('pf-kpi-last-valuation');
+  if (lastEl) lastEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
 }
 function renderPortfolioInstrumentFilterBar(filterLabel, visibleCount, totalCount) {
   const filterEl = document.getElementById('portfolio-instruments-filter');
@@ -1556,6 +1657,7 @@ function renderPortfolioInstruments(positions, options = {}) {
     : allPositions;
 
   renderPortfolioInstrumentFilterBar(filterLabel, visiblePositions.length, allPositions.length);
+  const totalPortfolioValue = allPositions.reduce((sum, p) => sum + positionCurrentValue(p), 0);
 
   let sort = { key: 'value', asc: false };
 
@@ -1569,6 +1671,14 @@ function renderPortfolioInstruments(positions, options = {}) {
         return p.quantity || 0;
       case 'value':
         return positionCurrentValue(p);
+      case 'return3y':
+        return positionReturn3Y(p) ?? Number.NEGATIVE_INFINITY;
+      case 'weight':
+        return totalPortfolioValue > 0 ? positionCurrentValue(p) / totalPortfolioValue : 0;
+      case 'unrealizedPnl': {
+        const cost = positionCostValue(p);
+        return cost === null ? Number.NEGATIVE_INFINITY : positionCurrentValue(p) - cost;
+      }
       case 'lastValuation': {
         const d = new Date(positionLastValuationDate(p));
         return Number.isNaN(d.getTime()) ? 0 : d.getTime();
@@ -1602,6 +1712,10 @@ function renderPortfolioInstruments(positions, options = {}) {
       const tr = document.createElement('tr');
       tr.className = 'clickable';
       const instrumentValue = positionCurrentValue(p);
+      const perf3Y = positionReturn3Y(p);
+      const weight = totalPortfolioValue > 0 ? instrumentValue / totalPortfolioValue : null;
+      const cost = positionCostValue(p);
+      const unrealized = cost === null ? null : instrumentValue - cost;
 
       tr.innerHTML = `
         <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
@@ -1610,7 +1724,16 @@ function renderPortfolioInstruments(positions, options = {}) {
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
         </td>
         <td data-label="Hodnota">
-          ${instrumentValue ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
+          ${Number.isFinite(instrumentValue) ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}
+        </td>
+        <td data-label="Výnos 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">
+          ${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtNumber(perf3Y * 100, 2) + ' %'}
+        </td>
+        <td data-label="Podíl">
+          ${weight === null ? '—' : fmtNumber(weight * 100, 2) + ' %'}
+        </td>
+        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">
+          ${formatSignedPortfolioMoney(unrealized)}
         </td>
         <td data-label="Poslední ocenění">
           ${formatPortfolioDate(positionLastValuationDate(p))}
