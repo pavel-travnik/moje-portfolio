@@ -41,10 +41,39 @@ const serviceLoader = (() => {
   return { start, stop, messageFor };
 })();
 const nativeFetch = window.fetch.bind(window);
+
+// Loader s mincí se zobrazí pouze u požadavku vyvolaného přímou akcí uživatele.
+// Automatický preload, zahřívání cache a požadavky na pozadí zůstanou bez loaderu.
+let lastUserTriggeredAt = 0;
+const USER_TRIGGERED_FETCH_WINDOW_MS = 1500;
+
+function markUserTriggeredRequest(event) {
+  if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+  const control = event.target?.closest?.(
+    'a, button, input, select, textarea, [role="button"], [data-page], .side-card, .fund-card'
+  );
+  if (!control) return;
+  lastUserTriggeredAt = Date.now();
+}
+
+document.addEventListener('click', markUserTriggeredRequest, true);
+document.addEventListener('keydown', markUserTriggeredRequest, true);
+
+function shouldShowServiceLoader(options = {}) {
+  if (options.showLoader === true) return true;
+  if (options.showLoader === false || options.background === true) return false;
+  return Date.now() - lastUserTriggeredAt <= USER_TRIGGERED_FETCH_WINDOW_MS;
+}
+
 window.fetch = async function fetchWithServiceLoader(input, options = {}) {
+  const showLoader = shouldShowServiceLoader(options);
   const url = typeof input === 'string' ? input : input?.url;
-  serviceLoader.start(serviceLoader.messageFor(url, options));
-  try { return await nativeFetch(input, options); } finally { serviceLoader.stop(); }
+  if (showLoader) serviceLoader.start(serviceLoader.messageFor(url, options));
+  try {
+    return await nativeFetch(input, options);
+  } finally {
+    if (showLoader) serviceLoader.stop();
+  }
 };
 window.serviceLoader = serviceLoader;
 function showAuthMessage(text, type = 'info') {
@@ -2968,8 +2997,10 @@ function setRiskMetric(id, value, decimals = 2, signed = false) {
   el.className = '';
   if (signed && value != null && !isNaN(Number(value))) el.className = Number(value) >= 0 ? 'pos' : 'neg';
 }
+// Riziko, výnosy, benchmark a zobrazení v CZK jsou nyní veřejné bez přihlášení.
+// Až bude potřeba funkce znovu uzamknout, vrať sem podmínku isLoggedIn().
 function canShowStockAdvancedDetail() {
-  return typeof isLoggedIn === 'function' && isLoggedIn();
+  return true;
 }
 function isStockCompareMode() { return canShowStockAdvancedDetail() && !!document.getElementById('stock-compare-index')?.checked; }
 function getBenchmarkTickerForStock(row) { return row?.benchmarkTicker || row?.BenchmarkTicker || '^DJI'; }
