@@ -1648,6 +1648,17 @@ function ensureStockCzkToggleStyle() {
     .stock-risk-label .stock-risk-help { width: 18px; height: 18px; min-width: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #3d3d3d; color: #fff; border: 1px solid rgba(201,166,70,.65); font-size: 12px; font-weight: 700; line-height: 1; cursor: help; margin-bottom: 0; }
     .stock-risk-label .stock-risk-help:hover, .stock-risk-label .stock-risk-help:focus { background: #C9A646; color: #111; outline: none; }
     .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
+    .stock-benchmark-info { display: none; align-items: center; gap: 8px; min-height: 40px; padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(201,166,70,.55); background: rgba(255,250,240,.95); color: #0f3d2e; box-shadow: 0 6px 20px rgba(0,0,0,.06); font-size: 13px; box-sizing: border-box; }
+    .stock-benchmark-info.is-visible { display: inline-flex; }
+    .stock-benchmark-info span { color: #777; }
+    .stock-benchmark-info strong { color: #0f3d2e; }
+    .stock-comparison-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; padding: 8px 12px; margin-bottom: 4px; border-radius: 14px; background: rgba(255,250,240,.72); border: 1px solid rgba(201,166,70,.25); font-size: 12px; font-weight: 700; color: #333; }
+    .stock-comparison-legend-item { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+    .stock-comparison-legend-line { width: 28px; height: 3px; border-radius: 999px; flex: 0 0 auto; }
+    .stock-comparison-legend-line.stock { background: #C9A646; }
+    .stock-comparison-legend-line.benchmark { background: #6c7a89; }
+    .period-diff { display: inline-flex !important; align-items: center; justify-content: center; min-height: 40px; padding: 8px 14px !important; border-radius: 999px !important; border: 1px solid #C9A646 !important; background: #C9A646 !important; color: #111 !important; font-weight: 800 !important; box-shadow: 0 6px 20px rgba(0,0,0,.08); white-space: nowrap; }
+    .period-diff.pos, .period-diff.neg { color: #111 !important; }
 
     @media (max-width: 900px) {
       .stock-risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1673,6 +1684,7 @@ function ensureStockCzkToggleStyle() {
         box-sizing: border-box;
       }
       .stock-czk-toggle .toggle-text { font-size: 14px; }
+      .stock-benchmark-info.is-visible { display: flex; width: 100%; justify-content: space-between; }
       .period-row {
         display: grid !important;
         grid-template-columns: 1fr !important;
@@ -3004,6 +3016,18 @@ function canShowStockAdvancedDetail() {
 }
 function isStockCompareMode() { return canShowStockAdvancedDetail() && !!document.getElementById('stock-compare-index')?.checked; }
 function getBenchmarkTickerForStock(row) { return row?.benchmarkTicker || row?.BenchmarkTicker || '^DJI'; }
+function getInstrumentDisplayName(row, fallback = '') { return row?.name || row?.Name || row?.companyName || row?.CompanyName || row?.ticker || fallback; }
+function formatComparisonLabel(name, ticker) {
+  const cleanName = String(name || '').trim(); const cleanTicker = String(ticker || '').trim();
+  if (!cleanName) return cleanTicker;
+  if (!cleanTicker || cleanName.toLowerCase() === cleanTicker.toLowerCase()) return cleanName;
+  return `${cleanName} (${cleanTicker})`;
+}
+function updateBenchmarkInfo(name, ticker, visible) {
+  const box = document.getElementById('stock-benchmark-info'); const value = document.getElementById('stock-benchmark-name');
+  if (!box || !value) return;
+  value.textContent = formatComparisonLabel(name, ticker) || '—'; box.classList.toggle('is-visible', !!visible);
+}
 function normalizeSeriesToBase100(rows, valueGetter) {
   const cleaned = (rows || []).map(r => ({ date: r.date, value: valueGetter(r) })).filter(r => r.value != null && !isNaN(Number(r.value)) && Number(r.value) > 0);
   if (cleaned.length < 2) return [];
@@ -3025,33 +3049,23 @@ async function ensureStockHistory(ticker) {
 }
 function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
   lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
-  const div = document.getElementById(containerId);
-  if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
-  div.innerHTML = '';
-  div.style.position = 'relative';
-  const width = div.clientWidth || div.parentElement?.clientWidth || 320;
-  const height = Math.min(width * 0.65, 320);
-  div.style.height = height + 'px';
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  div.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  const padding = { top: 26, right: width < 520 ? 42 : 60, bottom: 34, left: 22 };
-  const allValues = [...stockSeries, ...benchmarkSeries].map(p => p.value);
-  const min = Math.min(...allValues);
-  const max = Math.max(...allValues);
-  const range = max - min || 1;
-  function xy(series, i) { return { x: padding.left + (i / (series.length - 1)) * (width - padding.left - padding.right), y: padding.top + ((max - series[i].value) / range) * (height - padding.top - padding.bottom) }; }
-  ctx.strokeStyle = '#e6e6e6'; ctx.fillStyle = '#666'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
-  for (let i = 0; i <= 5; i++) { const y = padding.top + (i / 5) * (height - padding.top - padding.bottom); ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(width - padding.right, y); ctx.stroke(); ctx.fillText((max - (i / 5) * range).toFixed(1), width - 6, y + 4); }
-  function drawLine(series, color, widthLine) { ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = widthLine; series.forEach((_, i) => { const p = xy(series, i); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); }); ctx.stroke(); }
-  drawLine(benchmarkSeries, '#6c7a89', 1.6); drawLine(stockSeries, '#C9A646', 2.2);
-  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = '#C9A646'; ctx.fillText(stockLabel, padding.left, 4); ctx.fillStyle = '#6c7a89'; ctx.fillText(benchmarkLabel, width < 420 ? padding.left : padding.left + 120, width < 420 ? 16 : 4);
-  ctx.textAlign = 'center'; ctx.fillStyle = '#666'; const maxXTicks = width < 500 ? 3 : 5; const step = Math.max(1, Math.floor(stockSeries.length / maxXTicks));
-  for (let i = 0; i < stockSeries.length; i += step) { const p = xy(stockSeries, i); ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'), p.x, height - padding.bottom + 8); }
+  const div = document.getElementById(containerId); if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
+  div.innerHTML = ''; div.style.position = 'relative';
+  const legend = document.createElement('div'); legend.className = 'stock-comparison-legend'; legend.setAttribute('aria-label', 'Legenda porovnání');
+  legend.innerHTML = `<span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line stock"></span><span>${stockLabel}</span></span><span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line benchmark"></span><span>Benchmark: ${benchmarkLabel}</span></span>`;
+  div.appendChild(legend);
+  const width = div.clientWidth || div.parentElement?.clientWidth || 320; const chartHeight = Math.min(width * .65, 320); const legendHeight = legend.offsetHeight || 40;
+  div.style.height = chartHeight + legendHeight + 4 + 'px';
+  const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = chartHeight; div.appendChild(canvas); const ctx = canvas.getContext('2d');
+  const padding = { top: 16, right: width < 520 ? 42 : 60, bottom: 34, left: 22 }; const allValues = [...stockSeries,...benchmarkSeries].map(p=>p.value); const min=Math.min(...allValues); const max=Math.max(...allValues); const range=max-min||1;
+  function xy(series,i){ return { x: padding.left+(i/(series.length-1))*(width-padding.left-padding.right), y: padding.top+((max-series[i].value)/range)*(chartHeight-padding.top-padding.bottom) }; }
+  ctx.strokeStyle='#e6e6e6'; ctx.fillStyle='#666'; ctx.font='12px Arial'; ctx.textAlign='right';
+  for(let i=0;i<=5;i++){ const y=padding.top+(i/5)*(chartHeight-padding.top-padding.bottom); ctx.beginPath(); ctx.moveTo(padding.left,y); ctx.lineTo(width-padding.right,y); ctx.stroke(); ctx.fillText((max-(i/5)*range).toFixed(1),width-6,y+4); }
+  function drawLine(series,color,lineWidth){ ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=lineWidth; series.forEach((_,i)=>{const p=xy(series,i); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}); ctx.stroke(); }
+  drawLine(benchmarkSeries,'#6c7a89',1.6); drawLine(stockSeries,'#C9A646',2.2);
+  ctx.textAlign='center'; ctx.fillStyle='#666'; const maxXTicks=width<500?3:5; const step=Math.max(1,Math.floor(stockSeries.length/maxXTicks));
+  for(let i=0;i<stockSeries.length;i+=step){ const p=xy(stockSeries,i); ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'),p.x,chartHeight-padding.bottom+8); }
 }
-
 function loadStockDetail(ticker) {
   const main = document.getElementById('mainContent');
   if (!main) return;
@@ -3075,7 +3089,8 @@ function loadStockDetail(ticker) {
         <label class="stock-czk-toggle" title="Porovná vývoj instrumentu s benchmark indexem.">
           <input type="checkbox" id="stock-compare-index" aria-label="Porovnat s indexem">
           <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Porovnat s indexem</span>
-        </label>` : ''}
+        </label>
+        <div id="stock-benchmark-info" class="stock-benchmark-info" aria-live="polite"><span>Benchmark</span><strong id="stock-benchmark-name">—</strong></div>` : ''}
       </div>` : ''}
     </div>
 
@@ -3195,14 +3210,21 @@ async function loadStockData(ticker, period) {
   if (compareIndex && stockRowsForChart.length) {
     const benchmarkTicker = getBenchmarkTickerForStock(finalData[0]);
     const benchmarkData = await ensureStockHistory(benchmarkTicker);
+    const stockName = getInstrumentDisplayName(finalData[0], ticker);
+    const benchmarkName = getInstrumentDisplayName(benchmarkData[0], benchmarkTicker);
+    updateBenchmarkInfo(benchmarkName, benchmarkTicker, true);
     const benchmarkFiltered = filterPeriod(benchmarkData, period);
     const benchmarkRows = benchmarkFiltered.length ? benchmarkFiltered : benchmarkData;
     const alignedBenchmarkRows = alignBenchmarkToStockDates(stockRowsForChart, benchmarkRows, r => r.close);
     const alignedStockRows = stockRowsForChart.filter(r => alignedBenchmarkRows.some(b => b.date === r.date));
     const stockSeries = normalizeSeriesToBase100(alignedStockRows, r => getStockChartValue(r, useCzk));
     const benchmarkSeries = normalizeSeriesToBase100(alignedBenchmarkRows, r => r.close);
-    if (stockSeries.length > 1 && benchmarkSeries.length > 1) { renderStockComparisonChart(stockSeries, benchmarkSeries, 'chart-stock', finalData[0]?.ticker || ticker, benchmarkTicker); return; }
+    if (stockSeries.length > 1 && benchmarkSeries.length > 1) {
+      renderStockComparisonChart(stockSeries, benchmarkSeries, 'chart-stock', formatComparisonLabel(stockName, finalData[0]?.ticker || ticker), formatComparisonLabel(benchmarkName, benchmarkTicker));
+      return;
+    }
   }
+  updateBenchmarkInfo('', '', false);
   renderPortfolioChart(chartData, 'chart-stock');
 }
 
