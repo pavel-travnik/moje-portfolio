@@ -1534,183 +1534,7 @@ function formatOverviewValue(value, options = {}) {
 
 
 
-function ensureStockCzkToggleStyle() {
-  if (document.getElementById('stock-czk-toggle-style')) return;
-  const style = document.createElement('style');
-  style.id = 'stock-czk-toggle-style';
-  style.textContent = `
-    .stock-detail-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-    .stock-detail-head p { margin: 0; min-width: 0; }
-    .stock-detail-head strong { word-break: break-word; }
-    .stock-detail-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 8px;
-      padding-top: 2px;
-      flex: 0 0 auto;
-    }
-    .stock-czk-toggle {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 9px;
-      min-height: 40px;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(201, 166, 70, 0.55);
-      background: rgba(255, 250, 240, 0.95);
-      color: #0f3d2e;
-      font-weight: 700;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-      overflow: hidden;
-    }
-    .stock-czk-toggle:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 9px 24px rgba(0,0,0,0.09);
-      border-color: rgba(201, 166, 70, 0.85);
-    }
-    .stock-czk-toggle input {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      opacity: 0;
-      cursor: pointer;
-      z-index: 2;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-    .stock-czk-toggle .toggle-track,
-    .stock-czk-toggle .toggle-text {
-      pointer-events: none;
-      position: relative;
-      z-index: 1;
-    }
-    .stock-czk-toggle .toggle-track {
-      width: 42px;
-      height: 22px;
-      border-radius: 999px;
-      background: #d9d9d9;
-      transition: background .2s ease;
-      flex: 0 0 auto;
-    }
-    .stock-czk-toggle .toggle-track::after {
-      content: '';
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #fff;
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      box-shadow: 0 2px 7px rgba(0,0,0,0.25);
-      transition: transform .2s ease;
-    }
-    .stock-czk-toggle input:checked + .toggle-track { background: #0f3d2e; }
-    .stock-czk-toggle input:checked + .toggle-track::after { transform: translateX(20px); }
-    .stock-czk-toggle .toggle-text { white-space: nowrap; font-size: 13px; }
-    .stock-risk-panel {
-      margin: 12px 0 16px;
-      padding: 14px;
-      border: 1px solid rgba(201, 166, 70, 0.28);
-      border-radius: 18px;
-      background: rgba(255, 250, 240, 0.55);
-    }
-    .stock-risk-panel h4 { margin: 0 0 10px; color: #0f3d2e; font-size: 15px; }
-    .stock-risk-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
-      gap: 10px;
-    }
-    .stock-risk-metric {
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(201, 166, 70, 0.18);
-      min-width: 0;
-    }
-    .stock-risk-metric span { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
-    .stock-risk-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-    .stock-risk-label > span:first-child { min-width: 0; margin-bottom: 0; }
-    .stock-risk-label .stock-risk-help { width: 18px; height: 18px; min-width: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #3d3d3d; color: #fff; border: 1px solid rgba(201,166,70,.65); font-size: 12px; font-weight: 700; line-height: 1; cursor: help; margin-bottom: 0; }
-    .stock-risk-label .stock-risk-help:hover, .stock-risk-label .stock-risk-help:focus { background: #C9A646; color: #111; outline: none; }
-    .stock-risk-metric strong { display: block; color: #111; font-size: 15px; word-break: break-word; }
-    .stock-benchmark-info { display: none; align-items: center; gap: 8px; min-height: 40px; padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(201,166,70,.55); background: rgba(255,250,240,.95); color: #0f3d2e; box-shadow: 0 6px 20px rgba(0,0,0,.06); font-size: 13px; box-sizing: border-box; }
-    .stock-benchmark-info.is-visible { display: inline-flex; }
-    .stock-benchmark-info span { color: #777; }
-    .stock-benchmark-info strong { color: #0f3d2e; }
-    .stock-comparison-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; padding: 8px 12px; margin-bottom: 4px; border-radius: 14px; background: rgba(255,250,240,.72); border: 1px solid rgba(201,166,70,.25); font-size: 12px; font-weight: 700; color: #333; }
-    .stock-comparison-legend-item { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
-    .stock-comparison-legend-line { width: 28px; height: 3px; border-radius: 999px; flex: 0 0 auto; }
-    .stock-comparison-legend-line.stock { background: #C9A646; }
-    .stock-comparison-legend-line.benchmark { background: #6c7a89; }
-    .period-diff { display: inline-flex !important; align-items: center; justify-content: center; min-height: 40px; padding: 8px 14px !important; border-radius: 999px !important; border: 1px solid #C9A646 !important; background: #C9A646 !important; color: #111 !important; font-weight: 800 !important; box-shadow: 0 6px 20px rgba(0,0,0,.08); white-space: nowrap; }
-    .period-diff.pos, .period-diff.neg { color: #111 !important; }
-
-    @media (max-width: 900px) {
-      .stock-risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 760px) {
-      .stock-detail-head {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-      .stock-detail-actions {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
-        justify-content: stretch;
-      }
-      .stock-czk-toggle {
-        width: 100%;
-        justify-content: space-between;
-        min-height: 44px;
-        padding: 10px 12px;
-        box-sizing: border-box;
-      }
-      .stock-czk-toggle .toggle-text { font-size: 14px; }
-      .stock-benchmark-info.is-visible { display: flex; width: 100%; justify-content: space-between; }
-      .period-row {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-        align-items: stretch !important;
-      }
-      .period-switch {
-        display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-        width: 100%;
-      }
-      .period-switch button { width: 100%; min-height: 38px; padding: 8px 6px; }
-      .period-diff { width: 100%; box-sizing: border-box; text-align: center; }
-      #chart-stock { min-height: 240px; }
-    }
-    @media (max-width: 420px) {
-      .stock-risk-grid { grid-template-columns: 1fr; }
-      .period-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .stock-czk-toggle .toggle-track { width: 38px; height: 20px; }
-      .stock-czk-toggle .toggle-track::after { width: 16px; height: 16px; }
-      .stock-czk-toggle input:checked + .toggle-track::after { transform: translateX(18px); }
-    }
-  `;
-  document.head.appendChild(style);
-}
+function ensureStockCzkToggleStyle() { /* Styly detailu jsou centralne v styles.css. */ }
 
 function formatStockMoney(value, currency, decimals = 2) {
   if (value == null || isNaN(Number(value))) return '—';
@@ -3454,7 +3278,7 @@ function renderPortfolioChart(history, containerId) {
 function renderPeriodDifference(data) {
   const box = document.getElementById('period-diff');
   if (!box || data.length < 2) {
-    if (box) box.innerHTML = '<span>Změna</span> —';
+    if (box) box.innerHTML = 'Změna&nbsp;—';
     return;
   }
 
@@ -3464,11 +3288,7 @@ function renderPeriodDifference(data) {
   const diff = last.value - first.value;
   const pct = (diff / first.value) * 100;
 
-  box.innerHTML = `
-    <span>Změna</span>
-    ${diff.toFixed(4)}
-    (<strong>${pct.toFixed(2)} %</strong>)
-  `;
+  box.innerHTML = `Změna&nbsp;${diff.toFixed(4)} (<strong>${pct.toFixed(2)} %</strong>)`;
 
   box.className =
     'period-diff ' + (diff >= 0 ? 'pos' : 'neg');
