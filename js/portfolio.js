@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-21-1540-zero-investment-userid-v5';
+const PORTFOLIO_BUILD = '2026-08-25-2011-trade-status-correction-v6';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -660,6 +660,7 @@ function openCreatePortfolioModal() {
   // ===============================
   if (page.startsWith('portfolio/')) {
     const portfolioId = page.split('/')[1];
+    window.CURRENT_PORTFOLIO_ID = portfolioId;
 
     if (!portfolioId || isNaN(Number(portfolioId))) {
       alert('Chyba: neplatné portfolio ID.');
@@ -760,7 +761,8 @@ function openCreatePortfolioModal() {
             <option value="instrument">Typ</option>
             <option value="type">Směr</option>
             <option value="quantity">Počet kusů</option>
-            <option value="investment">Vstupní investice</option>
+            <option value="price">Cena za jednotku</option>
+            <option value="status">Stav</option>
           </select>
           <button id="tx-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
@@ -770,7 +772,9 @@ function openCreatePortfolioModal() {
             <th data-key="instrument">Typ</th>
             <th data-key="type">Směr</th>
             <th data-key="quantity">Počet kusů</th>
-            <th data-key="investment">Vstupní investice</th>
+            <th data-key="price">Cena za jednotku</th>
+            <th data-key="status">Stav</th>
+            <th data-key="action">Akce</th>
           </tr></thead>
           <tbody id="portfolio-transactions"></tbody>
         </table>
@@ -1530,17 +1534,12 @@ function formatSignedPortfolioMoney(value) {
   if (!Number.isFinite(value)) return '—';
   return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
 }
-function transactionInvestmentValue(trade) {
-  // API vrací celkovou vstupní investici. Hodnotu proto nijak
-  // nenásobíme množstvím ani nepřepočítáváme na cenu za kus.
-  const value = nullablePortfolioNumber(
-    trade?.investment_value,
-    trade?.input_investment,
-    trade?.invested_amount,
-    trade?.trade_amount,
-    trade?.price
-  );
-  return value !== null && value > 0 ? value : null;
+function transactionUnitPrice(trade) {
+  const value = nullablePortfolioNumber(trade?.unit_price, trade?.price);
+  return value !== null && value >= 0 ? value : null;
+}
+function transactionStatus(trade) {
+  return String(trade?.trade_status || 'ACTIVE').trim().toUpperCase();
 }
 
 function formatPortfolioDate(value) {
@@ -1829,114 +1828,72 @@ function renderPortfolioTransactions(trades) {
   const tbody = document.getElementById('portfolio-transactions');
   const table = document.getElementById('transactions-table');
   if (!tbody || !table) return;
-
   const safeTrades = Array.isArray(trades) ? trades : [];
   let sort = { key: 'date', asc: false };
-
   function getValue(t, key) {
     switch (key) {
       case 'date': return new Date(t.trade_date || 0).getTime() || 0;
       case 'instrument': return `${t.asset_type || ''} · ${positionDisplayName(t)}`.toLowerCase();
       case 'type': return t.trade_type || '';
       case 'quantity': return Number(t.quantity) || 0;
-      case 'investment': return transactionInvestmentValue(t) ?? Number.NEGATIVE_INFINITY;
+      case 'price': return transactionUnitPrice(t) ?? Number.NEGATIVE_INFINITY;
+      case 'status': return transactionStatus(t);
       default: return '';
     }
   }
-
   function render() {
     table.querySelectorAll('th').forEach(th => {
       th.classList.remove('sort-asc', 'sort-desc');
-      if (th.dataset.key === sort.key) {
-        th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
-      }
+      if (th.dataset.key === sort.key) th.classList.add(sort.asc ? 'sort-asc' : 'sort-desc');
     });
-
-    const data = [...safeTrades];
-    data.sort((a, b) => {
-      const A = getValue(a, sort.key);
-      const B = getValue(b, sort.key);
+    const data = [...safeTrades].sort((a, b) => {
+      const A = getValue(a, sort.key), B = getValue(b, sort.key);
       if (A < B) return sort.asc ? -1 : 1;
       if (A > B) return sort.asc ? 1 : -1;
       return 0;
     });
-
     tbody.innerHTML = '';
-
     data.forEach(t => {
+      const isActive = transactionStatus(t) === 'ACTIVE';
       const tr = document.createElement('tr');
-      tr.className = 'clickable';
-
+      tr.className = `clickable ${isActive ? '' : 'trade-cancelled'}`;
       const quantity = Number(t.quantity) || 0;
-      const investment = transactionInvestmentValue(t);
+      const unitPrice = transactionUnitPrice(t);
       const currency = t.currency || 'CZK';
       const tradeDate = t.trade_date ? new Date(t.trade_date) : null;
-      const tradeDateText = tradeDate && !Number.isNaN(tradeDate.getTime())
-        ? tradeDate.toLocaleDateString('cs-CZ')
-        : '—';
-
-      // Důležité: všech 5 buněk je uvnitř stejného <tr>.
-      // Díky tomu je Cena součástí tabulky a hover/active probarvení funguje pro celý řádek.
+      const tradeDateText = tradeDate && !Number.isNaN(tradeDate.getTime()) ? tradeDate.toLocaleDateString('cs-CZ') : '—';
       tr.innerHTML = `
-        <td data-label="Datum">
-          ${tradeDateText}
-        </td>
-        <td data-label="Typ">
-          ${assetTypeLabel(t.asset_type)} · ${positionDisplayName(t)}
-        </td>
-        <td data-label="Směr">
-          ${t.trade_type || '—'}
-        </td>
-        <td data-label="Množství">
-          ${fmtNumber(quantity, 1)}
-        </td>
-        <td data-label="Vstupní investice">
-          ${investment === null ? '—' : fmtNumber(investment, 2) + ' ' + currency}
-        </td>
-      `;
-
+        <td data-label="Datum">${tradeDateText}</td>
+        <td data-label="Typ">${assetTypeLabel(t.asset_type)} · ${positionDisplayName(t)}</td>
+        <td data-label="Směr">${t.trade_type || '—'}</td>
+        <td data-label="Množství">${fmtNumber(quantity, 4)}</td>
+        <td data-label="Cena za jednotku">${unitPrice === null ? '—' : fmtNumber(unitPrice, 6) + ' ' + currency}</td>
+        <td data-label="Stav" class="${isActive ? 'trade-status-active' : 'trade-status-cancelled'}">${isActive ? 'Aktivní' : 'Storno'}</td>
+        <td data-label="Akce">${isActive ? '<button type="button" class="pill-button trade-correct-btn">Opravit</button>' : '—'}</td>`;
+      tr.querySelector('.trade-correct-btn')?.addEventListener('click', event => {
+        event.stopPropagation();
+        openTransactionModal(t.portfolio_id || window.CURRENT_PORTFOLIO_ID, t);
+      });
       tbody.appendChild(tr);
     });
-
-    // Po překreslení tbody znovu navážeme hover/click chování.
     bindAppTableRows(table);
   }
-
-  // ===== desktop sort (klik na th) =====
   table.querySelectorAll('th').forEach(th => {
     th.onclick = () => {
       const key = th.dataset.key;
-      if (!key) return;
+      if (!key || key === 'action') return;
       sort.asc = sort.key === key ? !sort.asc : true;
       sort.key = key;
       render();
     };
   });
-
-  // ===== mobile sort =====
   const mobileSelect = document.getElementById('tx-sort');
   const mobileDir = document.getElementById('tx-sort-dir');
   if (mobileSelect && mobileDir) {
-    if (![...mobileSelect.options].some(o => o.value === 'investment')) {
-      const opt = document.createElement('option');
-      opt.value = 'investment';
-      opt.textContent = 'Vstupní investice';
-      mobileSelect.appendChild(opt);
-    }
-
     setSortDirectionButton(mobileDir, sort.asc);
-    mobileSelect.onchange = () => {
-      sort.key = mobileSelect.value;
-      render();
-    };
-    mobileDir.onclick = () => {
-      sort.asc = !sort.asc;
-      setSortDirectionButton(mobileDir, sort.asc);
-      mobileDir.classList.toggle('active', sort.asc);
-      render();
-    };
+    mobileSelect.onchange = () => { sort.key = mobileSelect.value; render(); };
+    mobileDir.onclick = () => { sort.asc = !sort.asc; setSortDirectionButton(mobileDir, sort.asc); render(); };
   }
-
   render();
 }
 
@@ -1985,11 +1942,16 @@ function ensurePortfolioSavingStyles() {
       opacity: 0.55;
       cursor: not-allowed;
     }
+    #transactions-table tr.trade-cancelled td { opacity: .58; text-decoration: line-through; }
+    #transactions-table tr.trade-cancelled td[data-label="Akce"] { text-decoration: none; }
+    .trade-status-active { color: #217a3c; font-weight: 700; }
+    .trade-status-cancelled { color: #8a2d2d; font-weight: 700; }
+    .trade-correct-btn { padding: .3rem .65rem; font-size: .85rem; }
   `;
   document.head.appendChild(style);
 }
 
-function openTransactionModal(portfolioId) {
+function openTransactionModal(portfolioId, originalTrade = null) {
   ensurePortfolioSavingStyles();
 
   const modal = document.createElement('div');
@@ -1997,7 +1959,7 @@ function openTransactionModal(portfolioId) {
 
   modal.innerHTML = `
 <div class="modal">
-  <h3>Nová transakce</h3>
+  <h3>${originalTrade ? 'Oprava transakce' : 'Nová transakce'}</h3>
 
   <div class="tx-form">
 
@@ -2028,8 +1990,8 @@ function openTransactionModal(portfolioId) {
     <label>Množství</label>
     <input id="tx-quantity" type="number" inputmode="decimal" step="any" min="0">
 
-    <label>Vstupní investice</label>
-    <input id="tx-investment" type="number" inputmode="decimal" step="any" min="0" placeholder="Např. 10 000">
+    <label>Cena za jednotku</label>
+    <input id="tx-investment" type="number" inputmode="decimal" step="any" min="0" placeholder="Např. 125,50">
 
     <label>Měna</label>
     <input id="tx-currency" disabled>
@@ -2118,6 +2080,14 @@ function openTransactionModal(portfolioId) {
         opt.dataset.ticker = a.ticker || a.Ticker || a.symbol || a.Symbol || a.symbolData || '';
         assetIdEl.appendChild(opt);
       });
+      if (originalTrade && normalizePortfolioAssetType(originalTrade.asset_type) === type) {
+        const wanted = String(originalTrade.asset_id || '');
+        const matching = [...assetIdEl.options].find(o => o.value === wanted || o.dataset.isin === wanted || o.dataset.ticker === wanted);
+        if (matching) {
+          assetIdEl.value = matching.value;
+          currencyEl.value = matching.dataset.currency || originalTrade.currency || 'CZK';
+        }
+      }
     } catch (e) {
       console.error('Chyba načítání instrumentů:', e);
       assetIdEl.innerHTML = `<option value="">Chyba načítání</option>`;
@@ -2130,31 +2100,35 @@ function openTransactionModal(portfolioId) {
     currencyEl.value = currency || 'CZK';
   };
 
+  if (originalTrade) {
+    assetTypeEl.value = normalizePortfolioAssetType(originalTrade.asset_type);
+    directionEl.value = String(originalTrade.trade_type || 'BUY').toUpperCase();
+    dateEl.value = String(originalTrade.trade_date || '').slice(0, 10);
+    quantityEl.value = originalTrade.quantity ?? '';
+    investmentEl.value = transactionUnitPrice(originalTrade) ?? '';
+    currencyEl.value = originalTrade.currency || 'CZK';
+    assetTypeEl.dispatchEvent(new Event('change'));
+  } else {
+    dateEl.value = new Date().toISOString().slice(0, 10);
+  }
+
   // ===== Uložit =====
   saveBtn.onclick = async () => {
     if (isSaving) return; // ochrana proti dvojkliku / opakovanému submitu
 
     const quantity = Number(String(quantityEl.value).replace(',', '.'));
-    const investmentText = String(investmentEl.value || '').trim().replace(/\s/g, '').replace(',', '.');
-    const parsedInvestment = investmentText === '' ? null : Number(investmentText);
-    const investmentValue = parsedInvestment !== null && Number.isFinite(parsedInvestment) && parsedInvestment > 0
-      ? parsedInvestment
-      : null;
+    const priceText = String(investmentEl.value || '').trim().replace(/\s/g, '').replace(',', '.');
+    const parsedPrice = priceText === '' ? null : Number(priceText);
+    const unitPrice = parsedPrice !== null && Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : null;
     const trade = {
       asset_type: assetTypeEl.value,
       asset_id: assetIdEl.value,
       trade_type: directionEl.value,
       quantity,
-      // API přijímá a vrací celkovou vstupní investici. Bez přepočtu na kus.
-      // Prázdná nebo nulová investice zůstane null, aby se z ní nepočítal zisk.
-      price: investmentValue !== null && Number.isFinite(investmentValue) && investmentValue > 0
-        ? investmentValue
-        : null,
-      investment_value: investmentValue !== null && Number.isFinite(investmentValue) && investmentValue > 0
-        ? investmentValue
-        : null,
+      price: unitPrice,
       currency: currencyEl.value || 'CZK',
-      trade_date: dateEl.value
+      trade_date: dateEl.value,
+      replaces_trade_id: originalTrade?.trade_id || null
     };
 
     if (!trade.asset_type || !trade.asset_id || !trade.quantity || !trade.trade_date) {
@@ -2165,8 +2139,8 @@ function openTransactionModal(portfolioId) {
       alert('Množství musí být větší než nula.');
       return;
     }
-    if (investmentText !== '' && parsedInvestment !== null && !Number.isFinite(parsedInvestment)) {
-      alert('Vstupní investice musí být číslo, nebo může zůstat prázdná.');
+    if (priceText !== '' && parsedPrice !== null && (!Number.isFinite(parsedPrice) || parsedPrice < 0)) {
+      alert('Cena za jednotku musí být nezáporné číslo, nebo může zůstat prázdná.');
       return;
     }
 
