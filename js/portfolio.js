@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-25-2011-trade-status-correction-v6';
+const PORTFOLIO_BUILD = '2026-08-25-2123-trade-table-format-v7';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -420,6 +420,23 @@ function ensurePortfolioUiStyles() {
     #instruments-table th[data-key="weight"], #instruments-table td[data-label="Podíl"] { width: 8%; text-align:right; white-space:nowrap; }
     #instruments-table th[data-key="unrealizedPnl"], #instruments-table td[data-label="Nerealizovaný zisk"] { width: 16%; text-align:right; white-space:nowrap; }
     #instruments-table th[data-key="lastValuation"], #instruments-table td[data-label="Poslední ocenění"] { width: 17%; white-space:nowrap; }
+    /* Transakce: počet kusů, cena za jednotku a stav zarovnat doleva. */
+    #transactions-table th[data-key="quantity"],
+    #transactions-table td[data-label="Množství"],
+    #transactions-table th[data-key="price"],
+    #transactions-table td[data-label="Cena za jednotku"],
+    #transactions-table th[data-key="status"],
+    #transactions-table td[data-label="Stav"] {
+      text-align: left !important;
+      padding-left: 8px;
+      padding-right: 8px;
+      white-space: nowrap;
+    }
+    #transactions-table th[data-key="quantity"],
+    #transactions-table th[data-key="price"],
+    #transactions-table th[data-key="status"] {
+      padding-right: 22px;
+    }
     @media (max-width: 640px) {
       .portfolio-kpi-pair { grid-template-columns: 1fr 1fr; }
       .portfolio-kpi-secondary { grid-template-columns: 1fr; }
@@ -1866,8 +1883,8 @@ function renderPortfolioTransactions(trades) {
         <td data-label="Datum">${tradeDateText}</td>
         <td data-label="Typ">${assetTypeLabel(t.asset_type)} · ${positionDisplayName(t)}</td>
         <td data-label="Směr">${t.trade_type || '—'}</td>
-        <td data-label="Množství">${fmtNumber(quantity, 4)}</td>
-        <td data-label="Cena za jednotku">${unitPrice === null ? '—' : fmtNumber(unitPrice, 6) + ' ' + currency}</td>
+        <td data-label="Množství">${fmtNumber(quantity, 2)}</td>
+        <td data-label="Cena za jednotku">${unitPrice === null ? '—' : fmtNumber(unitPrice, 4) + ' ' + currency}</td>
         <td data-label="Stav" class="${isActive ? 'trade-status-active' : 'trade-status-cancelled'}">${isActive ? 'Aktivní' : 'Storno'}</td>
         <td data-label="Akce">${isActive ? '<button type="button" class="pill-button trade-correct-btn">Opravit</button>' : '—'}</td>`;
       tr.querySelector('.trade-correct-btn')?.addEventListener('click', event => {
