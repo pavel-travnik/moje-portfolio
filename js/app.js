@@ -2030,11 +2030,20 @@ function maybeRenderInstrumentRiskPanel(prefix) {
       <div class="stock-risk-grid">
         <div class="stock-risk-metric" data-tooltip="Volatilita vyjadřuje, jak výrazně a často kolísá cena v čase. Čím je vyšší, tím větší je nejistota budoucího vývoje ceny, a tedy i potenciál jak vyšších zisků, tak vyšších ztrát."><div class="stock-risk-label"><span>Volatilita 3Y</span><span class="stock-risk-help" data-tooltip="Volatilita vyjadřuje, jak výrazně a často kolísá cena v čase. Čím je vyšší, tím větší je nejistota budoucího vývoje ceny, a tedy i potenciál jak vyšších zisků, tak vyšších ztrát." aria-label="Vysvětlení metriky Volatilita 3Y">?</span></div><strong id="${prefix}-risk-vol-3y">—</strong></div>
         <div class="stock-risk-metric" data-tooltip="Největší pokles od průběžného maxima za poslední 3 roky. Ukazuje historicky nejhlubší propad fondu v daném období."><div class="stock-risk-label"><span>Max. propad 3Y</span><span class="stock-risk-help" data-tooltip="Největší pokles od průběžného maxima za poslední 3 roky. Ukazuje historicky nejhlubší propad fondu v daném období." aria-label="Vysvětlení metriky Max. propad 3Y">?</span></div><strong id="${prefix}-risk-dd-3y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 3letým výnosem fondu a 3letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark."><div class="stock-risk-label"><span>Výnos vs benchmark 3Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 3letým výnosem fondu a 3letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark." aria-label="Vysvětlení metriky Výnos vs benchmark 3Y">?</span></div><strong id="${prefix}-risk-vs-bmk-3y">—</strong></div>
-        <div class="stock-risk-metric" data-tooltip="Rozdíl mezi 5letým výnosem fondu a 5letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark."><div class="stock-risk-label"><span>Výnos vs benchmark 5Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 5letým výnosem fondu a 5letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark." aria-label="Vysvětlení metriky Výnos vs benchmark 5Y">?</span></div><strong id="${prefix}-risk-vs-bmk-5y">—</strong></div>
+        <div class="stock-risk-metric" hidden data-tooltip="Rozdíl mezi 3letým výnosem fondu a 3letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark."><div class="stock-risk-label"><span>Výnos vs benchmark 3Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 3letým výnosem fondu a 3letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark." aria-label="Vysvětlení metriky Výnos vs benchmark 3Y">?</span></div><strong id="${prefix}-risk-vs-bmk-3y">—</strong></div>
+        <div class="stock-risk-metric" hidden data-tooltip="Rozdíl mezi 5letým výnosem fondu a 5letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark."><div class="stock-risk-label"><span>Výnos vs benchmark 5Y</span><span class="stock-risk-help" data-tooltip="Rozdíl mezi 5letým výnosem fondu a 5letým výnosem jeho benchmarku. Kladná hodnota znamená lepší vývoj než benchmark." aria-label="Vysvětlení metriky Výnos vs benchmark 5Y">?</span></div><strong id="${prefix}-risk-vs-bmk-5y">—</strong></div>
       </div>
     </section>
   `;
+}
+
+function setOptionalBenchmarkMetric(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const metric = el.closest('.stock-risk-metric');
+  const hasValue = value != null && !isNaN(Number(value)) && Number(value) !== 0;
+  if (metric) metric.hidden = !hasValue;
+  if (hasValue) setRiskMetric(id, value, 2, true);
 }
 
 function renderInstrumentRiskMetrics(prefix, item) {
@@ -2045,8 +2054,8 @@ function renderInstrumentRiskMetrics(prefix, item) {
   const vs5Y = metricValueFromObject(item, 'perfVsBenchmark5Y', 'PerfVsBenchmark5Y');
   setRiskMetric(`${prefix}-risk-vol-3y`, vol3Y);
   setRiskMetric(`${prefix}-risk-dd-3y`, dd3Y, 2, true);
-  setRiskMetric(`${prefix}-risk-vs-bmk-3y`, vs3Y, 2, true);
-  setRiskMetric(`${prefix}-risk-vs-bmk-5y`, vs5Y, 2, true);
+  setOptionalBenchmarkMetric(`${prefix}-risk-vs-bmk-3y`, vs3Y);
+  setOptionalBenchmarkMetric(`${prefix}-risk-vs-bmk-5y`, vs5Y);
 }
 // ===================================================
 // DETAIL FONDU
@@ -2061,8 +2070,7 @@ const main = document.getElementById('mainContent');
     <h3 id="fund-name">Detail fondu</h3>
 
      <p class="meta">
-      <span id="fund-provider"></span><br>
-      ISIN: <span id="fund-isin">${isin}</span>
+      <span id="fund-provider"></span>
     </p>
 
     <div class="kpi-row">
@@ -2330,6 +2338,7 @@ function renderPodilovyFondMeta(fund) {
 
   const name = fund.name || fund.Name || fund.companyName || fund.CompanyName || '';
   const manager = fund.manager || fund.Manager || fund.spravce || fund.Spravce || fund.provider || fund.Provider || '';
+  const currency = fund.currency || fund.Currency || fund.mena || fund.Mena || '';
   const url = normalizeExternalUrl(
     fund.url || fund.URL || fund.web || fund.Web || fund.detailUrl || fund.detailURL || fund.fundUrl || fund.fundURL
   );
@@ -2337,11 +2346,13 @@ function renderPodilovyFondMeta(fund) {
   const nameEl = document.getElementById('pf-name');
   const titleEl = document.getElementById('pf-title');
   const managerEl = document.getElementById('pf-kpi-manager');
+  const currencyEl = document.getElementById('pf-kpi-currency');
   const link = document.getElementById('pf-url');
 
   if (nameEl && name) nameEl.textContent = name;
   if (titleEl && name) titleEl.textContent = name;
   if (managerEl) managerEl.textContent = manager || '—';
+  if (currencyEl) currencyEl.textContent = currency || '—';
 
   if (link) {
     if (url) {
@@ -2378,6 +2389,15 @@ function loadPodilovyFondDetail(isin) {
       <span>Správce</span>
       <strong id="pf-kpi-manager">-</strong>
     </div>
+    <div class="kpi">
+      <span>Měna fondu</span>
+      <strong id="pf-kpi-currency">-</strong>
+    </div>
+  </div>
+
+  <div class="stock-detail-controls">
+    <label class="stock-toggle"><input id="pf-compare-index" type="checkbox"> <span>Porovnat s indexem</span></label>
+    <div id="pf-benchmark-info" class="stock-benchmark-info"><span>Benchmark</span><strong id="pf-benchmark-name">—</strong></div>
   </div>
 
   ${maybeRenderInstrumentRiskPanel('pf')}
@@ -2424,6 +2444,14 @@ function loadPodilovyFondDetail(isin) {
     };
   });
 
+  const defaultPfPeriodBtn = document.querySelector('.period-switch button[data-period="3Y"]');
+  if (defaultPfPeriodBtn) defaultPfPeriodBtn.classList.add('active');
+  const compareToggle = document.getElementById('pf-compare-index');
+  if (compareToggle) compareToggle.onchange = () => {
+    const activePeriod = document.querySelector('.period-switch button.active')?.dataset.period || '3Y';
+    loadPodilovyFondData(isin, activePeriod);
+  };
+
   // ✅ metadata – název, správce a odkaz na detail fondu
   const list = apiCache.podiloveFondyList;
   if (Array.isArray(list)) {
@@ -2442,29 +2470,50 @@ function loadPodilovyFondDetail(isin) {
   loadPodilovyFondData(isin, '3Y');
 }
 
+function updatePodilovyFondBenchmarkInfo(name, ticker, visible) {
+  const box = document.getElementById('pf-benchmark-info');
+  const value = document.getElementById('pf-benchmark-name');
+  if (!box || !value) return;
+  value.textContent = formatComparisonLabel(name, ticker) || '—';
+  box.classList.toggle('is-visible', !!visible);
+}
+
 async function loadPodilovyFondData(isin, period) {
   if (!apiCache.podiloveFondy[isin]) {
-    let data = await cachedJsonFetch(
-      publicDataProxyUrl('fund', isin)
-    );
+    let data = await cachedJsonFetch(publicDataProxyUrl('fund', isin));
+    if (!Array.isArray(data)) data = [];
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
     apiCache.podiloveFondy[isin] = data;
   }
-
-  const filtered = filterPeriod(
-    apiCache.podiloveFondy[isin],
-    period
-  );
-
-  renderPodilovyFondKPI(filtered);
-  renderPeriodDifference(filtered);
-
-  renderPortfolioChart(
-    filtered.map(d => ({ date: d.date, value: d.value })),
-    'chart-podilovy-fond'
-  );
+  const allRows = apiCache.podiloveFondy[isin];
+  const filtered = filterPeriod(allRows, period);
+  const finalData = filtered.length ? filtered : allRows;
+  renderPodilovyFondKPI(finalData);
+  renderPeriodDifference(finalData);
+  const fundSeries = finalData.map(d => ({ date: d.date, value: Number(d.value) }))
+    .filter(d => d.date && Number.isFinite(d.value) && d.value > 0);
+  if (document.getElementById('pf-compare-index')?.checked && fundSeries.length > 1) {
+    const funds = await ensurePodiloveFondyList();
+    const fund = funds.find(f => String(f.isin || '').trim() === String(isin || '').trim()) || {};
+    const benchmarkTicker = getBenchmarkTickerForStock(fund);
+    const benchmarkData = await ensureStockHistory(benchmarkTicker);
+    const benchmarkFiltered = filterPeriod(benchmarkData, period);
+    const benchmarkRows = benchmarkFiltered.length ? benchmarkFiltered : benchmarkData;
+    const alignedBenchmarkRows = alignBenchmarkToStockDates(finalData, benchmarkRows, r => r.close);
+    const alignedFundRows = finalData.filter(r => alignedBenchmarkRows.some(b => b.date === r.date));
+    const fundNormalized = normalizeSeriesToBase100(alignedFundRows, r => r.value);
+    const benchmarkNormalized = normalizeSeriesToBase100(alignedBenchmarkRows, r => r.close);
+    const benchmarkName = getInstrumentDisplayName(benchmarkData[0], benchmarkTicker);
+    updatePodilovyFondBenchmarkInfo(benchmarkName, benchmarkTicker, true);
+    if (fundNormalized.length > 1 && benchmarkNormalized.length > 1) {
+      renderStockComparisonChart(fundNormalized, benchmarkNormalized, 'chart-podilovy-fond',
+        getInstrumentDisplayName(fund, isin), formatComparisonLabel(benchmarkName, benchmarkTicker));
+      return;
+    }
+  }
+  updatePodilovyFondBenchmarkInfo('', '', false);
+  renderPortfolioChart(fundSeries, 'chart-podilovy-fond');
 }
-
 
 function renderPodilovyFondKPI(data) {
   if (!data.length) return;
@@ -3544,7 +3593,7 @@ const main = document.getElementById('mainContent');
     <div class="kpi-row">
       <div class="kpi"><span>Aktuální kurz</span><strong id="cur-kpi-last"> - </strong></div>
       <div class="kpi"><span>Změna</span><strong id="cur-kpi-change"> - </strong></div>
-      <div class="kpi"><span>Záznamů</span><strong id="cur-kpi-count"> - </strong></div>
+      <div class="kpi"><span>Poměr kurzu</span><strong id="cur-kpi-ratio"> - </strong></div>
     </div>
 
 <div class="period-row">
@@ -3602,7 +3651,7 @@ async function loadCurrencyData(code, period) {
   }
 
   const filtered = filterPeriod(apiCache.currencies[code], period);
-  renderCurrencyKPI(filtered);
+  renderCurrencyKPI(filtered, code);
   renderPeriodDifference(filtered);
 
   renderPortfolioChart(
@@ -3611,7 +3660,17 @@ async function loadCurrencyData(code, period) {
   );
 }
 
-function renderCurrencyKPI(data) {
+function getCurrencyRateAmount(row, currencyCode = '') {
+  const candidates = [row?.amount, row?.Amount, row?.unit, row?.Unit, row?.nominal, row?.Nominal,
+    row?.quantity, row?.Quantity, row?.currencyAmount, row?.CurrencyAmount, row?.rateAmount, row?.RateAmount,
+    row?.multiplier, row?.Multiplier];
+  const supplied = candidates.find(value => value != null && Number.isFinite(Number(value)) && Number(value) > 0);
+  if (supplied != null) return Number(supplied);
+  const code = String(currencyCode || row?.code || row?.Code || row?.currency || row?.Currency || '').toUpperCase();
+  return code === 'HUF' || code === 'JPY' ? 100 : 1;
+}
+
+function renderCurrencyKPI(data, currencyCode) {
   if (!data.length) return;
 
   const last = data.at(-1);
@@ -3623,7 +3682,8 @@ function renderCurrencyKPI(data) {
     `${last.value.toFixed(4)} CZK (${dateStr})`;
 
 
-  document.getElementById('cur-kpi-count').textContent = data.length;
+  const ratioEl = document.getElementById('cur-kpi-ratio');
+  if (ratioEl) ratioEl.textContent = `${getCurrencyRateAmount(last, currencyCode)}/1`;
 
   if (prev) {
     const diff = last.value - prev.value;
