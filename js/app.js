@@ -2371,10 +2371,16 @@ function loadPodilovyFondDetail(isin) {
 
   main.innerHTML = `
   <h3 id="pf-title">Detail fondu</h3>
-  <p class="meta">
-    <span id="pf-name"> - </span><br>
-    <small>ID: ${isin}</small>
-  </p>
+  <div class="stock-detail-head">
+    <p class="meta"><span id="pf-name"> - </span><br><small>ID: ${isin}</small></p>
+    <div class="stock-detail-actions">
+      <label class="stock-czk-toggle" title="Porovná vývoj fondu s benchmark indexem.">
+        <input type="checkbox" id="pf-compare-index" aria-label="Porovnat s indexem">
+        <span class="toggle-track" aria-hidden="true"></span><span class="toggle-text">Porovnat s indexem</span>
+      </label>
+      <div id="pf-benchmark-info" class="stock-benchmark-info" aria-live="polite"><span>Benchmark</span><strong id="pf-benchmark-name">—</strong></div>
+    </div>
+  </div>
 
   <div class="kpi-row">
     <div class="kpi">
@@ -2393,11 +2399,6 @@ function loadPodilovyFondDetail(isin) {
       <span>Měna fondu</span>
       <strong id="pf-kpi-currency">-</strong>
     </div>
-  </div>
-
-  <div class="stock-detail-controls">
-    <label class="stock-toggle"><input id="pf-compare-index" type="checkbox"> <span>Porovnat s indexem</span></label>
-    <div id="pf-benchmark-info" class="stock-benchmark-info"><span>Benchmark</span><strong id="pf-benchmark-name">—</strong></div>
   </div>
 
   ${maybeRenderInstrumentRiskPanel('pf')}
@@ -2514,6 +2515,7 @@ async function loadPodilovyFondData(isin, period) {
   updatePodilovyFondBenchmarkInfo('', '', false);
   renderPortfolioChart(fundSeries, 'chart-podilovy-fond');
 }
+
 
 function renderPodilovyFondKPI(data) {
   if (!data.length) return;
