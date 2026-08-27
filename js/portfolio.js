@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-25-2123-trade-table-format-v7';
+const PORTFOLIO_BUILD = '2026-08-27-portfolio-pnl-book-value-v8';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -865,7 +865,8 @@ function calculateAllocationByType(positions) {
 
   positions.forEach(p => {
     const key = assetTypeLabel(p.asset_type);
-    const val = Number(p.book_value) || 0;
+    // Rozložení portfolia počítáme z aktuální tržní hodnoty.
+    const val = positionCurrentValue(p);
     totals[key] = (totals[key] || 0) + val;
     sum += val;
   });
@@ -1536,7 +1537,22 @@ function positionReturn3Y(position) {
   return Math.abs(raw) > 3 ? raw / 100 : raw;
 }
 function positionInvestmentValue(position) {
+  const valueCzk = nullablePortfolioNumber(
+    position?.book_value_czk,
+    position?.bookValueCzk,
+    position?.investment_value_czk,
+    position?.investmentValueCzk
+  );
+  if (valueCzk !== null && valueCzk > 0) return valueCzk;
+
+  const costCurrency = String(
+    position?.cost_currency ?? position?.costCurrency ?? ''
+  ).trim().toUpperCase();
+  if (costCurrency !== 'CZK') return null;
+
   const value = nullablePortfolioNumber(
+    position?.book_value,
+    position?.bookValue,
     position?.investment_value,
     position?.input_investment,
     position?.invested_amount,
@@ -1544,8 +1560,26 @@ function positionInvestmentValue(position) {
     position?.purchase_value,
     position?.book_cost
   );
-  // Nula znamená, že vstupní investice není zadaná. Zisk se nepočítá.
-  return value !== null && Number.isFinite(value) && value > 0 ? value : null;
+  return value !== null && value > 0 ? value : null;
+}
+function positionUnrealizedPnl(position) {
+  const direct = nullablePortfolioNumber(
+    position?.unrealized_pnl_czk,
+    position?.unrealizedPnlCzk
+  );
+  if (direct !== null) return direct;
+  const investment = positionInvestmentValue(position);
+  return investment === null ? null : positionCurrentValue(position) - investment;
+}
+function positionUnrealizedPnlPct(position) {
+  const direct = nullablePortfolioNumber(
+    position?.unrealized_pnl_pct,
+    position?.unrealizedPnlPct
+  );
+  if (direct !== null) return Math.abs(direct) > 3 ? direct / 100 : direct;
+  const investment = positionInvestmentValue(position);
+  const pnl = positionUnrealizedPnl(position);
+  return investment && pnl !== null ? pnl / investment : null;
 }
 function formatSignedPortfolioMoney(value) {
   if (!Number.isFinite(value)) return '—';
@@ -1651,11 +1685,14 @@ function renderPortfolioOverview(data) {
   const lastEl = document.getElementById('pf-kpi-last-valuation');
   if (lastEl) lastEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
 
-  const withInvestment = positions.map(p => ({ value: positionCurrentValue(p), investment: positionInvestmentValue(p) })).filter(x => x.investment !== null);
+  const withInvestment = positions
+    .map(p => ({ investment: positionInvestmentValue(p), unrealized: positionUnrealizedPnl(p) }))
+    .filter(x => x.investment !== null && x.unrealized !== null);
   const totalInvestment = withInvestment.reduce((sum, x) => sum + x.investment, 0);
-  const coveredValue = withInvestment.reduce((sum, x) => sum + x.value, 0);
-  const unrealized = withInvestment.length > 0 && totalInvestment > 0 ? coveredValue - totalInvestment : null;
-  const unrealizedPct = unrealized !== null ? unrealized / totalInvestment : null;
+  const unrealized = withInvestment.length > 0 && totalInvestment > 0
+    ? withInvestment.reduce((sum, x) => sum + x.unrealized, 0)
+    : null;
+  const unrealizedPct = unrealized !== null && totalInvestment > 0 ? unrealized / totalInvestment : null;
   const unrealizedEl = document.getElementById('pf-kpi-unrealized');
   const unrealizedPctEl = document.getElementById('pf-kpi-unrealized-pct');
   if (unrealizedEl) {
@@ -1736,8 +1773,7 @@ function renderPortfolioInstruments(positions, options = {}) {
       case 'return3y': return positionReturn3Y(p) ?? Number.NEGATIVE_INFINITY;
       case 'weight': return totalPortfolioValue > 0 ? positionCurrentValue(p) / totalPortfolioValue : 0;
       case 'unrealizedPnl': {
-        const investment = positionInvestmentValue(p);
-        return investment === null ? Number.NEGATIVE_INFINITY : positionCurrentValue(p) - investment;
+        return positionUnrealizedPnl(p) ?? Number.NEGATIVE_INFINITY;
       }
       case 'lastValuation': {
         const d = new Date(positionLastValuationDate(p));
@@ -1774,8 +1810,7 @@ function renderPortfolioInstruments(positions, options = {}) {
       const instrumentValue = positionCurrentValue(p);
       const perf3Y = positionReturn3Y(p);
       const weight = totalPortfolioValue > 0 ? instrumentValue / totalPortfolioValue : null;
-      const investment = positionInvestmentValue(p);
-      const unrealized = investment === null ? null : instrumentValue - investment;
+      const unrealized = positionUnrealizedPnl(p);
 
       tr.innerHTML = `
         <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
