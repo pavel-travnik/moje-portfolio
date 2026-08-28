@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-27-portfolio-pnl-book-value-v8';
+const PORTFOLIO_BUILD = '2026-08-28-transaction-price-mode-v9';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -2042,8 +2042,15 @@ function openTransactionModal(portfolioId, originalTrade = null) {
     <label>Množství</label>
     <input id="tx-quantity" type="number" inputmode="decimal" step="any" min="0">
 
-    <label>Cena za jednotku</label>
+    <label>Způsob zadání pořizovací hodnoty</label>
+    <select id="tx-price-mode">
+      <option value="UNIT_PRICE">Nákupní cena za jeden kus</option>
+      <option value="TOTAL_INVESTMENT">Celková vstupní investice</option>
+    </select>
+
+    <label id="tx-investment-label">Cena za jeden kus</label>
     <input id="tx-investment" type="number" inputmode="decimal" step="any" min="0" placeholder="Např. 125,50">
+    <div id="tx-investment-hint" class="full muted" style="font-size:.85rem;margin-top:-.25rem"></div>
 
     <label>Měna</label>
     <input id="tx-currency" disabled>
@@ -2070,7 +2077,10 @@ function openTransactionModal(portfolioId, originalTrade = null) {
   const directionEl = document.getElementById('tx-direction');
   const dateEl = document.getElementById('tx-date');
   const quantityEl = document.getElementById('tx-quantity');
+  const priceModeEl = document.getElementById('tx-price-mode');
+  const investmentLabelEl = document.getElementById('tx-investment-label');
   const investmentEl = document.getElementById('tx-investment');
+  const investmentHintEl = document.getElementById('tx-investment-hint');
   const currencyEl = document.getElementById('tx-currency');
   const cancelBtn = document.getElementById('tx-cancel');
   const saveBtn = document.getElementById('tx-save');
@@ -2089,12 +2099,42 @@ function openTransactionModal(portfolioId, originalTrade = null) {
     modal.classList.toggle('tx-busy', saving);
     savingStatus.classList.toggle('active', saving);
 
-    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, investmentEl, cancelBtn, saveBtn].forEach(el => {
+    [assetTypeEl, assetIdEl, directionEl, dateEl, quantityEl, priceModeEl, investmentEl, cancelBtn, saveBtn].forEach(el => {
       if (el) el.disabled = saving;
     });
 
     saveBtn.textContent = saving ? 'Ukládám…' : 'Uložit';
   }
+
+  function parseOptionalAmount(value) {
+    const text = String(value ?? '').trim().replace(/\s/g, '').replace(',', '.');
+    return { text, value: text === '' ? null : Number(text) };
+  }
+
+  function refreshInvestmentInputUi() {
+    const mode = priceModeEl.value;
+    const quantity = Number(String(quantityEl.value || '').replace(',', '.'));
+    const parsed = parseOptionalAmount(investmentEl.value);
+    const currency = currencyEl.value || 'CZK';
+
+    if (mode === 'TOTAL_INVESTMENT') {
+      investmentLabelEl.textContent = 'Celková vstupní investice';
+      investmentEl.placeholder = 'Např. 94 495,00';
+      investmentHintEl.textContent = parsed.value !== null && Number.isFinite(parsed.value) && parsed.value >= 0 && quantity > 0
+        ? `Cena za jeden kus: ${fmtNumber(parsed.value / quantity, 4)} ${currency}`
+        : 'Zadaná částka se při uložení přepočítá na cenu za jeden kus.';
+    } else {
+      investmentLabelEl.textContent = 'Nákupní cena za jeden kus';
+      investmentEl.placeholder = 'Např. 1 332,40';
+      investmentHintEl.textContent = parsed.value !== null && Number.isFinite(parsed.value) && parsed.value >= 0 && quantity > 0
+        ? `Celková vstupní investice: ${fmtNumber(parsed.value * quantity, 2)} ${currency}`
+        : 'Celková vstupní investice se vypočítá jako množství × cena za kus.';
+    }
+  }
+
+  priceModeEl.onchange = refreshInvestmentInputUi;
+  quantityEl.oninput = refreshInvestmentInputUi;
+  investmentEl.oninput = refreshInvestmentInputUi;
 
   // ===== Zrušit =====
   cancelBtn.onclick = closeModal;
@@ -2157,27 +2197,33 @@ function openTransactionModal(portfolioId, originalTrade = null) {
     directionEl.value = String(originalTrade.trade_type || 'BUY').toUpperCase();
     dateEl.value = String(originalTrade.trade_date || '').slice(0, 10);
     quantityEl.value = originalTrade.quantity ?? '';
+    priceModeEl.value = 'UNIT_PRICE';
     investmentEl.value = transactionUnitPrice(originalTrade) ?? '';
     currencyEl.value = originalTrade.currency || 'CZK';
     assetTypeEl.dispatchEvent(new Event('change'));
   } else {
+    priceModeEl.value = 'UNIT_PRICE';
     dateEl.value = new Date().toISOString().slice(0, 10);
   }
+  refreshInvestmentInputUi();
 
   // ===== Uložit =====
   saveBtn.onclick = async () => {
     if (isSaving) return; // ochrana proti dvojkliku / opakovanému submitu
 
     const quantity = Number(String(quantityEl.value).replace(',', '.'));
-    const priceText = String(investmentEl.value || '').trim().replace(/\s/g, '').replace(',', '.');
-    const parsedPrice = priceText === '' ? null : Number(priceText);
-    const unitPrice = parsedPrice !== null && Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : null;
+    const amountInput = parseOptionalAmount(investmentEl.value);
+    const inputMode = priceModeEl.value === 'TOTAL_INVESTMENT' ? 'TOTAL_INVESTMENT' : 'UNIT_PRICE';
+    const inputValue = amountInput.value;
+    const unitPrice = inputValue === null ? null : (inputMode === 'TOTAL_INVESTMENT' ? inputValue / quantity : inputValue);
     const trade = {
       asset_type: assetTypeEl.value,
       asset_id: assetIdEl.value,
       trade_type: directionEl.value,
       quantity,
-      price: unitPrice,
+      price: Number.isFinite(unitPrice) ? unitPrice : null,
+      price_input_type: inputMode,
+      input_value: inputValue,
       currency: currencyEl.value || 'CZK',
       trade_date: dateEl.value,
       replaces_trade_id: originalTrade?.trade_id || null
@@ -2191,8 +2237,10 @@ function openTransactionModal(portfolioId, originalTrade = null) {
       alert('Množství musí být větší než nula.');
       return;
     }
-    if (priceText !== '' && parsedPrice !== null && (!Number.isFinite(parsedPrice) || parsedPrice < 0)) {
-      alert('Cena za jednotku musí být nezáporné číslo, nebo může zůstat prázdná.');
+    if (amountInput.text !== '' && (inputValue === null || !Number.isFinite(inputValue) || inputValue < 0)) {
+      alert(inputMode === 'TOTAL_INVESTMENT'
+        ? 'Celková vstupní investice musí být nezáporné číslo, nebo může zůstat prázdná.'
+        : 'Cena za jeden kus musí být nezáporné číslo, nebo může zůstat prázdná.');
       return;
     }
 
