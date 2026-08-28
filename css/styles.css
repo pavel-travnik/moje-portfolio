@@ -2379,8 +2379,8 @@ Riziko a vynos, CZK prepinac, benchmark a zmena obdobi
 
 /* =====================================================
 PORTFOLIO - STYLY PRESUNUTE Z PORTFOLIO.JS
-Build: 2026-08-28-external-css-v14
-Tato sekce je zamerne na konci souboru kvuli CSS specificite a poradi.
+Build: 2026-08-28-external-css-detail-v15
+Sekce je zamerne na konci souboru, aby prepsala starsi konfliktni pravidla.
 ===================================================== */
 .portfolio-tabs {
       display: flex;
@@ -2795,7 +2795,7 @@ Tato sekce je zamerne na konci souboru kvuli CSS specificite a poradi.
     }
 
 /* =====================================================
-PORTFOLIO - UKLADANI TRANSAKCE A STAVY OBCHODU
+PORTFOLIO - UKLADANI TRANSAKCI A STAVY OBCHODU
 ===================================================== */
 .tx-saving-status {
       display: none;
@@ -2847,3 +2847,56 @@ PORTFOLIO - UKLADANI TRANSAKCE A STAVY OBCHODU
     #transactions-table th[data-key="quantity"], #transactions-table td[data-label="Množství"],
     #transactions-table th[data-key="price"], #transactions-table td[data-label="Nákupní cena za kus"],
     #transactions-table th[data-key="investment"], #transactions-table td[data-label="Vstupní investice"] { text-align:right !important; }
+
+/* =====================================================
+PORTFOLIO DETAIL - FINALNI ZAHLA VI A ZAROVNANI
+===================================================== */
+#instruments-table thead th {
+  vertical-align: top !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  line-height: 1.15 !important;
+  height: 52px;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+#instruments-table thead th .th-line {
+  display: block !important;
+  white-space: nowrap !important;
+}
+
+#instruments-table th[data-key="quantity"] .th-line-single {
+  display: inline-block !important;
+  white-space: nowrap !important;
+}
+
+#instruments-table th[data-key="unitPrice"],
+#instruments-table td[data-label="Cena za kus"] {
+  text-align: right !important;
+}
+
+#instruments-table th[data-key="lastValuation"] {
+  text-align: right !important;
+  padding-right: calc(2mm + 18px) !important;
+}
+
+#instruments-table th[data-key="lastValuation"]::after {
+  right: 2mm !important;
+  left: auto !important;
+}
+
+#instruments-table td[data-label="Poslední ocenění"] {
+  text-align: right !important;
+  padding-right: 2mm !important;
+}
+
+#transactions-table th[data-key="quantity"],
+#transactions-table td[data-label="Množství"],
+#transactions-table th[data-key="price"],
+#transactions-table td[data-label="Nákupní cena za kus"],
+#transactions-table th[data-key="investment"],
+#transactions-table td[data-label="Vstupní investice"] {
+  text-align: right !important;
+}
