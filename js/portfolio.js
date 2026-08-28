@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-28-external-css-v14';
+const PORTFOLIO_BUILD = '2026-08-28-external-css-detail-v15';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -108,7 +108,7 @@ function assetTypeLabel(assetType) {
 }
 
 function ensurePortfolioUiStyles() {
-  // Styly byly přesunuty do styles.css. Funkce zůstává kvůli kompatibilitě.
+  // Styly jsou načítány z centrálního souboru styles.css.
 }
 
 function setSortDirectionButton(btn, asc) {
@@ -377,7 +377,7 @@ function openCreatePortfolioModal() {
           <thead><tr>
             <th data-key="type">Typ</th>
             <th data-key="name">Název</th>
-            <th data-key="quantity"><span class="th-line">Počet</span><span class="th-line">kusů</span></th>
+            <th data-key="quantity"><span class="th-line th-line-single">Počet kusů</span></th>
             <th data-key="unitPrice"><span class="th-line">Cena za</span><span class="th-line">kus</span></th>
             <th data-key="value">Hodnota</th>
             <th data-key="return3y"><span class="th-line">Výnos nástroje</span><span class="th-line">3Y</span></th>
@@ -1607,7 +1607,7 @@ function renderPortfolioTransactions(trades) {
 // TRANSACTION MODAL – CREATE / SAVE
 // ===================================================
 function ensurePortfolioSavingStyles() {
-  // Styly byly přesunuty do styles.css. Funkce zůstává kvůli kompatibilitě.
+  // Styly jsou načítány z centrálního souboru styles.css.
 }
 
 function openTransactionModal(portfolioId, originalTrade = null) {
