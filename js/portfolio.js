@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-28-mobile-tables-investment-v11';
+const PORTFOLIO_BUILD = '2026-08-28-detail-headers-inline-switch-v12';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -794,13 +794,13 @@ function openCreatePortfolioModal() {
           <thead><tr>
             <th data-key="type">Typ</th>
             <th data-key="name">Název</th>
-            <th data-key="quantity">Počet kusů</th>
-            <th data-key="unitPrice">Cena za kus</th>
+            <th data-key="quantity"><span class="th-line">Počet</span><span class="th-line">kusů</span></th>
+            <th data-key="unitPrice"><span class="th-line">Cena za</span><span class="th-line">kus</span></th>
             <th data-key="value">Hodnota</th>
-            <th data-key="return3y">Výnos nástroje 3Y</th>
+            <th data-key="return3y"><span class="th-line">Výnos nástroje</span><span class="th-line">3Y</span></th>
             <th data-key="weight">Podíl</th>
-            <th data-key="unrealizedPnl">Nerealizovaný zisk</th>
-            <th data-key="lastValuation">Poslední ocenění</th>
+            <th data-key="unrealizedPnl"><span class="th-line">Nerealizovaný</span><span class="th-line">zisk</span></th>
+            <th data-key="lastValuation"><span class="th-line">Poslední</span><span class="th-line">ocenění</span></th>
           </tr></thead>
           <tbody id="portfolio-instruments"></tbody>
           <tfoot id="portfolio-instruments-total"></tfoot>
@@ -873,7 +873,10 @@ function openCreatePortfolioModal() {
     document.getElementById('btn-add-transaction').onclick = () => openTransactionModal(portfolioId);
 
     const portfolios = await fetchUserPortfolios();
-    document.getElementById('btn-other-portfolio').onclick = () => openPortfolioSwitcherModal(portfolios);
+    document.getElementById('btn-other-portfolio').onclick = () => {
+      history.pushState({}, '', '/portfolio');
+      loadPortfolioPage('portfolio');
+    };
 
     const detail = await fetchPortfolioDetail(portfolioId);
     const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
@@ -1414,6 +1417,23 @@ async function createPortfolio(name) {
     return data;
 }
 
+function showPortfolioNotice(container, message, type = 'success') {
+  if (!container) return;
+  let notice = container.querySelector('.portfolio-notice');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.className = 'portfolio-notice';
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    container.appendChild(notice);
+  }
+  notice.classList.toggle('error', type === 'error');
+  notice.textContent = message;
+  notice.hidden = false;
+  window.clearTimeout(notice._hideTimer);
+  notice._hideTimer = window.setTimeout(() => { notice.hidden = true; }, 5000);
+}
+
 function renderPortfolioSettings(detail, portfolioId) {
   const settings = detail?.settings || {};
   const emailEl = document.getElementById('pf-settings-email');
@@ -1440,7 +1460,7 @@ function renderPortfolioSettings(detail, portfolioId) {
     const frequency = frequencyEl.value;
 
     if (frequency !== 'off' && !email) {
-      alert('Zadej e-mail pro zasílání přehledu.');
+      showPortfolioNotice(saveBtn.closest('.tx-modal'), 'Doplňte prosím e-mail pro zasílání přehledu.', 'error');
       return;
     }
 
@@ -1455,10 +1475,10 @@ function renderPortfolioSettings(detail, portfolioId) {
           `Přehled se odesílá ráno v 7:00 podle zvolené frekvence. Další odeslání: ${next}`;
       }
 
-      alert('Nastavení bylo uloženo.');
+      showPortfolioNotice(saveBtn.closest('.tx-modal'), 'Nastavení bylo úspěšně uloženo. Přehled budeme posílat podle zvolené frekvence.');
     } catch (e) {
       console.error(e);
-      alert(e.message || 'Nastavení se nepodařilo uložit.');
+      showPortfolioNotice(saveBtn.closest('.tx-modal'), e.message || 'Nastavení se nepodařilo uložit. Zkuste to prosím znovu.', 'error');
     }
   };
 }
@@ -1875,11 +1895,10 @@ function renderPortfolioInstruments(positions, options = {}) {
     });
     if (tfoot) {
       const totalValue = data.reduce((sum,p) => sum + positionCurrentValue(p), 0);
-      const totalQuantity = data.reduce((sum,p) => sum + (Number(p.quantity)||0), 0);
       const pnlValues = data.map(positionUnrealizedPnl).filter(Number.isFinite);
       const totalPnl = pnlValues.length ? pnlValues.reduce((a,b)=>a+b,0) : null;
       const totalWeight = totalPortfolioValue > 0 ? totalValue / totalPortfolioValue : null;
-      tfoot.innerHTML = `<tr><td colspan="2">Celkem${filterLabel ? ` · ${filterLabel}` : ''}</td><td class="numeric">${fmtNumber(totalQuantity,2)}</td><td>—</td><td class="numeric">${fmtNumber(totalValue,2)} CZK</td><td>—</td><td class="numeric">${totalWeight===null?'—':fmtNumber(totalWeight*100,2)+' %'}</td><td class="numeric">${formatSignedPortfolioMoney(totalPnl)}</td><td>—</td></tr>`;
+      tfoot.innerHTML = `<tr><td colspan="2">Celkem${filterLabel ? ` · ${filterLabel}` : ''}</td><td class="numeric">—</td><td>—</td><td class="numeric">${fmtNumber(totalValue,2)} CZK</td><td>—</td><td class="numeric">${totalWeight===null?'—':fmtNumber(totalWeight*100,2)+' %'}</td><td class="numeric">${formatSignedPortfolioMoney(totalPnl)}</td><td>—</td></tr>`;
     }
 
     bindAppTableRows(table);
@@ -2051,6 +2070,15 @@ function ensurePortfolioSavingStyles() {
     .trade-status-active { color: #217a3c; font-weight: 700; }
     .trade-status-cancelled { color: #8a2d2d; font-weight: 700; }
     .trade-correct-btn { padding: .3rem .65rem; font-size: .85rem; }
+    .portfolio-notice { margin-top:.85rem; padding:.75rem 1rem; border:1px solid rgba(201,166,70,.45); border-radius:12px; background:rgba(201,166,70,.12); color:#2f2a1e; font-weight:600; line-height:1.4; }
+    .portfolio-notice.error { border-color:rgba(155,45,45,.35); background:rgba(155,45,45,.08); color:#7c2424; }
+    #instruments-table thead th { white-space:normal !important; overflow-wrap:anywhere; line-height:1.15; vertical-align:bottom; height:auto; min-height:48px; }
+    #instruments-table th .th-line { display:block; }
+    #instruments-table th[data-key="return3y"] { padding-left:5px; padding-right:22px; }
+    #instruments-table th[data-key="unitPrice"], #instruments-table td[data-label="Cena za kus"] { text-align:right !important; }
+    #transactions-table th[data-key="quantity"], #transactions-table td[data-label="Množství"],
+    #transactions-table th[data-key="price"], #transactions-table td[data-label="Nákupní cena za kus"],
+    #transactions-table th[data-key="investment"], #transactions-table td[data-label="Vstupní investice"] { text-align:right !important; }
   `;
   document.head.appendChild(style);
 }
