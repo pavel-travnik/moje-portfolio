@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-28-external-css-detail-v15';
+const PORTFOLIO_BUILD = '2026-08-30-detail-layout-v16';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -339,14 +339,14 @@ function openCreatePortfolioModal() {
         </div>
         <div class="portfolio-kpi-grid">
           <div class="portfolio-kpi-primary">
-            <div class="kpi"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+            <div class="kpi kpi-highlight"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
           </div>
           <div class="portfolio-kpi-pair">
             <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
             <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
           </div>
           <div class="portfolio-kpi-secondary">
-            <div class="kpi"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
+            <div class="kpi kpi-highlight"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
             <div class="kpi"><span>Vážený výnos nakoupených nástrojů 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
             <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
             <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
@@ -359,6 +359,11 @@ function openCreatePortfolioModal() {
 
       <section id="tab-instruments" class="portfolio-tab">
         <h2>Detail</h2>
+        <div class="portfolio-detail-help">
+          Zde najdete přehled zadaných transakcí. Novou transakci můžete přidat v záložce <strong>Transakce</strong> pomocí tlačítka <strong>Přidat transakci</strong>.
+          Zadáte zde nový nákup nebo prodej vybraných nástrojů, které jsou v databázi. Pokud zadáte i nákupní cenu, vypočte se nerealizovaný zisk.
+          Jako vstupní transakci můžete zadat také aktuální stav své investice a následně přidávat další nové transakce.
+        </div>
         <div id="portfolio-instruments-filter" class="portfolio-instruments-filter"></div>
         <div class="mobile-sort">
           <label for="inst-sort">Řadit podle</label>
@@ -919,6 +924,13 @@ async function openAssetDetail(assetType, assetId) {
       console.warn('Neznámý typ instrumentu pro detail:', { assetType, assetId });
       return;
   }
+  if (window.CURRENT_PORTFOLIO_ID) {
+    history.replaceState({
+      ...(history.state || {}),
+      portfolioId: String(window.CURRENT_PORTFOLIO_ID),
+      portfolioTab: 'instruments'
+    }, '', window.location.href);
+  }
   if (typeof loadPage === 'function') {
     loadPage(path);
   } else {
@@ -1227,9 +1239,9 @@ function positionUnrealizedPnlPct(position) {
   const pnl = positionUnrealizedPnl(position);
   return investment && pnl !== null ? pnl / investment : null;
 }
-function formatSignedPortfolioMoney(value) {
+function formatSignedPortfolioMoney(value, decimals = 2) {
   if (!Number.isFinite(value)) return '—';
-  return `${value > 0 ? '+' : ''}${fmtNumber(value, 2)} CZK`;
+  return `${value > 0 ? '+' : ''}${fmtNumber(value, decimals)} CZK`;
 }
 function transactionUnitPrice(trade) {
   const value = nullablePortfolioNumber(trade?.unit_price, trade?.price);
@@ -1313,7 +1325,7 @@ function renderPortfolioOverview(data) {
   const positionsValue = positions.reduce((sum, p) => sum + positionCurrentValue(p), 0);
   const portfolioValue = nullablePortfolioNumber(val.gross_value_base, val.gross_value_czk, positionsValue) ?? 0;
   const valueEl = document.getElementById('pf-kpi-value');
-  if (valueEl) valueEl.textContent = `${fmtNumber(portfolioValue)} CZK`;
+  if (valueEl) valueEl.textContent = `${fmtNumber(portfolioValue, 0)} CZK`;
 
   const dailyEl = document.getElementById('pf-kpi-daily');
   const dailyDiff = nullablePortfolioNumber(val.pnl_day_czk);
@@ -1457,20 +1469,34 @@ function renderPortfolioInstruments(positions, options = {}) {
 
       tr.innerHTML = `
         <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
-        <td data-label="Název">${positionDisplayName(p)}</td>
+        <td data-label="Název" class="instrument-name-cell">
+          <span class="instrument-name-text">${positionDisplayName(p)}</span>
+          <button type="button" class="mobile-pnl-info" aria-label="Zobrazit nerealizovaný zisk" aria-expanded="false">i</button>
+          <span class="mobile-pnl-bubble" role="tooltip">Nerealizovaný zisk: ${unrealized === null ? '—' : formatSignedPortfolioMoney(unrealized, 1)}</span>
+        </td>
         <td data-label="Počet kusů">
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
         </td>
         <td data-label="Cena za kus">${unitPrice === null ? '—' : fmtNumber(unitPrice, 4) + ' CZK'}</td>
-        <td data-label="Hodnota">${Number.isFinite(instrumentValue) ? fmtNumber(instrumentValue, 2) + ' CZK' : '—'}</td>
+        <td data-label="Hodnota">${Number.isFinite(instrumentValue) ? fmtNumber(instrumentValue, 0) + ' CZK' : '—'}</td>
         <td data-label="Výnos nástroje 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtNumber(perf3Y * 100, 2) + ' %'}</td>
         <td data-label="Podíl">${weight === null ? '—' : fmtNumber(weight * 100, 2) + ' %'}</td>
-        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">${formatSignedPortfolioMoney(unrealized)}</td>
+        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">${formatSignedPortfolioMoney(unrealized, 1)}</td>
         <td data-label="Poslední ocenění">
           ${formatPortfolioDate(positionLastValuationDate(p))}
         </td>
       `;
 
+      tr.querySelector('.mobile-pnl-info')?.addEventListener('click', event => {
+        event.stopPropagation();
+        const button = event.currentTarget;
+        const bubble = tr.querySelector('.mobile-pnl-bubble');
+        const willOpen = !bubble.classList.contains('is-open');
+        tbody.querySelectorAll('.mobile-pnl-bubble.is-open').forEach(x => x.classList.remove('is-open'));
+        tbody.querySelectorAll('.mobile-pnl-info[aria-expanded="true"]').forEach(x => x.setAttribute('aria-expanded', 'false'));
+        bubble.classList.toggle('is-open', willOpen);
+        button.setAttribute('aria-expanded', String(willOpen));
+      });
       // ✅ klik → detail instrumentu
       tr.onclick = () => openAssetDetail(p.asset_type, resolvePortfolioAssetId(p));
 
@@ -1481,7 +1507,7 @@ function renderPortfolioInstruments(positions, options = {}) {
       const pnlValues = data.map(positionUnrealizedPnl).filter(Number.isFinite);
       const totalPnl = pnlValues.length ? pnlValues.reduce((a,b)=>a+b,0) : null;
       const totalWeight = totalPortfolioValue > 0 ? totalValue / totalPortfolioValue : null;
-      tfoot.innerHTML = `<tr><td colspan="2">Celkem${filterLabel ? ` · ${filterLabel}` : ''}</td><td class="numeric">—</td><td>—</td><td class="numeric">${fmtNumber(totalValue,2)} CZK</td><td>—</td><td class="numeric">${totalWeight===null?'—':fmtNumber(totalWeight*100,2)+' %'}</td><td class="numeric">${formatSignedPortfolioMoney(totalPnl)}</td><td>—</td></tr>`;
+      tfoot.innerHTML = `<tr><td colspan="2">Celkem${filterLabel ? ` · ${filterLabel}` : ''}</td><td class="numeric">—</td><td>—</td><td class="numeric">${fmtNumber(totalValue,0)} CZK</td><td>—</td><td class="numeric">${totalWeight===null?'—':fmtNumber(totalWeight*100,2)+' %'}</td><td class="numeric">${formatSignedPortfolioMoney(totalPnl, 1)}</td><td>—</td></tr>`;
     }
 
     bindAppTableRows(table);
@@ -1919,9 +1945,14 @@ function initPortfolioTabs() {
   tabs.forEach(t => t.classList.remove('active'));
   sections.forEach(s => s.classList.remove('active'));
 
-  // ✅ výchozí tab = Přehled
-  const defaultTab = document.querySelector('.portfolio-tabs .tab[data-tab="value"]');
-  const defaultSection = document.getElementById('tab-value');
+  // Při návratu z detailu nástroje obnovíme list, ze kterého uživatel odešel.
+  const savedState = history.state || {};
+  const allowedTabs = new Set(['value', 'instruments', 'transactions', 'settings']);
+  const preferredTab = String(savedState.portfolioId || '') === String(window.CURRENT_PORTFOLIO_ID || '') && allowedTabs.has(savedState.portfolioTab)
+    ? savedState.portfolioTab
+    : 'value';
+  const defaultTab = document.querySelector(`.portfolio-tabs .tab[data-tab="${preferredTab}"]`);
+  const defaultSection = document.getElementById(`tab-${preferredTab}`);
 
   if (defaultTab && defaultSection) {
     defaultTab.classList.add('active');
@@ -1938,6 +1969,11 @@ function initPortfolioTabs() {
       document
         .getElementById(`tab-${btn.dataset.tab}`)
         ?.classList.add('active');
+      history.replaceState({
+        ...(history.state || {}),
+        portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
+        portfolioTab: btn.dataset.tab
+      }, '', window.location.href);
     };
   });
 }
