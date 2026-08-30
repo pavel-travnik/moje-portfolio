@@ -105,16 +105,47 @@ module.exports = async function (context, req) {
     const data = await pending.get(key);
     context.res = reply(200, data, { 'x-proxy-cache': 'MISS' });
   } catch (error) {
+    const message = String(error?.message || '');
+    let errorCode = 'UPSTREAM_ERROR';
+
+    if (message.includes('timeout')) {
+      errorCode = 'UPSTREAM_TIMEOUT';
+    } else if (message.includes('too large')) {
+      errorCode = 'UPSTREAM_RESPONSE_TOO_LARGE';
+    } else if (message.includes('invalid JSON')) {
+      errorCode = 'UPSTREAM_INVALID_JSON';
+    } else if (error?.statusCode) {
+      errorCode = `UPSTREAM_HTTP_${error.statusCode}`;
+    }
+
     context.log.error('[public-data] backend error', {
-      message: error.message,
+      errorCode,
+      message,
       statusCode: error.statusCode || null,
       type,
       id: normalizedId || null,
       apimKeyConfigured: Boolean(APIM_KEY),
       apimBaseUrlConfigured: Boolean(APIM_BASE_URL),
-      backendTimeoutMs: BACKEND_TIMEOUT_MS
+      backendTimeoutMs: BACKEND_TIMEOUT_MS,
+      maxResponseBytes: MAX_RESPONSE_BYTES
     });
-    if (hit?.data) { context.res = reply(200, hit.data, { 'x-proxy-cache': 'STALE', 'cache-control': 'public, max-age=60' }); return; }
-    context.res = reply(502, { error: 'Data se nepodarilo nacist.' }, { 'cache-control': 'no-store' });
+
+    if (hit?.data) {
+      context.res = reply(200, hit.data, {
+        'x-proxy-cache': 'STALE',
+        'cache-control': 'public, max-age=60'
+      });
+      return;
+    }
+
+    context.res = reply(502, {
+      error: 'Data se nepodarilo nacist.',
+      code: errorCode,
+      apimKeyConfigured: Boolean(APIM_KEY),
+      backendTimeoutMs: BACKEND_TIMEOUT_MS,
+      maxResponseBytes: MAX_RESPONSE_BYTES
+    }, {
+      'cache-control': 'no-store'
+    });
   }
 };
