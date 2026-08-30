@@ -135,7 +135,7 @@ apiCache.stockUniversePromise = null;
 // Krok 11: verejne datove endpointy jdou pres API Management.
 // Function key neni ve frontendu. APIM vola Function App na pozadi.
 // Poznamka: portfolio/login endpointy sem zamerne nepatri, ty budeme resit samostatne pres autentizaci.
-const APIM_API_BASE_URL = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
+const APIM_API_BASE_URL = '/api/private-api';
 
 const DPS_API_URL = `${APIM_API_BASE_URL}/get_dps_data`;
 const DPS_API = `${APIM_API_BASE_URL}/get_dps_funds`;
@@ -160,7 +160,7 @@ function publicDataProxyUrl(type, id = '') {
 // ===================================================
 // Soukromé portfolio endpointy budou volané přes APIM. Pokud vytvoříš jiné
 // APIM API pro privátní část, změň pouze tuto konstantu.
-const PORTFOLIO_PRIVATE_API_BASE_URL = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
+const PORTFOLIO_PRIVATE_API_BASE_URL = '/api/private-api';
 window.PORTFOLIO_API = PORTFOLIO_PRIVATE_API_BASE_URL;
 
 function getPortfolioApiBaseUrl() {
@@ -1385,6 +1385,14 @@ function ensureOverviewTableStyle() {
     }
 
     @media (max-width: 767px) {
+      .mobile-two-line { display: inline-block; line-height: 1.1; }
+      .overview-table th[data-key="perf3Y"],
+      .overview-table th[data-key="perf5Y"],
+      #fundTable .dps-overview-table th[data-key="perf3Y"],
+      #fundTable .dps-overview-table th[data-key="perf5Y"] {
+        white-space: normal !important;
+        line-height: 1.1 !important;
+      }
       .overview-view-switch {
         justify-content: stretch;
       }
@@ -1676,8 +1684,8 @@ function renderThreeColumnOverviewTable({
         <tr>
           <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
           <th data-key="metric" class="${sortKey === 'metric' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">${metricLabel}</th>
-          <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}"><span class="mobile-two-line">Výnos<br>3 roky</span></th>
-          <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}"><span class="mobile-two-line">Výnos<br>5 let</span></th>
+          <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 3 roky</th>
+          <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 5 let</th>
         </tr>
       </thead>
       <tbody>
