@@ -6,6 +6,7 @@ const APIM_KEY = process.env.INTERNAL_APIM_SUBSCRIPTION_KEY || '';
 const CACHE_TTL_SECONDS = Math.max(60, Number(process.env.PUBLIC_PROXY_CACHE_TTL_SECONDS || 21600));
 const MAX_CACHE_ITEMS = Math.max(50, Number(process.env.PUBLIC_PROXY_MAX_CACHE_ITEMS || 500));
 const MAX_RESPONSE_BYTES = Math.max(65536, Number(process.env.PUBLIC_PROXY_MAX_RESPONSE_BYTES || 5242880));
+const BACKEND_TIMEOUT_MS = Math.min(40000, Math.max(5000, Number(process.env.PUBLIC_PROXY_BACKEND_TIMEOUT_MS || 40000)));
 
 const cache = global.__PUBLIC_DATA_PROXY_CACHE__ || new Map();
 const pending = global.__PUBLIC_DATA_PROXY_PENDING__ || new Map();
@@ -65,7 +66,7 @@ function requestJson(url, headers = {}) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(15000, () => req.destroy(new Error('Backend request timeout')));
+    req.setTimeout(BACKEND_TIMEOUT_MS, () => req.destroy(new Error('Backend request timeout')));
     req.end();
   });
 }
@@ -104,7 +105,15 @@ module.exports = async function (context, req) {
     const data = await pending.get(key);
     context.res = reply(200, data, { 'x-proxy-cache': 'MISS' });
   } catch (error) {
-    context.log.error('[public-data] backend error', { message: error.message, type });
+    context.log.error('[public-data] backend error', {
+      message: error.message,
+      statusCode: error.statusCode || null,
+      type,
+      id: normalizedId || null,
+      apimKeyConfigured: Boolean(APIM_KEY),
+      apimBaseUrlConfigured: Boolean(APIM_BASE_URL),
+      backendTimeoutMs: BACKEND_TIMEOUT_MS
+    });
     if (hit?.data) { context.res = reply(200, hit.data, { 'x-proxy-cache': 'STALE', 'cache-control': 'public, max-age=60' }); return; }
     context.res = reply(502, { error: 'Data se nepodarilo nacist.' }, { 'cache-control': 'no-store' });
   }
