@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-detail-layout-v16';
+const PORTFOLIO_BUILD = '2026-08-30-detail-final-v16';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -339,14 +339,14 @@ function openCreatePortfolioModal() {
         </div>
         <div class="portfolio-kpi-grid">
           <div class="portfolio-kpi-primary">
-            <div class="kpi kpi-highlight"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+            <div class="kpi portfolio-kpi-highlight"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
           </div>
           <div class="portfolio-kpi-pair">
             <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
             <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
           </div>
           <div class="portfolio-kpi-secondary">
-            <div class="kpi kpi-highlight"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
+            <div class="kpi portfolio-kpi-highlight"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
             <div class="kpi"><span>Vážený výnos nakoupených nástrojů 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
             <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
             <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
@@ -359,11 +359,6 @@ function openCreatePortfolioModal() {
 
       <section id="tab-instruments" class="portfolio-tab">
         <h2>Detail</h2>
-        <div class="portfolio-detail-help">
-          Zde najdete přehled zadaných transakcí. Novou transakci můžete přidat v záložce <strong>Transakce</strong> pomocí tlačítka <strong>Přidat transakci</strong>.
-          Zadáte zde nový nákup nebo prodej vybraných nástrojů, které jsou v databázi. Pokud zadáte i nákupní cenu, vypočte se nerealizovaný zisk.
-          Jako vstupní transakci můžete zadat také aktuální stav své investice a následně přidávat další nové transakce.
-        </div>
         <div id="portfolio-instruments-filter" class="portfolio-instruments-filter"></div>
         <div class="mobile-sort">
           <label for="inst-sort">Řadit podle</label>
@@ -396,6 +391,9 @@ function openCreatePortfolioModal() {
       </section>
 
       <section id="tab-transactions" class="portfolio-tab">
+        <div class="portfolio-transactions-help">
+          Zde najdete přehled zadaných transakcí. Novou můžete přidat pomocí tlačítka <strong>Přidat transakci</strong>. Zadáte zde nový nákup nebo prodej vybraných nástrojů, které jsou v databázi. Pokud zadáte i nákupní cenu, vypočte se nerealizovaný zisk. Technicky můžete jako vstupní transakci zadat také aktuální stav své investice a následně přidávat další nové transakce.
+        </div>
         <div class="toolbar" style="justify-content:space-between">
           <span class="muted">Transakce</span>
           <button id="btn-add-transaction" class="button pill-button" data-portfolio-id="${portfolioId}">Přidat transakci</button>
@@ -1469,11 +1467,7 @@ function renderPortfolioInstruments(positions, options = {}) {
 
       tr.innerHTML = `
         <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
-        <td data-label="Název" class="instrument-name-cell">
-          <span class="instrument-name-text">${positionDisplayName(p)}</span>
-          <button type="button" class="mobile-pnl-info" aria-label="Zobrazit nerealizovaný zisk" aria-expanded="false">i</button>
-          <span class="mobile-pnl-bubble" role="tooltip">Nerealizovaný zisk: ${unrealized === null ? '—' : formatSignedPortfolioMoney(unrealized, 1)}</span>
-        </td>
+        <td data-label="Název">${positionDisplayName(p)}</td>
         <td data-label="Počet kusů">
           ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
         </td>
@@ -1487,16 +1481,6 @@ function renderPortfolioInstruments(positions, options = {}) {
         </td>
       `;
 
-      tr.querySelector('.mobile-pnl-info')?.addEventListener('click', event => {
-        event.stopPropagation();
-        const button = event.currentTarget;
-        const bubble = tr.querySelector('.mobile-pnl-bubble');
-        const willOpen = !bubble.classList.contains('is-open');
-        tbody.querySelectorAll('.mobile-pnl-bubble.is-open').forEach(x => x.classList.remove('is-open'));
-        tbody.querySelectorAll('.mobile-pnl-info[aria-expanded="true"]').forEach(x => x.setAttribute('aria-expanded', 'false'));
-        bubble.classList.toggle('is-open', willOpen);
-        button.setAttribute('aria-expanded', String(willOpen));
-      });
       // ✅ klik → detail instrumentu
       tr.onclick = () => openAssetDetail(p.asset_type, resolvePortfolioAssetId(p));
 
@@ -1945,7 +1929,7 @@ function initPortfolioTabs() {
   tabs.forEach(t => t.classList.remove('active'));
   sections.forEach(s => s.classList.remove('active'));
 
-  // Při návratu z detailu nástroje obnovíme list, ze kterého uživatel odešel.
+  // Obnoví aktivní list při návratu z detailu nástroje.
   const savedState = history.state || {};
   const allowedTabs = new Set(['value', 'instruments', 'transactions', 'settings']);
   const preferredTab = String(savedState.portfolioId || '') === String(window.CURRENT_PORTFOLIO_ID || '') && allowedTabs.has(savedState.portfolioTab)
