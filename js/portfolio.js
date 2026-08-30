@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-navigation-repair-v19';
+const PORTFOLIO_BUILD = '2026-08-30-tab-history-final-v18';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -455,20 +455,7 @@ function openCreatePortfolioModal() {
     `;
 
     initPortfolioTabs();
-    document.querySelector('.back-btn').onclick = () => {
-      const previousTab = window.PORTFOLIO_TAB_HISTORY?.pop();
-      if (previousTab) {
-        activatePortfolioTab(previousTab);
-        history.replaceState({
-          ...(history.state || {}),
-          page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
-          portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
-          portfolioTab: previousTab
-        }, '', window.location.href);
-        return;
-      }
-      history.back();
-    };
+    document.querySelector('.back-btn').onclick = () => history.back();
     document.getElementById('btn-add-transaction').onclick = () => openTransactionModal(portfolioId);
 
     const portfolios = await fetchUserPortfolios();
@@ -936,13 +923,11 @@ async function openAssetDetail(assetType, assetId) {
       return;
   }
   if (window.CURRENT_PORTFOLIO_ID) {
-    const returnContext = {
-      page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
+    history.replaceState({
+      ...(history.state || {}),
       portfolioId: String(window.CURRENT_PORTFOLIO_ID),
       portfolioTab: 'instruments'
-    };
-    sessionStorage.setItem('portfolio_return_context', JSON.stringify(returnContext));
-    history.replaceState({ ...(history.state || {}), ...returnContext }, '', `/${returnContext.page}`);
+    }, '', window.location.href);
   }
   if (typeof loadPage === 'function') {
     loadPage(path);
@@ -954,40 +939,99 @@ async function openAssetDetail(assetType, assetId) {
 // ===================================================
 // API
 // ===================================================
-async function fetchUserPortfolios() {
-  const r = await portfolioAuthFetch(
-    `${PORTFOLIO_API}/get_portfolios?is_active=1`
-  );
-  const data = await r.json();
-  if (!Array.isArray(data)) return [];
-  // Bezpečnostní klientský filtr. Primární filtr má být na API/SQL:
-  // SELECT * FROM dbo.Portfolio WHERE user_id = ? AND is_active = 1
-  return data.filter(p => p.is_active === undefined || p.is_active === null || Number(p.is_active) === 1 || p.is_active === true);
+const PORTFOLIO_CACHE_TTL_MS = 5 * 60 * 1000;
+const portfolioMemoryCache = window.__portfolioMemoryCache || {
+  portfolios: null,
+  details: new Map(),
+  transactions: new Map(),
+  pending: new Map()
+};
+window.__portfolioMemoryCache = portfolioMemoryCache;
+
+function getPortfolioCacheEntry(bucket, key = null) {
+  const entry = key === null ? portfolioMemoryCache[bucket] : portfolioMemoryCache[bucket].get(String(key));
+  if (!entry || Date.now() - entry.savedAt > PORTFOLIO_CACHE_TTL_MS) return null;
+  return entry.data;
 }
 
-async function fetchPortfolioDetail(id) {
-  const r = await portfolioAuthFetch(
-    `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${encodeURIComponent(id)}`
-  );
-  return await r.json();
+function setPortfolioCacheEntry(bucket, key, data) {
+  const entry = { data, savedAt: Date.now() };
+  if (key === null) portfolioMemoryCache[bucket] = entry;
+  else portfolioMemoryCache[bucket].set(String(key), entry);
+  return data;
 }
 
-async function fetchPortfolioTransactions(portfolioId) {
-  try {
-    const r = await portfolioAuthFetch(
-      `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${encodeURIComponent(portfolioId)}`
-    );
-    if (!r.ok) return [];
+function invalidatePortfolioCache(portfolioId = null) {
+  if (portfolioId === null || portfolioId === undefined) {
+    portfolioMemoryCache.portfolios = null;
+    portfolioMemoryCache.details.clear();
+    portfolioMemoryCache.transactions.clear();
+    portfolioMemoryCache.pending.clear();
+    return;
+  }
+  const key = String(portfolioId);
+  portfolioMemoryCache.details.delete(key);
+  portfolioMemoryCache.transactions.delete(key);
+  portfolioMemoryCache.pending.delete(`detail:${key}`);
+  portfolioMemoryCache.pending.delete(`transactions:${key}`);
+}
+window.invalidatePortfolioCache = invalidatePortfolioCache;
 
+async function cachedPortfolioRequest(requestKey, loader) {
+  if (portfolioMemoryCache.pending.has(requestKey)) return portfolioMemoryCache.pending.get(requestKey);
+  const promise = Promise.resolve().then(loader).finally(() => portfolioMemoryCache.pending.delete(requestKey));
+  portfolioMemoryCache.pending.set(requestKey, promise);
+  return promise;
+}
+
+async function fetchUserPortfolios(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = getPortfolioCacheEntry('portfolios');
+    if (cached) return cached;
+  }
+  return cachedPortfolioRequest('portfolios', async () => {
+    const r = await portfolioAuthFetch(`${PORTFOLIO_API}/get_portfolios?is_active=1`, { showLoader: forceRefresh });
     const data = await r.json();
+    const filtered = Array.isArray(data)
+      ? data.filter(p => p.is_active === undefined || p.is_active === null || Number(p.is_active) === 1 || p.is_active === true)
+      : [];
+    return setPortfolioCacheEntry('portfolios', null, filtered);
+  });
+}
 
-    // ✅ API vrací PŘÍMO POLE, ne objekt
-    if (Array.isArray(data)) return data;
+async function fetchPortfolioDetail(id, forceRefresh = false) {
+  const key = String(id);
+  if (!forceRefresh) {
+    const cached = getPortfolioCacheEntry('details', key);
+    if (cached) return cached;
+  }
+  return cachedPortfolioRequest(`detail:${key}`, async () => {
+    const r = await portfolioAuthFetch(
+      `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${encodeURIComponent(id)}`,
+      { showLoader: forceRefresh }
+    );
+    const data = await r.json();
+    return setPortfolioCacheEntry('details', key, data);
+  });
+}
 
-    // fallback pokud by se struktura změnila
-    if (Array.isArray(data.trades)) return data.trades;
-
-    return [];
+async function fetchPortfolioTransactions(portfolioId, forceRefresh = false) {
+  const key = String(portfolioId);
+  if (!forceRefresh) {
+    const cached = getPortfolioCacheEntry('transactions', key);
+    if (cached) return cached;
+  }
+  try {
+    return await cachedPortfolioRequest(`transactions:${key}`, async () => {
+      const r = await portfolioAuthFetch(
+        `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${encodeURIComponent(portfolioId)}`,
+        { showLoader: forceRefresh }
+      );
+      if (!r.ok) return [];
+      const data = await r.json();
+      const trades = Array.isArray(data) ? data : Array.isArray(data?.trades) ? data.trades : [];
+      return setPortfolioCacheEntry('transactions', key, trades);
+    });
   } catch (err) {
     console.warn('Chyba při načítání transakcí:', err);
     return [];
@@ -1022,6 +1066,7 @@ async function createPortfolio(name) {
         console.error("CREATE PORTFOLIO ERROR:", data);
         throw new Error(data.error || "Create failed");
     }
+    portfolioMemoryCache.portfolios = null;
     return data;
 }
 
@@ -1882,9 +1927,10 @@ function openTransactionModal(portfolioId, originalTrade = null) {
       // DŮLEŽITÉ: ukládáme pouze jednou.
       // Endpoint save_portfolio_trades už na backendu spouští rebuild pozic i přepočet valuace.
       await savePortfolioTrade(portfolioId, trade);
+      invalidatePortfolioCache(portfolioId);
 
-      // Načti nová data až po dokončení uložení + backendového přepočtu.
-      const detail = await fetchPortfolioDetail(portfolioId);
+      // Po změně transakce načteme jednou čerstvá data a znovu je uložíme do cache.
+      const detail = await fetchPortfolioDetail(portfolioId, true);
       renderPortfolioOverview(detail);
 
       CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
@@ -1939,34 +1985,52 @@ async function savePortfolioTrade(portfolioId, trade) {
 function initPortfolioTabs() {
   const tabs = document.querySelectorAll('.portfolio-tabs .tab');
   const sections = document.querySelectorAll('.portfolio-tab');
-  const allowedTabs = new Set(['value', 'instruments', 'transactions', 'settings']);
+
+  // ✅ reset – všechno pryč
+  tabs.forEach(t => t.classList.remove('active'));
+  sections.forEach(s => s.classList.remove('active'));
+
+  // Obnoví aktivní list při návratu z detailu nástroje.
   const savedState = history.state || {};
+  const allowedTabs = new Set(['value', 'instruments', 'transactions', 'settings']);
   const preferredTab = String(savedState.portfolioId || '') === String(window.CURRENT_PORTFOLIO_ID || '') && allowedTabs.has(savedState.portfolioTab)
     ? savedState.portfolioTab
     : 'value';
+  const defaultTab = document.querySelector(`.portfolio-tabs .tab[data-tab="${preferredTab}"]`);
+  const defaultSection = document.getElementById(`tab-${preferredTab}`);
 
-  window.PORTFOLIO_TAB_HISTORY = [];
-  activatePortfolioTab(preferredTab);
+  if (defaultTab && defaultSection) {
+    defaultTab.classList.add('active');
+    defaultSection.classList.add('active');
+  }
+
+  // Aktuální list je součástí položky historie portfolia.
   history.replaceState({
-    ...savedState,
+    ...(history.state || {}),
     page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
     portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
     portfolioTab: preferredTab
   }, '', window.location.href);
 
+  // Každý nově otevřený list vytvoří vlastní krok historie.
   tabs.forEach(btn => {
     btn.onclick = () => {
-      const currentTab = document.querySelector('.portfolio-tabs .tab.active')?.dataset.tab;
-      const nextTab = btn.dataset.tab;
-      if (!allowedTabs.has(nextTab) || currentTab === nextTab) return;
-      if (currentTab) window.PORTFOLIO_TAB_HISTORY.push(currentTab);
-      activatePortfolioTab(nextTab);
-      history.replaceState({
-        ...(history.state || {}),
-        page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
-        portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
-        portfolioTab: nextTab
-      }, '', window.location.href);
+      tabs.forEach(t => t.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+
+      btn.classList.add('active');
+      document
+        .getElementById(`tab-${btn.dataset.tab}`)
+        ?.classList.add('active');
+      // Nekládáme do historie stejný list dvakrát.
+      if ((history.state || {}).portfolioTab !== btn.dataset.tab) {
+        history.pushState({
+          ...(history.state || {}),
+          page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
+          portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
+          portfolioTab: btn.dataset.tab
+        }, '', window.location.href);
+      }
     };
   });
 }
