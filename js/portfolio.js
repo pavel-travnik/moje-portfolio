@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-tab-history-final-v18';
+const PORTFOLIO_BUILD = '2026-08-30-navigation-repair-v19';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -455,7 +455,20 @@ function openCreatePortfolioModal() {
     `;
 
     initPortfolioTabs();
-    document.querySelector('.back-btn').onclick = () => history.back();
+    document.querySelector('.back-btn').onclick = () => {
+      const previousTab = window.PORTFOLIO_TAB_HISTORY?.pop();
+      if (previousTab) {
+        activatePortfolioTab(previousTab);
+        history.replaceState({
+          ...(history.state || {}),
+          page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
+          portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
+          portfolioTab: previousTab
+        }, '', window.location.href);
+        return;
+      }
+      history.back();
+    };
     document.getElementById('btn-add-transaction').onclick = () => openTransactionModal(portfolioId);
 
     const portfolios = await fetchUserPortfolios();
@@ -923,11 +936,13 @@ async function openAssetDetail(assetType, assetId) {
       return;
   }
   if (window.CURRENT_PORTFOLIO_ID) {
-    history.replaceState({
-      ...(history.state || {}),
+    const returnContext = {
+      page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
       portfolioId: String(window.CURRENT_PORTFOLIO_ID),
       portfolioTab: 'instruments'
-    }, '', window.location.href);
+    };
+    sessionStorage.setItem('portfolio_return_context', JSON.stringify(returnContext));
+    history.replaceState({ ...(history.state || {}), ...returnContext }, '', `/${returnContext.page}`);
   }
   if (typeof loadPage === 'function') {
     loadPage(path);
@@ -1924,52 +1939,34 @@ async function savePortfolioTrade(portfolioId, trade) {
 function initPortfolioTabs() {
   const tabs = document.querySelectorAll('.portfolio-tabs .tab');
   const sections = document.querySelectorAll('.portfolio-tab');
-
-  // ✅ reset – všechno pryč
-  tabs.forEach(t => t.classList.remove('active'));
-  sections.forEach(s => s.classList.remove('active'));
-
-  // Obnoví aktivní list při návratu z detailu nástroje.
-  const savedState = history.state || {};
   const allowedTabs = new Set(['value', 'instruments', 'transactions', 'settings']);
+  const savedState = history.state || {};
   const preferredTab = String(savedState.portfolioId || '') === String(window.CURRENT_PORTFOLIO_ID || '') && allowedTabs.has(savedState.portfolioTab)
     ? savedState.portfolioTab
     : 'value';
-  const defaultTab = document.querySelector(`.portfolio-tabs .tab[data-tab="${preferredTab}"]`);
-  const defaultSection = document.getElementById(`tab-${preferredTab}`);
 
-  if (defaultTab && defaultSection) {
-    defaultTab.classList.add('active');
-    defaultSection.classList.add('active');
-  }
-
-  // Aktuální list je součástí položky historie portfolia.
+  window.PORTFOLIO_TAB_HISTORY = [];
+  activatePortfolioTab(preferredTab);
   history.replaceState({
-    ...(history.state || {}),
+    ...savedState,
     page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
     portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
     portfolioTab: preferredTab
   }, '', window.location.href);
 
-  // Každý nově otevřený list vytvoří vlastní krok historie.
   tabs.forEach(btn => {
     btn.onclick = () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      sections.forEach(s => s.classList.remove('active'));
-
-      btn.classList.add('active');
-      document
-        .getElementById(`tab-${btn.dataset.tab}`)
-        ?.classList.add('active');
-      // Nekládáme do historie stejný list dvakrát.
-      if ((history.state || {}).portfolioTab !== btn.dataset.tab) {
-        history.pushState({
-          ...(history.state || {}),
-          page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
-          portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
-          portfolioTab: btn.dataset.tab
-        }, '', window.location.href);
-      }
+      const currentTab = document.querySelector('.portfolio-tabs .tab.active')?.dataset.tab;
+      const nextTab = btn.dataset.tab;
+      if (!allowedTabs.has(nextTab) || currentTab === nextTab) return;
+      if (currentTab) window.PORTFOLIO_TAB_HISTORY.push(currentTab);
+      activatePortfolioTab(nextTab);
+      history.replaceState({
+        ...(history.state || {}),
+        page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
+        portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
+        portfolioTab: nextTab
+      }, '', window.location.href);
     };
   });
 }

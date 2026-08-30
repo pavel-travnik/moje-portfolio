@@ -752,8 +752,33 @@ document.addEventListener('focusin', e => {
   preloadSectionData(link.dataset.page).catch(() => {});
 });
 
+function navigateSmartBack() {
+  if (typeof hideTooltip === 'function') hideTooltip();
+  try {
+    const raw = sessionStorage.getItem('portfolio_return_context');
+    const context = raw ? JSON.parse(raw) : null;
+    if (context?.page && context?.portfolioId) {
+      sessionStorage.removeItem('portfolio_return_context');
+      const state = {
+        page: context.page,
+        portfolioId: String(context.portfolioId),
+        portfolioTab: context.portfolioTab || 'instruments'
+      };
+      history.replaceState(state, '', `/${context.page}`);
+      loadPage(context.page, false);
+      return;
+    }
+  } catch (error) {
+    sessionStorage.removeItem('portfolio_return_context');
+    console.warn('Návrat do portfolia se nepodařilo obnovit:', error);
+  }
+  history.back();
+}
+window.navigateSmartBack = navigateSmartBack;
+
 window.addEventListener('popstate', e => {
-  if (e.state?.page) loadPage(e.state.page, false);
+  const page = e.state?.page || location.pathname.replace(/^\/+/, '') || 'uvod';
+  loadPage(page, false);
 });
 
 document.addEventListener('click', e => {
