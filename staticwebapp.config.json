@@ -1,4 +1,36 @@
 {
+  "routes": [
+    {
+      "route": "/api/public-data",
+      "methods": [
+        "GET"
+      ],
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/api/private-api/*",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "allowedRoles": [
+        "anonymous"
+      ]
+    },
+    {
+      "route": "/api/*",
+      "methods": [
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "TRACE",
+        "CONNECT"
+      ],
+      "statusCode": 405
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
@@ -9,6 +41,14 @@
       "/api/*",
       "/.auth/*"
     ]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Content-Security-Policy-Report-Only": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; connect-src 'self'; img-src 'self' data: https:; font-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'"
   },
   "platform": {
     "apiRuntime": "node:18"
