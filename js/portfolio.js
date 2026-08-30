@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-tab-history-final-v18';
+const PORTFOLIO_BUILD = '2026-08-30-mobile-tables-v22';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -108,7 +108,81 @@ function assetTypeLabel(assetType) {
 }
 
 function ensurePortfolioUiStyles() {
-  // Styly jsou načítány z centrálního souboru styles.css.
+  const styleId = 'portfolio-mobile-table-overrides-v22';
+  if (document.getElementById(styleId)) return;
+
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.textContent = `
+    @media (max-width: 768px) {
+      /* DETAIL: pouze Název, Počet kusů a Hodnota. */
+      #instruments-table {
+        display: table !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+      }
+      #instruments-table thead { display: table-header-group !important; }
+      #instruments-table tbody { display: table-row-group !important; }
+      #instruments-table tr { display: table-row !important; }
+      #instruments-table th,
+      #instruments-table td {
+        display: none !important;
+        font-size: calc(85% - 1px) !important;
+        padding: 7px 5px !important;
+        vertical-align: middle !important;
+      }
+      #instruments-table th:nth-child(2),
+      #instruments-table td:nth-child(2),
+      #instruments-table th:nth-child(3),
+      #instruments-table td:nth-child(3),
+      #instruments-table th:nth-child(5),
+      #instruments-table td:nth-child(5) {
+        display: table-cell !important;
+      }
+      #instruments-table th:nth-child(2),
+      #instruments-table td:nth-child(2) {
+        width: 50% !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+      }
+      #instruments-table th:nth-child(3),
+      #instruments-table td:nth-child(3) {
+        width: 20% !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+      }
+      #instruments-table th:nth-child(5),
+      #instruments-table td:nth-child(5) {
+        width: 30% !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+      }
+      #instruments-table tfoot { display: none !important; }
+
+      /* TRANSAKCE: tabulka o 1 px menší než dosavadní mobilní zobrazení. */
+      #transactions-table th,
+      #transactions-table td {
+        font-size: calc(85% - 1px) !important;
+      }
+
+      /* Více prostoru kolem tlačítka Přidat transakci. */
+      #tab-transactions > .toolbar {
+        margin: 10px 0 18px !important;
+        padding: 8px 2px !important;
+        gap: 14px !important;
+        align-items: center !important;
+      }
+      #btn-add-transaction {
+        margin: 4px 2px !important;
+        padding: 9px 16px !important;
+        min-height: 40px !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 function setSortDirectionButton(btn, asc) {
@@ -458,36 +532,51 @@ function openCreatePortfolioModal() {
     document.querySelector('.back-btn').onclick = () => history.back();
     document.getElementById('btn-add-transaction').onclick = () => openTransactionModal(portfolioId);
 
-    const portfolios = await fetchUserPortfolios();
     document.getElementById('btn-other-portfolio').onclick = () => {
       history.pushState({}, '', '/portfolio');
       loadPortfolioPage('portfolio');
     };
 
-    const detail = await fetchPortfolioDetail(portfolioId);
-    const currentPortfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
+    // 1. fáze: prioritně načteme jen odpověď potřebnou pro list Hodnota.
+    // Seznam portfolií, tabulka Detail a Transakce už neblokují první vykreslení.
+    const portfoliosPromise = fetchUserPortfolios(false, true).catch(() => []);
+    const detail = await fetchPortfolioDetail(portfolioId, false, false);
+    if (String(window.CURRENT_PORTFOLIO_ID) !== String(portfolioId)) return;
+
+    const cachedPortfolios = portfolioCacheGet('portfolios') || [];
+    const currentPortfolio = cachedPortfolios.find(p => String(p.portfolio_id) === String(portfolioId));
     setPortfolioTitle(detail, currentPortfolio, portfolioId);
     try { renderPortfolioOverview(detail); } catch (error) { console.error('Chyba vykreslení souhrnu portfolia:', error); }
-    try { renderPortfolioSettings(detail, portfolioId); } catch (error) { console.error('Chyba vykreslení nastavení portfolia:', error); }
 
-    CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
-    portfolioInstrumentFilter = null;
-    try { renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS); } catch (error) { console.error('Chyba vykreslení pozic portfolia:', error); }
+    // 2. fáze: zbytek vykreslíme po uvolnění hlavního vlákna a bez globálního loaderu.
+    const loadSecondaryPortfolioData = async () => {
+      if (String(window.CURRENT_PORTFOLIO_ID) !== String(portfolioId)) return;
+      const portfolios = await portfoliosPromise;
+      const portfolio = portfolios.find(p => String(p.portfolio_id) === String(portfolioId));
+      setPortfolioTitle(detail, portfolio, portfolioId);
+      try { renderPortfolioSettings(detail, portfolioId); } catch (error) { console.error('Chyba vykreslení nastavení portfolia:', error); }
 
-    const raw = detail.valuation_by_asset_type || [];
-    const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
-    const allocation = raw.map(x => {
-      const value = Number(x.value) || 0;
-      return {
-        label: assetTypeLabel(x.asset_type),
-        value,
-        pct: total > 0 ? value / total : 0
-      };
-    });
-    renderAllocationDonut(allocation, 'portfolio-allocation-chart', detail?.valuation?.gross_value_base);
+      CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
+      portfolioInstrumentFilter = null;
+      try { renderPortfolioInstruments(CURRENT_PORTFOLIO_POSITIONS); } catch (error) { console.error('Chyba vykreslení pozic portfolia:', error); }
 
-    const trades = await fetchPortfolioTransactions(portfolioId);
-    renderPortfolioTransactions(trades);
+      const raw = detail.valuation_by_asset_type || [];
+      const total = raw.reduce((sum, x) => sum + (Number(x.value) || 0), 0);
+      const allocation = raw.map(x => {
+        const value = Number(x.value) || 0;
+        return { label: assetTypeLabel(x.asset_type), value, pct: total > 0 ? value / total : 0 };
+      });
+      renderAllocationDonut(allocation, 'portfolio-allocation-chart', detail?.valuation?.gross_value_base);
+
+      const trades = await fetchPortfolioTransactions(portfolioId, false, true);
+      if (String(window.CURRENT_PORTFOLIO_ID) === String(portfolioId)) renderPortfolioTransactions(trades);
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => loadSecondaryPortfolioData().catch(console.error), { timeout: 800 });
+    } else {
+      window.setTimeout(() => loadSecondaryPortfolioData().catch(console.error), 50);
+    }
   }
 };
 
@@ -948,21 +1037,25 @@ const portfolioMemoryCache = window.__portfolioMemoryCache || {
 };
 window.__portfolioMemoryCache = portfolioMemoryCache;
 
-function getPortfolioCacheEntry(bucket, key = null) {
+function portfolioCacheGet(bucket, key = null) {
   const entry = key === null ? portfolioMemoryCache[bucket] : portfolioMemoryCache[bucket].get(String(key));
   if (!entry || Date.now() - entry.savedAt > PORTFOLIO_CACHE_TTL_MS) return null;
   return entry.data;
 }
-
-function setPortfolioCacheEntry(bucket, key, data) {
+function portfolioCacheSet(bucket, key, data) {
   const entry = { data, savedAt: Date.now() };
   if (key === null) portfolioMemoryCache[bucket] = entry;
   else portfolioMemoryCache[bucket].set(String(key), entry);
   return data;
 }
-
+function portfolioCachedRequest(key, loader) {
+  if (portfolioMemoryCache.pending.has(key)) return portfolioMemoryCache.pending.get(key);
+  const promise = Promise.resolve().then(loader).finally(() => portfolioMemoryCache.pending.delete(key));
+  portfolioMemoryCache.pending.set(key, promise);
+  return promise;
+}
 function invalidatePortfolioCache(portfolioId = null) {
-  if (portfolioId === null || portfolioId === undefined) {
+  if (portfolioId == null) {
     portfolioMemoryCache.portfolios = null;
     portfolioMemoryCache.details.clear();
     portfolioMemoryCache.transactions.clear();
@@ -972,65 +1065,48 @@ function invalidatePortfolioCache(portfolioId = null) {
   const key = String(portfolioId);
   portfolioMemoryCache.details.delete(key);
   portfolioMemoryCache.transactions.delete(key);
-  portfolioMemoryCache.pending.delete(`detail:${key}`);
-  portfolioMemoryCache.pending.delete(`transactions:${key}`);
 }
 window.invalidatePortfolioCache = invalidatePortfolioCache;
 
-async function cachedPortfolioRequest(requestKey, loader) {
-  if (portfolioMemoryCache.pending.has(requestKey)) return portfolioMemoryCache.pending.get(requestKey);
-  const promise = Promise.resolve().then(loader).finally(() => portfolioMemoryCache.pending.delete(requestKey));
-  portfolioMemoryCache.pending.set(requestKey, promise);
-  return promise;
-}
-
-async function fetchUserPortfolios(forceRefresh = false) {
-  if (!forceRefresh) {
-    const cached = getPortfolioCacheEntry('portfolios');
-    if (cached) return cached;
-  }
-  return cachedPortfolioRequest('portfolios', async () => {
-    const r = await portfolioAuthFetch(`${PORTFOLIO_API}/get_portfolios?is_active=1`, { showLoader: forceRefresh });
+async function fetchUserPortfolios(forceRefresh = false, background = false) {
+  const cached = !forceRefresh ? portfolioCacheGet('portfolios') : null;
+  if (cached) return cached;
+  return portfolioCachedRequest('portfolios', async () => {
+    const r = await portfolioAuthFetch(`${PORTFOLIO_API}/get_portfolios?is_active=1`, { showLoader: !background });
     const data = await r.json();
-    const filtered = Array.isArray(data)
-      ? data.filter(p => p.is_active === undefined || p.is_active === null || Number(p.is_active) === 1 || p.is_active === true)
-      : [];
-    return setPortfolioCacheEntry('portfolios', null, filtered);
+    const filtered = Array.isArray(data) ? data.filter(p => p.is_active === undefined || p.is_active === null || Number(p.is_active) === 1 || p.is_active === true) : [];
+    return portfolioCacheSet('portfolios', null, filtered);
   });
 }
 
-async function fetchPortfolioDetail(id, forceRefresh = false) {
+async function fetchPortfolioDetail(id, forceRefresh = false, background = false) {
   const key = String(id);
-  if (!forceRefresh) {
-    const cached = getPortfolioCacheEntry('details', key);
-    if (cached) return cached;
-  }
-  return cachedPortfolioRequest(`detail:${key}`, async () => {
+  const cached = !forceRefresh ? portfolioCacheGet('details', key) : null;
+  if (cached) return cached;
+  return portfolioCachedRequest(`detail:${key}`, async () => {
     const r = await portfolioAuthFetch(
       `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${encodeURIComponent(id)}`,
-      { showLoader: forceRefresh }
+      { showLoader: !background }
     );
     const data = await r.json();
-    return setPortfolioCacheEntry('details', key, data);
+    return portfolioCacheSet('details', key, data);
   });
 }
 
-async function fetchPortfolioTransactions(portfolioId, forceRefresh = false) {
+async function fetchPortfolioTransactions(portfolioId, forceRefresh = false, background = true) {
   const key = String(portfolioId);
-  if (!forceRefresh) {
-    const cached = getPortfolioCacheEntry('transactions', key);
-    if (cached) return cached;
-  }
+  const cached = !forceRefresh ? portfolioCacheGet('transactions', key) : null;
+  if (cached) return cached;
   try {
-    return await cachedPortfolioRequest(`transactions:${key}`, async () => {
+    return await portfolioCachedRequest(`transactions:${key}`, async () => {
       const r = await portfolioAuthFetch(
         `${PORTFOLIO_API}/get_portfolio_trades?portfolio_id=${encodeURIComponent(portfolioId)}`,
-        { showLoader: forceRefresh }
+        { showLoader: !background }
       );
       if (!r.ok) return [];
       const data = await r.json();
       const trades = Array.isArray(data) ? data : Array.isArray(data?.trades) ? data.trades : [];
-      return setPortfolioCacheEntry('transactions', key, trades);
+      return portfolioCacheSet('transactions', key, trades);
     });
   } catch (err) {
     console.warn('Chyba při načítání transakcí:', err);
@@ -1066,7 +1142,6 @@ async function createPortfolio(name) {
         console.error("CREATE PORTFOLIO ERROR:", data);
         throw new Error(data.error || "Create failed");
     }
-    portfolioMemoryCache.portfolios = null;
     return data;
 }
 
@@ -1929,8 +2004,8 @@ function openTransactionModal(portfolioId, originalTrade = null) {
       await savePortfolioTrade(portfolioId, trade);
       invalidatePortfolioCache(portfolioId);
 
-      // Po změně transakce načteme jednou čerstvá data a znovu je uložíme do cache.
-      const detail = await fetchPortfolioDetail(portfolioId, true);
+      // Po změně jednou načteme čerstvá data a znovu je uložíme do cache.
+      const detail = await fetchPortfolioDetail(portfolioId, true, false);
       renderPortfolioOverview(detail);
 
       CURRENT_PORTFOLIO_POSITIONS = Array.isArray(detail?.positions) ? detail.positions : [];
