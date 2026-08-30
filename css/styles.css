@@ -2940,38 +2940,123 @@ PORTFOLIO - DETAIL, TRANSAKCE A HODNOTA - FINAL 2026-08-30
   #instruments-table td:nth-child(n+3) { white-space: nowrap !important; }
 }
 
-/* Mobil: pouze Název, Počet kusů a Hodnota. Bez bubliny a bez zisku v názvu. */
+/* =====================================================
+PORTFOLIO MOBILE TABLES - FINAL v24
+Detail: Nazev, Hodnota, Nerealizovany zisk
+Transakce: Typ, Smer, Vstupni investice
+===================================================== */
 @media (max-width: 768px) {
-  #instruments-table { display: table !important; width: 100% !important; table-layout: fixed !important; }
-  #instruments-table thead { display: table-header-group !important; }
-  #instruments-table tbody { display: table-row-group !important; }
-  #instruments-table tr { display: table-row !important; }
-  #instruments-table th, #instruments-table td { display: none !important; }
-  #instruments-table th:nth-child(2), #instruments-table td:nth-child(2),
-  #instruments-table th:nth-child(3), #instruments-table td:nth-child(3),
-  #instruments-table th:nth-child(5), #instruments-table td:nth-child(5) { display: table-cell !important; }
-  #instruments-table th:nth-child(2), #instruments-table td:nth-child(2) { width: 50% !important; text-align: left !important; white-space: normal !important; }
-  #instruments-table th:nth-child(3), #instruments-table td:nth-child(3) { width: 20% !important; text-align: right !important; white-space: nowrap !important; }
-  #instruments-table th:nth-child(5), #instruments-table td:nth-child(5) { width: 30% !important; text-align: right !important; white-space: nowrap !important; }
-  #instruments-table tfoot { display: none !important; }
+  #instruments-table,
+  #transactions-table {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+
+  #instruments-table thead,
+  #transactions-table thead {
+    display: table-header-group !important;
+  }
+
+  #instruments-table tbody,
+  #transactions-table tbody {
+    display: table-row-group !important;
+  }
+
+  #instruments-table tr,
+  #transactions-table tr {
+    display: table-row !important;
+    width: auto !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  #instruments-table th,
+  #instruments-table td,
+  #transactions-table th,
+  #transactions-table td {
+    display: none !important;
+    padding: 8px 5px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    vertical-align: middle !important;
+  }
+
+  #instruments-table td::before,
+  #transactions-table td::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* Detail portfolia: sloupce 2, 5 a 8. */
+  #instruments-table th:nth-child(2),
+  #instruments-table td:nth-child(2),
+  #instruments-table th:nth-child(5),
+  #instruments-table td:nth-child(5),
+  #instruments-table th:nth-child(8),
+  #instruments-table td:nth-child(8) {
+    display: table-cell !important;
+  }
+
+  #instruments-table th:nth-child(2),
+  #instruments-table td:nth-child(2) {
+    width: 44% !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #instruments-table th:nth-child(5),
+  #instruments-table td:nth-child(5) {
+    width: 25% !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  #instruments-table th:nth-child(8),
+  #instruments-table td:nth-child(8) {
+    width: 31% !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  #instruments-table tfoot {
+    display: none !important;
+  }
+
+  /* Transakce: sloupce 2, 3 a 6. */
+  #transactions-table th:nth-child(2),
+  #transactions-table td:nth-child(2),
+  #transactions-table th:nth-child(3),
+  #transactions-table td:nth-child(3),
+  #transactions-table th:nth-child(6),
+  #transactions-table td:nth-child(6) {
+    display: table-cell !important;
+  }
+
+  #transactions-table th:nth-child(2),
+  #transactions-table td:nth-child(2) {
+    width: 50% !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #transactions-table th:nth-child(3),
+  #transactions-table td:nth-child(3) {
+    width: 18% !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  #transactions-table th:nth-child(6),
+  #transactions-table td:nth-child(6) {
+    width: 32% !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
 }
 
-
-/* FINAL MOBILE TABLE LAYOUT 2026-08-30 v23 */
-@media (max-width:767px){
- .overview-table th[data-key="perf3Y"],.overview-table th[data-key="perf5Y"],#fundTable .dps-overview-table th[data-key="perf3Y"],#fundTable .dps-overview-table th[data-key="perf5Y"]{white-space:normal!important;line-height:1.1!important;text-align:right!important}
- .mobile-two-line{display:inline-block;line-height:1.1}
-}
-@media (max-width:768px){
- #instruments-table,#transactions-table{display:table!important;width:100%!important;table-layout:fixed!important}
- #instruments-table thead,#transactions-table thead{display:table-header-group!important} #instruments-table tbody,#transactions-table tbody{display:table-row-group!important} #instruments-table tr,#transactions-table tr{display:table-row!important}
- #instruments-table th,#instruments-table td,#transactions-table th,#transactions-table td{display:none!important}
- #instruments-table th[data-key="name"],#instruments-table td[data-label="Název"],#instruments-table th[data-key="value"],#instruments-table td[data-label="Hodnota"],#instruments-table th[data-key="unrealizedPnl"],#instruments-table td[data-label="Nerealizovaný zisk"],#transactions-table th[data-key="instrument"],#transactions-table td[data-label="Typ"],#transactions-table th[data-key="type"],#transactions-table td[data-label="Směr"],#transactions-table th[data-key="investment"],#transactions-table td[data-label="Vstupní investice"]{display:table-cell!important;padding:7px 5px!important;font-size:calc(85% - 1px)!important;vertical-align:middle!important}
- #instruments-table th[data-key="name"],#instruments-table td[data-label="Název"]{width:45%!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important}
- #instruments-table th[data-key="value"],#instruments-table td[data-label="Hodnota"]{width:25%!important;text-align:right!important;white-space:nowrap!important}
- #instruments-table th[data-key="unrealizedPnl"],#instruments-table td[data-label="Nerealizovaný zisk"]{width:30%!important;text-align:right!important;white-space:nowrap!important}
- #instruments-table tfoot{display:none!important}
- #transactions-table th[data-key="instrument"],#transactions-table td[data-label="Typ"]{width:50%!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important}
- #transactions-table th[data-key="type"],#transactions-table td[data-label="Směr"]{width:18%!important;text-align:center!important;white-space:nowrap!important}
- #transactions-table th[data-key="investment"],#transactions-table td[data-label="Vstupní investice"]{width:32%!important;text-align:right!important;white-space:nowrap!important}
-}
