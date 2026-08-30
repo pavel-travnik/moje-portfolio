@@ -1500,7 +1500,7 @@ function ensureOverviewViewShell(grid, prefix) {
 
 function formatPerf(value) {
   return value != null && !isNaN(Number(value))
-    ? `${Number(value).toFixed(2)} %`
+    ? `${Number(value).toFixed(1)} %`
     : '—';
 }
 
@@ -1676,8 +1676,8 @@ function renderThreeColumnOverviewTable({
         <tr>
           <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
           <th data-key="metric" class="${sortKey === 'metric' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">${metricLabel}</th>
-          <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 3 roky</th>
-          <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 5 let</th>
+          <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}"><span class="mobile-two-line">Výnos<br>3 roky</span></th>
+          <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}"><span class="mobile-two-line">Výnos<br>5 let</span></th>
         </tr>
       </thead>
       <tbody>
@@ -1888,8 +1888,8 @@ function loadPensionFunds() {
           <tr>
             <th data-key="name">Název</th>
             <th data-key="riskCategory">Riziko</th>
-            <th data-key="perf3Y">Výnos 3 roky</th>
-            <th data-key="perf5Y">Výnos 5 let</th>
+            <th data-key="perf3Y"><span class="mobile-two-line">Výnos<br>3 roky</span></th>
+            <th data-key="perf5Y"><span class="mobile-two-line">Výnos<br>5 let</span></th>
             <th data-key="lastValue">Poslední ocenění</th>
             <th data-key="lastValuationDate">Datum ocenění</th>
           </tr>

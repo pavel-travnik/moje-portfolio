@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-mobile-tables-v22';
+const PORTFOLIO_BUILD = '2026-08-30-mobile-tables-v23';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -108,78 +108,32 @@ function assetTypeLabel(assetType) {
 }
 
 function ensurePortfolioUiStyles() {
-  const styleId = 'portfolio-mobile-table-overrides-v22';
+  const styleId = 'portfolio-mobile-table-overrides-v23';
   if (document.getElementById(styleId)) return;
-
   const style = document.createElement('style');
   style.id = styleId;
   style.textContent = `
     @media (max-width: 768px) {
-      /* DETAIL: pouze Název, Počet kusů a Hodnota. */
-      #instruments-table {
-        display: table !important;
-        width: 100% !important;
-        table-layout: fixed !important;
-      }
-      #instruments-table thead { display: table-header-group !important; }
-      #instruments-table tbody { display: table-row-group !important; }
-      #instruments-table tr { display: table-row !important; }
-      #instruments-table th,
-      #instruments-table td {
-        display: none !important;
-        font-size: calc(85% - 1px) !important;
-        padding: 7px 5px !important;
-        vertical-align: middle !important;
-      }
-      #instruments-table th:nth-child(2),
-      #instruments-table td:nth-child(2),
-      #instruments-table th:nth-child(3),
-      #instruments-table td:nth-child(3),
-      #instruments-table th:nth-child(5),
-      #instruments-table td:nth-child(5) {
-        display: table-cell !important;
-      }
-      #instruments-table th:nth-child(2),
-      #instruments-table td:nth-child(2) {
-        width: 50% !important;
-        text-align: left !important;
-        white-space: normal !important;
-        overflow-wrap: anywhere !important;
-      }
-      #instruments-table th:nth-child(3),
-      #instruments-table td:nth-child(3) {
-        width: 20% !important;
-        text-align: right !important;
-        white-space: nowrap !important;
-      }
-      #instruments-table th:nth-child(5),
-      #instruments-table td:nth-child(5) {
-        width: 30% !important;
-        text-align: right !important;
-        white-space: nowrap !important;
-      }
-      #instruments-table tfoot { display: none !important; }
-
-      /* TRANSAKCE: tabulka o 1 px menší než dosavadní mobilní zobrazení. */
-      #transactions-table th,
-      #transactions-table td {
-        font-size: calc(85% - 1px) !important;
-      }
-
-      /* Více prostoru kolem tlačítka Přidat transakci. */
-      #tab-transactions > .toolbar {
-        margin: 10px 0 18px !important;
-        padding: 8px 2px !important;
-        gap: 14px !important;
-        align-items: center !important;
-      }
-      #btn-add-transaction {
-        margin: 4px 2px !important;
-        padding: 9px 16px !important;
-        min-height: 40px !important;
-        flex: 0 0 auto !important;
-        width: auto !important;
-      }
+      #instruments-table, #transactions-table { display:table !important; width:100% !important; table-layout:fixed !important; }
+      #instruments-table thead, #transactions-table thead { display:table-header-group !important; }
+      #instruments-table tbody, #transactions-table tbody { display:table-row-group !important; }
+      #instruments-table tr, #transactions-table tr { display:table-row !important; }
+      #instruments-table th, #instruments-table td, #transactions-table th, #transactions-table td { display:none !important; font-size:calc(85% - 1px) !important; padding:7px 5px !important; vertical-align:middle !important; }
+      #instruments-table th[data-key="name"], #instruments-table td[data-label="Název"],
+      #instruments-table th[data-key="value"], #instruments-table td[data-label="Hodnota"],
+      #instruments-table th[data-key="unrealizedPnl"], #instruments-table td[data-label="Nerealizovaný zisk"] { display:table-cell !important; }
+      #instruments-table th[data-key="name"], #instruments-table td[data-label="Název"] { width:45% !important; text-align:left !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+      #instruments-table th[data-key="value"], #instruments-table td[data-label="Hodnota"] { width:25% !important; text-align:right !important; white-space:nowrap !important; }
+      #instruments-table th[data-key="unrealizedPnl"], #instruments-table td[data-label="Nerealizovaný zisk"] { width:30% !important; text-align:right !important; white-space:nowrap !important; }
+      #instruments-table tfoot { display:none !important; }
+      #transactions-table th[data-key="instrument"], #transactions-table td[data-label="Typ"],
+      #transactions-table th[data-key="type"], #transactions-table td[data-label="Směr"],
+      #transactions-table th[data-key="investment"], #transactions-table td[data-label="Vstupní investice"] { display:table-cell !important; }
+      #transactions-table th[data-key="instrument"], #transactions-table td[data-label="Typ"] { width:50% !important; text-align:left !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+      #transactions-table th[data-key="type"], #transactions-table td[data-label="Směr"] { width:18% !important; text-align:center !important; white-space:nowrap !important; }
+      #transactions-table th[data-key="investment"], #transactions-table td[data-label="Vstupní investice"] { width:32% !important; text-align:right !important; white-space:nowrap !important; }
+      #tab-transactions > .toolbar { margin:10px 0 18px !important; padding:8px 2px !important; gap:14px !important; align-items:center !important; }
+      #btn-add-transaction { margin:4px 2px !important; padding:9px 16px !important; min-height:40px !important; flex:0 0 auto !important; width:auto !important; }
     }
   `;
   document.head.appendChild(style);
