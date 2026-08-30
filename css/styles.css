@@ -2900,3 +2900,58 @@ PORTFOLIO DETAIL - FINALNI ZAHLA VI A ZAROVNANI
 #transactions-table td[data-label="Vstupní investice"] {
   text-align: right !important;
 }
+
+
+/* =====================================================
+PORTFOLIO - DETAIL, TRANSAKCE A HODNOTA - FINAL 2026-08-30
+===================================================== */
+.portfolio-transactions-help {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--gold, #c9a646);
+  border-radius: 10px;
+  background: rgba(201, 166, 70, .09);
+  color: #333;
+  font-size: 14px;
+  line-height: 1.6;
+}
+#tab-value .portfolio-kpi-highlight {
+  background: #f7edcf !important;
+  border: 1px solid #c9a646 !important;
+  box-shadow: 0 5px 16px rgba(201, 166, 70, .14) !important;
+}
+#tab-value .portfolio-kpi-highlight strong {
+  font-weight: 800 !important;
+  color: #111 !important;
+}
+
+/* Desktop: pevné a čitelné rozložení všech devíti sloupců. */
+@media (min-width: 769px) {
+  #instruments-table { table-layout: fixed !important; }
+  #instruments-table th:nth-child(1), #instruments-table td:nth-child(1) { width: 6% !important; }
+  #instruments-table th:nth-child(2), #instruments-table td:nth-child(2) { width: 23% !important; }
+  #instruments-table th:nth-child(3), #instruments-table td:nth-child(3) { width: 8% !important; text-align: right !important; }
+  #instruments-table th:nth-child(4), #instruments-table td:nth-child(4) { width: 11% !important; text-align: right !important; }
+  #instruments-table th:nth-child(5), #instruments-table td:nth-child(5) { width: 11% !important; text-align: right !important; }
+  #instruments-table th:nth-child(6), #instruments-table td:nth-child(6) { width: 10% !important; text-align: right !important; }
+  #instruments-table th:nth-child(7), #instruments-table td:nth-child(7) { width: 8% !important; text-align: right !important; padding-left: 16px !important; }
+  #instruments-table th:nth-child(8), #instruments-table td:nth-child(8) { width: 14% !important; text-align: right !important; padding-left: 18px !important; }
+  #instruments-table th:nth-child(9), #instruments-table td:nth-child(9) { width: 9% !important; text-align: right !important; }
+  #instruments-table td:nth-child(n+3) { white-space: nowrap !important; }
+}
+
+/* Mobil: pouze Název, Počet kusů a Hodnota. Bez bubliny a bez zisku v názvu. */
+@media (max-width: 768px) {
+  #instruments-table { display: table !important; width: 100% !important; table-layout: fixed !important; }
+  #instruments-table thead { display: table-header-group !important; }
+  #instruments-table tbody { display: table-row-group !important; }
+  #instruments-table tr { display: table-row !important; }
+  #instruments-table th, #instruments-table td { display: none !important; }
+  #instruments-table th:nth-child(2), #instruments-table td:nth-child(2),
+  #instruments-table th:nth-child(3), #instruments-table td:nth-child(3),
+  #instruments-table th:nth-child(5), #instruments-table td:nth-child(5) { display: table-cell !important; }
+  #instruments-table th:nth-child(2), #instruments-table td:nth-child(2) { width: 50% !important; text-align: left !important; white-space: normal !important; }
+  #instruments-table th:nth-child(3), #instruments-table td:nth-child(3) { width: 20% !important; text-align: right !important; white-space: nowrap !important; }
+  #instruments-table th:nth-child(5), #instruments-table td:nth-child(5) { width: 30% !important; text-align: right !important; white-space: nowrap !important; }
+  #instruments-table tfoot { display: none !important; }
+}
