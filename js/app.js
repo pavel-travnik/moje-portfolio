@@ -2121,7 +2121,7 @@ const main = document.getElementById('mainContent');
   `;
 
   // ✅ BACK
-  document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
+  document.querySelector('.back-btn').onclick = navigateSmartBack;
 
   // ✅ PERIOD SWITCH
   document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -2433,7 +2433,7 @@ function loadPodilovyFondDetail(isin) {
   `;
 
   // ✅ BACK
-  document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
+  document.querySelector('.back-btn').onclick = navigateSmartBack;
 
   // ✅ PERIOD SWITCH
   document.querySelectorAll('.period-switch button').forEach(btn => {
@@ -3010,7 +3010,7 @@ function loadStockDetail(ticker) {
     <button class="back-btn">← Zpět</button>
   `;
 
-  document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
+  document.querySelector('.back-btn').onclick = navigateSmartBack;
 
   document.querySelectorAll('.period-switch button').forEach(btn => {
     btn.onclick = () => {
@@ -3626,7 +3626,7 @@ const main = document.getElementById('mainContent');
 
   
 
-document.querySelector('.back-btn').onclick = () => { hideTooltip(); history.back(); };
+document.querySelector('.back-btn').onclick = navigateSmartBack;
 
 
 

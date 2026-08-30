@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-detail-final-v16';
+const PORTFOLIO_BUILD = '2026-08-30-tab-history-final-v18';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
@@ -1943,7 +1943,15 @@ function initPortfolioTabs() {
     defaultSection.classList.add('active');
   }
 
-  // ✅ klikání na taby
+  // Aktuální list je součástí položky historie portfolia.
+  history.replaceState({
+    ...(history.state || {}),
+    page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
+    portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
+    portfolioTab: preferredTab
+  }, '', window.location.href);
+
+  // Každý nově otevřený list vytvoří vlastní krok historie.
   tabs.forEach(btn => {
     btn.onclick = () => {
       tabs.forEach(t => t.classList.remove('active'));
@@ -1953,11 +1961,15 @@ function initPortfolioTabs() {
       document
         .getElementById(`tab-${btn.dataset.tab}`)
         ?.classList.add('active');
-      history.replaceState({
-        ...(history.state || {}),
-        portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
-        portfolioTab: btn.dataset.tab
-      }, '', window.location.href);
+      // Nekládáme do historie stejný list dvakrát.
+      if ((history.state || {}).portfolioTab !== btn.dataset.tab) {
+        history.pushState({
+          ...(history.state || {}),
+          page: `portfolio/${window.CURRENT_PORTFOLIO_ID}`,
+          portfolioId: String(window.CURRENT_PORTFOLIO_ID || ''),
+          portfolioTab: btn.dataset.tab
+        }, '', window.location.href);
+      }
     };
   });
 }
