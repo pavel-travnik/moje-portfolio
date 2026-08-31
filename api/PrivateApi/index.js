@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const https = require('https');
 
 const APIM_BASE_URL = (
@@ -41,11 +42,22 @@ function normalizeBearer(value) {
   const text = String(value || '').trim();
   const match = /^Bearer\s+([^\s]+)$/i.exec(text);
   if (!match) return '';
+
   const token = match[1];
   if (token.length > 8192) return '';
+
   const parts = token.split('.');
   if (parts.length !== 3 || parts.some(part => !/^[A-Za-z0-9_-]+$/.test(part))) return '';
   return `Bearer ${token}`;
+}
+
+function tokenFingerprint(authorization) {
+  if (!authorization) return null;
+  return crypto
+    .createHash('sha256')
+    .update(authorization, 'utf8')
+    .digest('hex')
+    .slice(0, 12);
 }
 
 function safeQuery(req, allowed) {
@@ -53,6 +65,7 @@ function safeQuery(req, allowed) {
   for (const name of allowed || []) {
     const value = req.query?.[name];
     if (value == null || value === '') continue;
+
     const text = String(value);
     if (name === 'portfolio_id' && !/^\d{1,18}$/.test(text)) throw new Error('INVALID_QUERY');
     if (name === 'is_active' && !/^[01]$/.test(text)) throw new Error('INVALID_QUERY');
@@ -70,6 +83,7 @@ function callBackend(url, method, headers, body) {
       let raw = '';
       let bytes = 0;
       response.setEncoding('utf8');
+
       response.on('data', chunk => {
         bytes += Buffer.byteLength(chunk, 'utf8');
         if (bytes > MAX_RESPONSE_BYTES) {
@@ -78,6 +92,7 @@ function callBackend(url, method, headers, body) {
         }
         raw += chunk;
       });
+
       response.on('end', () => resolve({
         status: response.statusCode || 502,
         body: raw || '{}',
@@ -107,6 +122,8 @@ module.exports = async function (context, req) {
 
   const incomingAuthorization = req.headers?.authorization || req.headers?.Authorization || '';
   const authorization = normalizeBearer(incomingAuthorization);
+  const authFingerprint = tokenFingerprint(authorization);
+
   if (cfg.auth && !authorization) {
     context.res = reply(401, { error: 'Missing or invalid bearer token at SWA proxy.' }, {
       'www-authenticate': 'Bearer'
@@ -142,7 +159,7 @@ module.exports = async function (context, req) {
 
   const headers = {
     Accept: 'application/json',
-    'User-Agent': 'swa-private-proxy/2.0'
+    'User-Agent': 'swa-private-proxy/2.1'
   };
   if (body) {
     headers['Content-Type'] = 'application/json';
@@ -150,13 +167,16 @@ module.exports = async function (context, req) {
   }
   if (authorization) headers.Authorization = authorization;
   if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
+  if (authFingerprint) headers['X-Auth-Fingerprint'] = authFingerprint;
 
   context.log('[private-api] forwarding', {
     operation,
     method: req.method,
     authorizationPresent: Boolean(authorization),
+    authFingerprint,
     apimKeyConfigured: Boolean(APIM_KEY),
-    backendTimeoutMs: BACKEND_TIMEOUT_MS
+    backendTimeoutMs: BACKEND_TIMEOUT_MS,
+    targetHost: target.hostname
   });
 
   try {
@@ -164,6 +184,10 @@ module.exports = async function (context, req) {
     const responseHeaders = {
       'x-private-proxy-upstream-status': String(result.status)
     };
+
+    if (authFingerprint) {
+      responseHeaders['x-private-proxy-auth-fingerprint'] = authFingerprint;
+    }
     if (result.headers['www-authenticate']) {
       responseHeaders['www-authenticate'] = result.headers['www-authenticate'];
     }
@@ -176,6 +200,7 @@ module.exports = async function (context, req) {
         operation,
         upstreamStatus: result.status,
         authorizationForwarded: Boolean(authorization),
+        authFingerprint,
         apimKeyConfigured: Boolean(APIM_KEY),
         upstreamWwwAuthenticate: result.headers['www-authenticate'] || null,
         apimRequestId: result.headers['apim-request-id'] || null
@@ -188,6 +213,7 @@ module.exports = async function (context, req) {
       operation,
       message: error.message,
       authorizationForwarded: Boolean(authorization),
+      authFingerprint,
       apimKeyConfigured: Boolean(APIM_KEY),
       backendTimeoutMs: BACKEND_TIMEOUT_MS
     });
