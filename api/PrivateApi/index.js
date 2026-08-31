@@ -159,7 +159,7 @@ module.exports = async function (context, req) {
 
   const headers = {
     Accept: 'application/json',
-    'User-Agent': 'swa-private-proxy/2.1'
+    'User-Agent': 'swa-private-proxy/2.2-auth-trace'
   };
   if (body) {
     headers['Content-Type'] = 'application/json';
@@ -167,7 +167,6 @@ module.exports = async function (context, req) {
   }
   if (authorization) headers.Authorization = authorization;
   if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
-  if (authFingerprint) headers['X-Auth-Fingerprint'] = authFingerprint;
 
   context.log('[private-api] forwarding', {
     operation,
@@ -193,6 +192,15 @@ module.exports = async function (context, req) {
     }
     if (result.headers['apim-request-id']) {
       responseHeaders['x-private-proxy-apim-request-id'] = result.headers['apim-request-id'];
+    }
+    if (result.headers['x-backend-auth-fingerprint']) {
+      responseHeaders['x-private-proxy-backend-auth-fingerprint'] = result.headers['x-backend-auth-fingerprint'];
+    }
+    if (result.headers['x-backend-auth-result']) {
+      responseHeaders['x-private-proxy-backend-auth-result'] = result.headers['x-backend-auth-result'];
+    }
+    if (result.headers['x-backend-auth-reason']) {
+      responseHeaders['x-private-proxy-backend-auth-reason'] = result.headers['x-backend-auth-reason'];
     }
 
     if (result.status === 401 || result.status === 403) {
