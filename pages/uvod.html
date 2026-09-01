@@ -1,31 +1,39 @@
 <div class="landing">
-  <section class="hero">
-    <h1 class="gold-text">Mějte své investice pod kontrolou</h1>
-    <p>
-      Přehled penzí, podílových fondů, akcií, ETF, kryptoměn a měn v jednoduchém a srozumitelném prostředí.
-      Sledujte historický vývoj, poslední dostupné hodnoty a základní informace na jednom místě.
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="hero-eyebrow">Přehled investic na jednom místě</p>
+    <h1 id="hero-title" class="gold-text">Mějte své investice pod kontrolou</h1>
+    <p class="hero-lead">
+      Sledujte penzijní a podílové fondy, akcie, ETF, indexy, kryptoměny a měnové kurzy.
+      Po přihlášení si můžete vytvořit vlastní portfolio a sledovat jeho aktuální hodnotu,
+      složení a vývoj.
     </p>
     <div class="hero-actions">
-      <button class="btn-primary" data-page="portfolio">Vytvořit portfolio</button>
-      <button class="btn-secondary" data-page="penze">Zobrazit přehled</button>
+      <button type="button" class="btn-primary" onclick="openLoginModal('register')">Vytvořit moje portfolio</button>
+      <a class="btn-secondary" href="/penze" data-page="penze">Zobrazit přehledy</a>
     </div>
+    <ul class="hero-trust" aria-label="Hlavní vlastnosti aplikace">
+      <li>Data z veřejně dostupných zdrojů</li>
+      <li>Pravidelná aktualizace hodnot</li>
+      <li>Informativní přehled bez investičních doporučení</li>
+    </ul>
   </section>
 
-  <section class="section compact-section">
-    <h2>Co zde najdete</h2>
+  <section class="section compact-section" aria-labelledby="features-title">
+    <h2 id="features-title">Co zde najdete</h2>
     <div class="cards cards-three">
       <a class="card-clean feature-card" href="/penze" data-page="penze"><span class="icon-badge" aria-hidden="true">♧</span><h3>Penze</h3><p>Přehled vybraných penzijních fondů včetně detailu, historického vývoje a základních parametrů.</p></a>
       <a class="card-clean feature-card" href="/podilove-fondy" data-page="podilove-fondy"><span class="icon-badge" aria-hidden="true">◈</span><h3>Podílové fondy</h3><p>Přehled podílových fondů s možností otevřít detail konkrétního fondu a sledovat jeho vývoj v čase.</p></a>
       <a class="card-clean feature-card" href="/akcie" data-page="akcie"><span class="icon-badge" aria-hidden="true">↗</span><h3>Akcie</h3><p>Vybrané akciové tituly, jejich poslední ceny, měna, obor a historický vývoj na jednom místě.</p></a>
       <a class="card-clean feature-card" href="/etf" data-page="etf"><span class="icon-badge" aria-hidden="true">◎</span><h3>ETF</h3><p>Přehled burzovně obchodovaných fondů odděleně od jednotlivých akcií s možností detailního zobrazení.</p></a>
-      <a class="card-clean feature-card" href="/crypto" data-page="crypto"><span class="icon-badge" aria-hidden="true">₿</span><h3>Crypto</h3><p>Přehled vybraných kryptoměn a digitálních aktiv včetně posledních cen, historického vývoje a základních tržních údajů.</p></a>
+      <a class="card-clean feature-card" href="/indexy" data-page="indexy"><span class="icon-badge" aria-hidden="true">▦</span><h3>Indexy</h3><p>Přehled vybraných světových indexů a jejich historického vývoje pro základní orientaci na trzích.</p></a>
+      <a class="card-clean feature-card" href="/crypto" data-page="crypto"><span class="icon-badge" aria-hidden="true">₿</span><h3>Kryptoměny</h3><p>Přehled vybraných kryptoměn a digitálních aktiv včetně posledních cen a historického vývoje.</p></a>
       <a class="card-clean feature-card" href="/meny" data-page="meny"><span class="icon-badge" aria-hidden="true">¤</span><h3>Měny</h3><p>Přehled vybraných měnových kurzů a jejich historického vývoje vůči CZK.</p></a>
     </div>
   </section>
 
-  <section class="cta">
-    <h2>Vytvořte si vlastní přehled</h2>
-    <p style="margin-bottom:16px;">Sledujte své portfolio, porovnávejte vývoj a mějte základní informace vždy po ruce.</p>
-    <button class="btn-primary" data-page="portfolio">Vytvořit portfolio</button>
+  <section class="cta" aria-labelledby="cta-title">
+    <h2 id="cta-title">Vytvořte si vlastní portfolio</h2>
+    <p>Zadejte své nákupy a sledujte aktuální hodnotu, rozložení, denní změnu i nerealizovaný výsledek na jednom místě.</p>
+    <button type="button" class="btn-primary" onclick="openLoginModal('register')">Začít s vlastním portfoliem</button>
   </section>
 </div>
