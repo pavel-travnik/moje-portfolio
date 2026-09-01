@@ -3060,3 +3060,67 @@ Transakce: Typ, Smer, Vstupni investice
   }
 }
 
+
+
+/* =====================================================
+   UVODNI STRANKA - FINALNI OPRAVY 2026-09-01
+===================================================== */
+.hero { max-width: 760px; }
+.hero-eyebrow {
+  margin: 0 0 10px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.hero .hero-lead { max-width: 700px; line-height: 1.7; }
+.hero-actions .btn-primary,
+.hero-actions .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+.hero-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.hero-trust li { position: relative; padding-left: 18px; }
+.hero-trust li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-weight: 800;
+}
+.cta p { max-width: 680px; margin: 0 0 18px; line-height: 1.65; }
+.cards-three .feature-card:last-child:nth-child(3n + 1) {
+  grid-column: 2;
+}
+.btn-primary:hover { background: var(--gold-strong); color: #111; }
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.feature-card:focus-visible {
+  outline: 3px solid rgba(201, 166, 70, .38);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gold-text { animation: none !important; }
+  .card-clean, .fund-card, .side-card { transition: none !important; }
+}
+@media (max-width: 1024px) {
+  .cards-three .feature-card:last-child:nth-child(3n + 1) { grid-column: auto; }
+}
+@media (max-width: 768px) {
+  .hero-trust { display: grid; gap: 9px; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary { width: 100%; }
+}
