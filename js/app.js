@@ -375,24 +375,63 @@ window.clearPublicDataCache = clearPublicDataCache;
 // ===================================================
 // COOKIE CONSENT
 // ===================================================
-const COOKIE_CONSENT_KEY = 'mp_cookie_consent_v1';
+const COOKIE_CONSENT_KEY = 'mp_cookie_consent_v2';
 const COOKIE_CONSENT_COOKIE = 'cookieConsent';
+const COOKIE_CONSENT_VERSION = 2;
+const COOKIE_CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
+const COOKIE_CONSENT_MAX_AGE_MS = COOKIE_CONSENT_MAX_AGE_SECONDS * 1000;
 
 function setCookieConsentCookie(value) {
   try {
-    const maxAge = 60 * 60 * 24 * 180; // 180 dní
-    document.cookie = `${COOKIE_CONSENT_COOKIE}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+    const secure = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${COOKIE_CONSENT_COOKIE}=${encodeURIComponent(value)}; Max-Age=${COOKIE_CONSENT_MAX_AGE_SECONDS}; Path=/; SameSite=Lax${secure}`;
   } catch (err) {
     console.warn('Cookie consent cookie write failed:', err);
+  }
+}
+
+function deleteCookieConsentCookie() {
+  try {
+    const secure = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${COOKIE_CONSENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax${secure}`;
+  } catch (err) {
+    console.warn('Cookie consent cookie delete failed:', err);
   }
 }
 
 function getCookieConsent() {
   try {
     const raw = localStorage.getItem(COOKIE_CONSENT_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
+    if (!raw) return null;
+    const consent = JSON.parse(raw);
+    const savedAt = Date.parse(consent?.savedAt || '');
+    const valid = consent?.version === COOKIE_CONSENT_VERSION &&
+      Number.isFinite(savedAt) &&
+      Date.now() - savedAt <= COOKIE_CONSENT_MAX_AGE_MS &&
+      ['necessary', 'analytics', 'all'].includes(consent?.choice);
+    if (!valid) {
+      localStorage.removeItem(COOKIE_CONSENT_KEY);
+      deleteCookieConsentCookie();
+      return null;
+    }
+    return consent;
+  } catch (err) {
+    console.warn('Cookie consent read failed:', err);
     return null;
+  }
+}
+
+function applyCookieConsent(consent) {
+  const analyticsAllowed = !!consent?.analytics;
+  window.dispatchEvent(new CustomEvent('portfolio:cookie-consent-changed', {
+    detail: { ...consent, analytics: analyticsAllowed }
+  }));
+  if (analyticsAllowed) {
+    if (typeof window.enableAnalyticsAfterConsent === 'function') {
+      window.enableAnalyticsAfterConsent(consent);
+    }
+  } else if (typeof window.disableAnalyticsAfterConsent === 'function') {
+    window.disableAnalyticsAfterConsent(consent);
   }
 }
 
@@ -403,22 +442,16 @@ function saveCookieConsent(choice) {
     necessary: true,
     analytics: safeChoice === 'all' || safeChoice === 'analytics',
     savedAt: new Date().toISOString(),
-    version: 1
+    version: COOKIE_CONSENT_VERSION
   };
-
   try {
     localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(payload));
   } catch (err) {
     console.warn('Cookie consent localStorage write failed:', err);
   }
-
   setCookieConsentCookie(safeChoice);
   closeCookieBanner();
-
-  if (payload.analytics && typeof window.enableAnalyticsAfterConsent === 'function') {
-    window.enableAnalyticsAfterConsent(payload);
-  }
-
+  applyCookieConsent(payload);
   return payload;
 }
 
@@ -427,9 +460,9 @@ function closeCookieBanner() {
 }
 
 function showCookieBanner(force = false) {
-  if (!force && getCookieConsent()) return;
+  const current = getCookieConsent();
+  if (!force && current) return;
   closeCookieBanner();
-
   const backdrop = document.createElement('div');
   backdrop.className = 'cookie-consent-backdrop';
   backdrop.innerHTML = `
@@ -437,10 +470,7 @@ function showCookieBanner(force = false) {
       <div class="cookie-consent-icon" aria-hidden="true">ⓘ</div>
       <div class="cookie-consent-content">
         <h3 id="cookie-consent-title">Nastavení cookies</h3>
-        <p>
-          Používáme nezbytné technické ukládání pro fungování webu, přihlášení a bezpečnost relace.
-          Analytiku spustíme pouze po vašem souhlasu.
-        </p>
+        <p>Používáme nezbytné technické ukládání pro fungování webu, přihlášení a bezpečnost relace. Analytiku spustíme pouze po vašem souhlasu.</p>
         <label class="cookie-choice-row">
           <input type="checkbox" checked disabled>
           <span><strong>Nezbytné</strong><small>Vždy aktivní, bez nich web správně nefunguje.</small></span>
@@ -455,29 +485,34 @@ function showCookieBanner(force = false) {
           <button type="button" class="pill-button cookie-primary" id="cookie-all">Přijmout vše</button>
         </div>
         <p class="cookie-consent-links">
-          <a href="#" data-page="cookies">Více o cookies</a>
-          <span>Souhlas můžete kdykoliv změnit na stránce Cookies.</span>
+          <a href="/cookies" data-page="cookies">Více o cookies</a>
+          <span>Volbu můžete kdykoliv změnit na stránce Cookies.</span>
         </p>
       </div>
-    </div>
-  `;
+    </div>`;
   document.body.appendChild(backdrop);
-
+  const dialog = backdrop.querySelector('.cookie-consent-box');
   const analytics = backdrop.querySelector('#cookie-analytics-choice');
-  const current = getCookieConsent();
   if (analytics && current?.analytics) analytics.checked = true;
-
   backdrop.querySelector('#cookie-necessary')?.addEventListener('click', () => saveCookieConsent('necessary'));
   backdrop.querySelector('#cookie-all')?.addEventListener('click', () => saveCookieConsent('all'));
-  backdrop.querySelector('#cookie-save')?.addEventListener('click', () => {
-    saveCookieConsent(analytics?.checked ? 'analytics' : 'necessary');
+  backdrop.querySelector('#cookie-save')?.addEventListener('click', () => saveCookieConsent(analytics?.checked ? 'analytics' : 'necessary'));
+  backdrop.querySelector('[data-page="cookies"]')?.addEventListener('click', () => closeCookieBanner());
+  dialog?.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && current) closeCookieBanner();
   });
+  requestAnimationFrame(() => backdrop.querySelector('#cookie-necessary')?.focus());
 }
 
 function resetCookieConsent() {
   try {
     localStorage.removeItem(COOKIE_CONSENT_KEY);
-  } catch {}
+    localStorage.removeItem('mp_cookie_consent_v1');
+  } catch (err) {
+    console.warn('Cookie consent reset failed:', err);
+  }
+  deleteCookieConsentCookie();
+  applyCookieConsent({ choice: null, necessary: true, analytics: false, version: COOKIE_CONSENT_VERSION });
   showCookieBanner(true);
 }
 
@@ -486,82 +521,20 @@ function ensureCookieConsentStyle() {
   const style = document.createElement('style');
   style.id = 'cookie-consent-style';
   style.textContent = `
-    .cookie-consent-backdrop {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 99999;
-      padding: 16px;
-      background: linear-gradient(to top, rgba(17,17,17,.22), rgba(17,17,17,0));
-    }
-    .cookie-consent-box {
-      max-width: 860px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 42px 1fr;
-      gap: 14px;
-      padding: 18px;
-      border-radius: 20px;
-      border: 1px solid rgba(201,166,70,.45);
-      background: rgba(255,255,255,.98);
-      box-shadow: 0 16px 50px rgba(0,0,0,.18);
-      color: #111;
-    }
-    .cookie-consent-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #0f3d2e;
-      color: #C9A646;
-      font-weight: 800;
-      font-size: 20px;
-    }
-    .cookie-consent-content h3 { margin: 0 0 6px; }
-    .cookie-consent-content p { margin: 0 0 12px; line-height: 1.45; color: #444; }
-    .cookie-choice-row {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      margin: 8px 0;
-      padding: 10px;
-      border: 1px solid rgba(201,166,70,.25);
-      border-radius: 14px;
-      background: #fffaf0;
-    }
-    .cookie-choice-row input { margin-top: 3px; }
-    .cookie-choice-row span { display: grid; gap: 2px; }
-    .cookie-choice-row small { color: #666; }
-    .cookie-consent-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 12px;
-    }
-    .cookie-consent-actions .cookie-primary {
-      background: #C9A646;
-      border-color: #C9A646;
-      color: #111;
-      font-weight: 800;
-    }
-    .cookie-consent-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-top: 10px !important;
-      font-size: 13px;
-    }
-    .cookie-consent-links a { color: #0f3d2e; font-weight: 700; }
-    @media (max-width: 640px) {
-      .cookie-consent-box { grid-template-columns: 1fr; }
-      .cookie-consent-actions { justify-content: stretch; }
-      .cookie-consent-actions .pill-button { flex: 1 1 100%; }
-    }
+    .cookie-consent-backdrop { position:fixed;left:0;right:0;bottom:0;z-index:99999;padding:16px;background:linear-gradient(to top,rgba(17,17,17,.22),rgba(17,17,17,0)); }
+    .cookie-consent-box { max-width:860px;margin:0 auto;display:grid;grid-template-columns:42px 1fr;gap:14px;padding:18px;border-radius:20px;border:1px solid rgba(201,166,70,.45);background:rgba(255,255,255,.98);box-shadow:0 16px 50px rgba(0,0,0,.18);color:#111; }
+    .cookie-consent-icon { width:42px;height:42px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:#0f3d2e;color:#C9A646;font-weight:800;font-size:20px; }
+    .cookie-consent-content h3 { margin:0 0 6px; }
+    .cookie-consent-content p { margin:0 0 12px;line-height:1.45;color:#444; }
+    .cookie-choice-row { display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:10px;border:1px solid rgba(201,166,70,.25);border-radius:14px;background:#fffaf0; }
+    .cookie-choice-row input { width:auto;margin:3px 0 0; }
+    .cookie-choice-row span { display:grid;gap:2px; }
+    .cookie-choice-row small { color:#666; }
+    .cookie-consent-actions { display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:12px; }
+    .cookie-consent-actions .cookie-primary { background:#C9A646;border-color:#C9A646;color:#111;font-weight:800; }
+    .cookie-consent-links { display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px!important;font-size:13px; }
+    .cookie-consent-links a { color:#0f3d2e;font-weight:700; }
+    @media(max-width:640px){.cookie-consent-box{grid-template-columns:1fr}.cookie-consent-actions{justify-content:stretch}.cookie-consent-actions .pill-button{flex:1 1 100%}}
   `;
   document.head.appendChild(style);
 }
@@ -570,17 +543,14 @@ function initCookieConsent() {
   ensureCookieConsentStyle();
   window.showCookieBanner = () => showCookieBanner(true);
   window.resetCookieConsent = resetCookieConsent;
-  if (!getCookieConsent()) {
-    setTimeout(() => showCookieBanner(false), 500);
-  } else {
-    const consent = getCookieConsent();
-    if (consent?.choice) setCookieConsentCookie(consent.choice);
-    if (consent?.analytics && typeof window.enableAnalyticsAfterConsent === 'function') {
-      window.enableAnalyticsAfterConsent(consent);
-    }
+  const consent = getCookieConsent();
+  if (!consent) {
+    window.setTimeout(() => showCookieBanner(false), 500);
+    return;
   }
+  setCookieConsentCookie(consent.choice);
+  applyCookieConsent(consent);
 }
-
 
 // ===================================================
 // PUBLIC DATA PRELOAD – zahřívání veřejných dat
@@ -914,6 +884,7 @@ if (!path || path === 'index.html') {
 
 
  updateMenu();
+ initCookieConsent();
  initDropdownControls();
  decoratePortfolioLabel();
  decorateSideCards();   // ✅ přidat
