@@ -225,20 +225,7 @@ window.loadPortfolioPage = async function (page) {
   if (page === 'portfolio') {
     const portfolios = await fetchUserPortfolios();
 
-    
-  // ✅ VŽDY zobraz seznam
-  main.innerHTML = ` 
-  <h2>Moje portfolia</h2>
-  <button id="btn-create-portfolio">+ Nové portfolio</button>
-  <div id="portfolioList"></div>
-  `;
-
-      document.getElementById("btn-create-portfolio").onclick = openCreatePortfolioModal;
-      renderPortfolioList(portfolios);
-      
-    
-
-    // ❗ jinak zobraz seznam (a možnost vytvořit)
+    // Vždy zobraz seznam a možnost vytvořit portfolio
     main.innerHTML = `
         <h2>Moje portfolia</h2>
         <button id="btn-create-portfolio" class="pill-button">
@@ -400,7 +387,7 @@ function openCreatePortfolioModal() {
                 si můžete nechat zasílat e-mailem. Kliknutím na konkrétní instrument
                 otevřete jeho detail s historickým vývojem hodnoty, rizikovostí a posledním
                 dostupným oceněním.
-                <a href="https://icy-sea-053d99203.4.azurestaticapps.net/aktualizace" target="_blank" rel="noopener noreferrer">Data jsou aktualizována</a>
+                <a href="/aktualizace" data-page="aktualizace">Data jsou aktualizována</a>
                 z veřejně dostupných zdrojů a slouží pouze pro informativní přehled.
                 Neposkytujeme investiční, penzijní ani jiné finanční poradenství.
               </p>
@@ -1064,12 +1051,28 @@ function invalidatePortfolioCache(portfolioId = null) {
 }
 window.invalidatePortfolioCache = invalidatePortfolioCache;
 
+async function parsePortfolioApiResponse(response, fallbackMessage) {
+  const text = await response.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { error: text || 'Neplatná odpověď serveru.' };
+  }
+  if (!response.ok) {
+    const requestId = response.headers.get('x-ms-request-id') || response.headers.get('x-ms-correlation-request-id');
+    const suffix = requestId ? ` ID požadavku: ${requestId}` : '';
+    throw new Error(`${data?.error || fallbackMessage} (HTTP ${response.status}).${suffix}`);
+  }
+  return data;
+}
+
 async function fetchUserPortfolios(forceRefresh = false, background = false) {
   const cached = !forceRefresh ? portfolioCacheGet('portfolios') : null;
   if (cached) return cached;
   return portfolioCachedRequest('portfolios', async () => {
     const r = await portfolioAuthFetch(`${PORTFOLIO_API}/get_portfolios?is_active=1`, { showLoader: !background });
-    const data = await r.json();
+    const data = await parsePortfolioApiResponse(r, 'Portfolia se nepodařilo načíst.');
     const filtered = Array.isArray(data) ? data.filter(p => p.is_active === undefined || p.is_active === null || Number(p.is_active) === 1 || p.is_active === true) : [];
     return portfolioCacheSet('portfolios', null, filtered);
   });
@@ -1084,7 +1087,7 @@ async function fetchPortfolioDetail(id, forceRefresh = false, background = false
       `${PORTFOLIO_API}/get_portfolio_detail?portfolio_id=${encodeURIComponent(id)}`,
       { showLoader: !background }
     );
-    const data = await r.json();
+    const data = await parsePortfolioApiResponse(r, 'Detail portfolia se nepodařilo načíst.');
     return portfolioCacheSet('details', key, data);
   });
 }

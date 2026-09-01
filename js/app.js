@@ -963,7 +963,7 @@ function updateMenu() {
     }
 }
 
-function openLoginModal() {
+function openLoginModal(initialView = 'login') {
     // Zabraň vícenásobnému otevření stejného modalu.
     const existing = document.querySelector('.modal-backdrop.auth-modal');
     if (existing) existing.remove();
@@ -1222,7 +1222,11 @@ function openLoginModal() {
         if (e.target === modal) closeModal();
     });
 
-    renderLogin();
+    if (initialView === 'register') {
+        renderRegisterRequest();
+    } else {
+        renderLogin();
+    }
 }
 
 
