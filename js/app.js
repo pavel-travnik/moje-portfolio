@@ -193,7 +193,7 @@ function getAuthHeaders(extraHeaders = {}) {
   const token = getAccessToken();
   return {
     ...extraHeaders,
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+    ...(token ? { 'X-Portfolio-Authorization': `Bearer ${token}` } : {})
   };
 }
 
@@ -1385,14 +1385,6 @@ function ensureOverviewTableStyle() {
     }
 
     @media (max-width: 767px) {
-      .mobile-two-line { display: inline-block; line-height: 1.1; }
-      .overview-table th[data-key="perf3Y"],
-      .overview-table th[data-key="perf5Y"],
-      #fundTable .dps-overview-table th[data-key="perf3Y"],
-      #fundTable .dps-overview-table th[data-key="perf5Y"] {
-        white-space: normal !important;
-        line-height: 1.1 !important;
-      }
       .overview-view-switch {
         justify-content: stretch;
       }
@@ -1508,7 +1500,7 @@ function ensureOverviewViewShell(grid, prefix) {
 
 function formatPerf(value) {
   return value != null && !isNaN(Number(value))
-    ? `${Number(value).toFixed(1)} %`
+    ? `${Number(value).toFixed(2)} %`
     : '—';
 }
 
@@ -1896,8 +1888,8 @@ function loadPensionFunds() {
           <tr>
             <th data-key="name">Název</th>
             <th data-key="riskCategory">Riziko</th>
-            <th data-key="perf3Y"><span class="mobile-two-line">Výnos<br>3 roky</span></th>
-            <th data-key="perf5Y"><span class="mobile-two-line">Výnos<br>5 let</span></th>
+            <th data-key="perf3Y">Výnos 3 roky</th>
+            <th data-key="perf5Y">Výnos 5 let</th>
             <th data-key="lastValue">Poslední ocenění</th>
             <th data-key="lastValuationDate">Datum ocenění</th>
           </tr>
