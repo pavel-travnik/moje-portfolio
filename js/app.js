@@ -1201,11 +1201,62 @@ function openLoginModal(initialView = 'login') {
 }
 
 
+// ===================================================
+// SEO METADATA PRO SPA ROUTER
+// ===================================================
+function updateSeoForPage(page) {
+  const normalizedPage = String(page || 'uvod').replace(/^\/+|\/+$/g, '') || 'uvod';
+  const section = normalizedPage.split('/')[0];
+  const privatePage = section === 'portfolio';
+  const seoByPage = {
+    uvod: ['Moje portfolio | ETF, akcie, fondy a penzijní spoření', 'Sledujte ETF, akcie, podílové fondy, penzijní spoření, indexy, kryptoměny a měny na jednom místě. Přehled výkonnosti, rizika a vývoje investic.'],
+    penze: ['Penzijní fondy | Výkonnost a riziko | Moje portfolio', 'Přehled penzijních účastnických fondů, jejich výkonnosti, rizikovosti, historického vývoje a posledního dostupného ocenění.'],
+    'podilove-fondy': ['Podílové fondy | Výkonnost a srovnání | Moje portfolio', 'Přehled podílových fondů, jejich historické výkonnosti, rizika, měny fondu a posledního dostupného ocenění.'],
+    akcie: ['Akcie | Ceny, výkonnost a riziko | Moje portfolio', 'Přehled vybraných akcií, historického vývoje cen, výkonnosti, rizikových ukazatelů a dalších tržních údajů.'],
+    etf: ['ETF | Přehled, výkonnost a riziko | Moje portfolio', 'Přehled vybraných ETF včetně historického vývoje ceny, výkonnosti, rizika a posledního dostupného ocenění.'],
+    indexy: ['Akciové indexy | Historický vývoj | Moje portfolio', 'Přehled vybraných světových akciových indexů, jejich hodnoty, dlouhodobé výkonnosti a historického vývoje.'],
+    crypto: ['Kryptoměny | Ceny a historický vývoj | Moje portfolio', 'Přehled vybraných kryptoměn a digitálních aktiv včetně cen, výkonnosti a historického vývoje.'],
+    meny: ['Měnové kurzy | Vývoj kurzů vůči CZK | Moje portfolio', 'Přehled vybraných měnových kurzů vůči české koruně, jejich aktuálních hodnot a historického vývoje.'],
+    slovnik: ['Investiční slovníček | Moje portfolio', 'Srozumitelné vysvětlení základních pojmů z oblasti investování, fondů, ETF, akcií, rizika a výkonnosti.'],
+    aktualizace: ['Aktualizace dat | Moje portfolio', 'Informace o aktualizaci, dostupnosti a zdrojích investičních a tržních dat na webu Moje portfolio.'],
+    upozorneni: ['Investiční upozornění | Moje portfolio', 'Důležité informace o rizicích investování a informativním charakteru údajů dostupných na webu Moje portfolio.'],
+    gdpr: ['Ochrana osobních údajů | Moje portfolio', 'Informace o ochraně a zpracování osobních údajů na webu Moje portfolio.'],
+    cookies: ['Nastavení cookies | Moje portfolio', 'Informace o používání nezbytných a volitelných cookies na webu Moje portfolio.']
+  };
+  const seo = seoByPage[section] || seoByPage.uvod;
+  const canonicalUrl = `https://www.moje-portfolio.cz/${normalizedPage}`;
+  document.title = seo[0];
+  function setMeta(selector, key, value) {
+    let el = document.head.querySelector(selector);
+    if (!el) {
+      el = document.createElement('meta');
+      const match = selector.match(/meta\[(name|property)="([^"]+)"\]/);
+      if (match) el.setAttribute(match[1], match[2]);
+      document.head.appendChild(el);
+    }
+    el.setAttribute(key, value);
+  }
+  setMeta('meta[name="description"]', 'content', seo[1]);
+  setMeta('meta[name="robots"]', 'content', privatePage ? 'noindex,nofollow,noarchive' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
+  setMeta('meta[property="og:title"]', 'content', seo[0]);
+  setMeta('meta[property="og:description"]', 'content', seo[1]);
+  setMeta('meta[property="og:url"]', 'content', canonicalUrl);
+  let canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    document.head.appendChild(canonical);
+  }
+  canonical.href = canonicalUrl;
+}
+
 function loadPage(page, pushState = true) {
 
 if (!page || page === "undefined") {
     page = "uvod";
-}  
+}
+
+  updateSeoForPage(page);  
  const main = document.getElementById('mainContent'); // ✅ přesun sem
 
  if (!main) {
