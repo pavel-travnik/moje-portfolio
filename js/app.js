@@ -1226,21 +1226,20 @@ function updateSeoForPage(page) {
   const seo = seoByPage[section] || seoByPage.uvod;
   const canonicalUrl = `https://www.moje-portfolio.cz/${normalizedPage}`;
   document.title = seo[0];
-  function setMeta(selector, key, value) {
+  const setMeta = (selector, type, name, value) => {
     let el = document.head.querySelector(selector);
     if (!el) {
       el = document.createElement('meta');
-      const match = selector.match(/meta\[(name|property)="([^"]+)"\]/);
-      if (match) el.setAttribute(match[1], match[2]);
+      el.setAttribute(type, name);
       document.head.appendChild(el);
     }
-    el.setAttribute(key, value);
-  }
-  setMeta('meta[name="description"]', 'content', seo[1]);
-  setMeta('meta[name="robots"]', 'content', privatePage ? 'noindex,nofollow,noarchive' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
-  setMeta('meta[property="og:title"]', 'content', seo[0]);
-  setMeta('meta[property="og:description"]', 'content', seo[1]);
-  setMeta('meta[property="og:url"]', 'content', canonicalUrl);
+    el.setAttribute('content', value);
+  };
+  setMeta('meta[name="description"]', 'name', 'description', seo[1]);
+  setMeta('meta[name="robots"]', 'name', 'robots', privatePage ? 'noindex,nofollow,noarchive' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
+  setMeta('meta[property="og:title"]', 'property', 'og:title', seo[0]);
+  setMeta('meta[property="og:description"]', 'property', 'og:description', seo[1]);
+  setMeta('meta[property="og:url"]', 'property', 'og:url', canonicalUrl);
   let canonical = document.head.querySelector('link[rel="canonical"]');
   if (!canonical) {
     canonical = document.createElement('link');
