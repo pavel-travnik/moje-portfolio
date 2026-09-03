@@ -587,34 +587,48 @@ function preloadSectionData(page) {
   return Promise.resolve(null);
 }
 
-function warmPublicDataCache() {
-  if (window.__publicWarmupStarted) return;
-  window.__publicWarmupStarted = true;
-
-  const jobs = [
-    () => preloadSectionData('penze'),
-    () => preloadSectionData('podilove-fondy'),
-    () => preloadSectionData('akcie'),
-    () => preloadSectionData('indexy'),
-    () => preloadSectionData('meny')
-  ];
-
-  let delay = 700;
-  jobs.forEach(job => {
-    setTimeout(() => {
-      job().catch(err => console.warn('Warmup veřejných dat selhal:', err));
-    }, delay);
-    delay += 900;
-  });
+function publicOverviewSections() {
+  return ['penze', 'podilove-fondy', 'akcie', 'indexy', 'meny'];
 }
 
-function schedulePublicDataWarmup() {
-  const run = () => warmPublicDataCache();
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(run, { timeout: 2500 });
-  } else {
-    setTimeout(run, 1500);
-  }
+function warmPublicDataCache(priorityPage = 'uvod') {
+  if (window.__publicWarmupStarted) return;
+  window.__publicWarmupStarted = true;
+  const priority = String(priorityPage || 'uvod').split('/')[0];
+  const sections = publicOverviewSections();
+  const queue = sections.includes(priority)
+    ? [priority, ...sections.filter(section => section !== priority)]
+    : sections;
+
+  const runNext = async () => {
+    const section = queue.shift();
+    if (!section) return;
+    try {
+      await preloadSectionData(section);
+    } catch (err) {
+      console.warn(`Warmup veřejných dat selhal pro ${section}:`, err);
+    }
+    if (!queue.length) return;
+    window.setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(runNext, { timeout: 4000 });
+      } else {
+        runNext();
+      }
+    }, 1800);
+  };
+  runNext();
+}
+
+function schedulePublicDataWarmup(priorityPage = 'uvod') {
+  const run = () => warmPublicDataCache(priorityPage);
+  window.setTimeout(() => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(run, { timeout: 5000 });
+    } else {
+      run();
+    }
+  }, 2500);
 }
 
 window.preloadSectionData = preloadSectionData;
@@ -709,8 +723,9 @@ document.addEventListener('click', e => {
 });
 
 
-// Přednačtení dat už při záměru uživatele, hover/focus na menu nebo dlaždici.
-document.addEventListener('mouseover', e => {
+// Přednostní načtení až při skutečném záměru uživatele.
+// Pouhý přejezd myší už nespouští načítání všech přehledů.
+document.addEventListener('pointerdown', e => {
   const link = e.target.closest('[data-page]');
   if (!link) return;
   preloadSectionData(link.dataset.page).catch(() => {});
