@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-08-30-mobile-tables-v24';
+const PORTFOLIO_BUILD = '2026-09-03-mobile-loader-v27';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';

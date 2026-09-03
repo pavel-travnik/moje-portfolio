@@ -56,6 +56,7 @@ function markUserTriggeredRequest(event) {
   lastUserTriggeredAt = Date.now();
 }
 
+document.addEventListener('pointerdown', markUserTriggeredRequest, true);
 document.addEventListener('click', markUserTriggeredRequest, true);
 document.addEventListener('keydown', markUserTriggeredRequest, true);
 
