@@ -3205,3 +3205,93 @@ UVOD - ZPETNA VAZBA A FAQ 2026-09-04 v28
   .feedback-content h2,
   .faq-section h2 { font-size: 23px; }
 }
+
+
+/* =====================================================
+MOBILNI ZALOZKY DETAILU INVESTICNIHO NASTROJE v29
+===================================================== */
+.mobile-detail-tabs { display: none; }
+@media (max-width: 768px) {
+  .mobile-detail-tabs-ready {
+    position: relative;
+  }
+  .mobile-detail-tabs {
+    position: sticky;
+    top: 54px;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 10px;
+    border: 1px solid rgba(201,166,70,.34);
+    border-radius: 16px;
+    background: rgba(255,255,255,.97);
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    backdrop-filter: blur(8px);
+  }
+  .mobile-detail-tab {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid var(--gold, #c9a646);
+    border-radius: 999px;
+    background: #fff;
+    color: #856b20;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .mobile-detail-tab.active {
+    background: var(--gold, #c9a646);
+    color: #111;
+    box-shadow: 0 5px 14px rgba(201,166,70,.22);
+  }
+  .mobile-detail-tab:focus-visible {
+    outline: 3px solid rgba(201,166,70,.3);
+    outline-offset: 2px;
+  }
+  .mobile-detail-tabs-ready > [data-detail-section] {
+    display: none !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > [data-detail-section="summary"],
+  .mobile-detail-tabs-ready[data-detail-active="risk"] > [data-detail-section="risk"],
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > [data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > [data-detail-section="chart"] {
+    display: flex !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > h3[data-detail-section="summary"],
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > p[data-detail-section="summary"],
+  .mobile-detail-tabs-ready[data-detail-active="risk"] > section[data-detail-section="risk"],
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > div[id^="chart-"][data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > div[id^="chart-"][data-detail-section="chart"] {
+    display: block !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] .stock-detail-actions {
+    display: none !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] .stock-detail-actions,
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] .stock-detail-actions {
+    display: grid !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] .stock-detail-head,
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] .stock-detail-head {
+    display: grid !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] .stock-czk-toggle:has(input[id$="show-czk"]) {
+    display: none !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] .stock-czk-toggle:has(input[id$="compare-index"]) {
+    display: none !important;
+  }
+  .mobile-detail-tabs-ready > .back-btn {
+    display: block !important;
+    margin-top: 22px;
+  }
+}
+@media (max-width: 390px) {
+  .mobile-detail-tabs { gap: 6px; padding: 8px; }
+  .mobile-detail-tab { font-size: 12px; padding: 7px 6px; }
+}
