@@ -3466,3 +3466,5 @@ FINALNI MOBILNI DETAIL v32
 .chart-svg-guide{stroke:#C9A646;stroke-width:1;stroke-dasharray:4 4;vector-effect:non-scaling-stroke;pointer-events:none}.chart-svg-dot.primary{fill:#C9A646}.chart-svg-dot.secondary{fill:#6c7a89}
 .chart-svg-hit{fill:transparent;pointer-events:all;cursor:crosshair;touch-action:pan-y}.svg-chart-tooltip{position:absolute!important;z-index:5!important;display:none;pointer-events:none!important}
 @media(max-width:768px){.interactive-chart-svg{min-height:220px}.mobile-detail-tabs{z-index:10!important}}
+
+/* SVG GRAF v42: vypln je uzavrena svisle ke spodni zakladni ose. */
