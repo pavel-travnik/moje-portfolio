@@ -3468,3 +3468,6 @@ FINALNI MOBILNI DETAIL v32
 @media(max-width:768px){.interactive-chart-svg{min-height:220px}.mobile-detail-tabs{z-index:10!important}}
 
 /* SVG GRAF v42: vypln je uzavrena svisle ke spodni zakladni ose. */
+
+/* v43: procentni zmena v grafu je zvyraznena bez absolutni hodnoty a zavorek. */
+.period-diff strong{font-weight:800!important;}
