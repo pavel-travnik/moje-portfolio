@@ -3444,3 +3444,14 @@ FINALNI MOBILNI DETAIL v32
   box-shadow:0 6px 18px rgba(0,0,0,.18);
 }
 #chart-stock canvas,#chart-portfolio canvas,#chart-podilovy-fond canvas,#chart-currency canvas { max-width:100%; }
+
+
+/* GRAF INTERAKCE A POROVNANI v40 */
+#chart-stock,#chart-portfolio,#chart-podilovy-fond,#chart-currency{position:relative!important;width:100%!important;min-width:0!important;overflow:hidden!important;isolation:isolate!important}
+#chart-stock canvas,#chart-portfolio canvas,#chart-podilovy-fond canvas,#chart-currency canvas{display:block!important;max-width:100%!important;pointer-events:none!important}
+.chart-hit-layer{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+.chart-guide-line{position:absolute;width:0;border-left:1px dashed rgba(201,166,70,.95);display:none;pointer-events:none}
+.chart-guide-dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;display:none;pointer-events:none}
+.chart-guide-dot.primary{background:#C9A646}.chart-guide-dot.secondary{background:#6c7a89}
+.chart-hover-tooltip{z-index:30!important;pointer-events:none!important;background:rgba(55,55,55,.97)!important;color:#C9A646!important;border:1px solid rgba(201,166,70,.55)!important}
+@media(max-width:768px){.mobile-detail-tabs{position:relative!important;z-index:40!important}.mobile-detail-tabs-ready[data-detail-active="chart"]>div[id^="chart-"][data-detail-section="chart"],.mobile-detail-tabs-ready[data-detail-active="comparison"]>div[id^="chart-"][data-detail-section="chart"]{display:block!important;position:relative!important;pointer-events:auto!important}}
