@@ -460,7 +460,7 @@ function closeCookieBanner() {
   document.querySelectorAll('.cookie-consent-backdrop').forEach(el => el.remove());
 }
 
-function showCookieBanner(force = false) {
+function renderCookieBanner(force = false) {
   const current = getCookieConsent();
   if (!force && current) return;
   closeCookieBanner();
@@ -521,7 +521,7 @@ function resetCookieConsent() {
   }
   deleteCookieConsentCookie();
   applyCookieConsent({ choice: null, necessary: true, analytics: false, version: COOKIE_CONSENT_VERSION });
-  showCookieBanner(true);
+  renderCookieBanner(true);
 }
 
 function ensureCookieConsentStyle() {
@@ -548,12 +548,14 @@ function ensureCookieConsentStyle() {
 }
 
 function initCookieConsent() {
+  if (window.__cookieConsentInitialized) return;
+  window.__cookieConsentInitialized = true;
   ensureCookieConsentStyle();
-  window.showCookieBanner = () => showCookieBanner(true);
+  window.showCookieBanner = () => renderCookieBanner(true);
   window.resetCookieConsent = resetCookieConsent;
   const consent = getCookieConsent();
   if (!consent) {
-    showCookieBanner(false);
+    renderCookieBanner(false);
     return;
   }
   setCookieConsentCookie(consent.choice);
@@ -1368,7 +1370,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260904-v33`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260904-v34`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
