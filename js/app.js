@@ -1370,7 +1370,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260904-v34`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260904-v35`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -3105,8 +3105,28 @@ function normalizeSeriesToBase100(rows, valueGetter) {
   return cleaned.map(r => ({ date: r.date, value: Number(r.value) / base * 100 }));
 }
 function alignBenchmarkToStockDates(stockRows, benchmarkRows, benchmarkGetter) {
-  const benchmarkByDate = new Map((benchmarkRows || []).filter(r => benchmarkGetter(r) != null && !isNaN(Number(benchmarkGetter(r))) && Number(benchmarkGetter(r)) > 0).map(r => [r.date, r]));
-  return (stockRows || []).map(r => benchmarkByDate.get(r.date)).filter(Boolean);
+  const benchmark = (benchmarkRows || [])
+    .filter(row => row?.date && Number.isFinite(Number(benchmarkGetter(row))) && Number(benchmarkGetter(row)) > 0)
+    .map(row => ({ ...row, __time: new Date(row.date).getTime() }))
+    .filter(row => Number.isFinite(row.__time))
+    .sort((a, b) => a.__time - b.__time);
+  if (!benchmark.length) return [];
+
+  const toleranceMs = 7 * 24 * 60 * 60 * 1000;
+  return (stockRows || []).map(stockRow => {
+    const target = new Date(stockRow?.date).getTime();
+    if (!Number.isFinite(target)) return null;
+    let low = 0, high = benchmark.length - 1;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (benchmark[mid].__time < target) low = mid + 1;
+      else high = mid - 1;
+    }
+    const candidates = [benchmark[low], benchmark[low - 1]].filter(Boolean);
+    const nearest = candidates.sort((a, b) => Math.abs(a.__time - target) - Math.abs(b.__time - target))[0];
+    if (!nearest || Math.abs(nearest.__time - target) > toleranceMs) return null;
+    return { ...nearest, date: stockRow.date };
+  }).filter(Boolean);
 }
 async function ensureStockHistory(ticker) {
   if (!apiCache.stocks[ticker]) {
@@ -3117,6 +3137,59 @@ async function ensureStockHistory(ticker) {
   }
   return apiCache.stocks[ticker];
 }
+function attachChartPointerInteraction({ canvas, tooltip, points, series, width, height, padding, overlayContext, valueFormatter }) {
+  if (!canvas || !points?.length || !series?.length) return;
+  canvas.style.pointerEvents = 'auto';
+  canvas.style.touchAction = 'pan-y';
+  canvas.style.cursor = 'crosshair';
+  canvas.style.zIndex = '3';
+  tooltip.style.zIndex = '5';
+
+  function hide() {
+    tooltip.style.display = 'none';
+    overlayContext.clearRect(0, 0, width, height);
+  }
+  function show(event) {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width) return;
+    const clientX = event.clientX ?? event.touches?.[0]?.clientX;
+    if (!Number.isFinite(clientX)) return;
+    const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+    const usable = width - padding.left - padding.right;
+    const index = Math.max(0, Math.min(series.length - 1,
+      Math.round(((canvasX - padding.left) / usable) * (series.length - 1))));
+    const point = points[index];
+    const item = series[index];
+    if (!point || !item) return hide();
+
+    overlayContext.clearRect(0, 0, width, height);
+    overlayContext.save();
+    overlayContext.beginPath();
+    overlayContext.strokeStyle = 'rgba(201,166,70,.9)';
+    overlayContext.lineWidth = 1;
+    overlayContext.setLineDash([4, 4]);
+    overlayContext.moveTo(point.x, padding.top);
+    overlayContext.lineTo(point.x, height - padding.bottom);
+    overlayContext.stroke();
+    overlayContext.setLineDash([]);
+    overlayContext.beginPath();
+    overlayContext.fillStyle = '#C9A646';
+    overlayContext.arc(point.x, point.y, 4, 0, Math.PI * 2);
+    overlayContext.fill();
+    overlayContext.restore();
+
+    tooltip.style.display = 'block';
+    tooltip.innerHTML = `${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${valueFormatter(item.value)}</strong>`;
+    const tooltipWidth = tooltip.offsetWidth || 120;
+    tooltip.style.left = Math.max(4, Math.min(rect.width - tooltipWidth - 4, point.x * (rect.width / canvas.width) + 10)) + 'px';
+    tooltip.style.top = Math.max(4, point.y * (rect.height / canvas.height) - 8) + 'px';
+  }
+  canvas.addEventListener('pointermove', show);
+  canvas.addEventListener('pointerdown', show);
+  canvas.addEventListener('pointerleave', hide);
+  canvas.addEventListener('pointercancel', hide);
+}
+
 function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
   lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
   const div = document.getElementById(containerId); if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
@@ -3135,6 +3208,16 @@ function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, s
   drawLine(benchmarkSeries,'#6c7a89',1.6); drawLine(stockSeries,'#C9A646',2.2);
   ctx.textAlign='center'; ctx.fillStyle='#666'; const maxXTicks=width<500?3:5; const step=Math.max(1,Math.floor(stockSeries.length/maxXTicks));
   for(let i=0;i<stockSeries.length;i+=step){ const p=xy(stockSeries,i); ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'),p.x,chartHeight-padding.bottom+8); }
+
+  const overlay = document.createElement('canvas');
+  overlay.width = width; overlay.height = chartHeight;
+  overlay.style.position = 'absolute'; overlay.style.left = '0'; overlay.style.top = legendHeight + 4 + 'px';
+  overlay.style.width = '100%'; overlay.style.height = chartHeight + 'px';
+  div.appendChild(overlay);
+  const tip = document.createElement('div'); tip.className = 'chart-hover-tooltip'; div.appendChild(tip);
+  const overlayContext = overlay.getContext('2d');
+  const stockPoints = stockSeries.map((_, i) => xy(stockSeries, i));
+  attachChartPointerInteraction({ canvas: overlay, tooltip: tip, points: stockPoints, series: stockSeries, width, height: chartHeight, padding, overlayContext, valueFormatter: value => Number(value).toFixed(2) });
 }
 function loadStockDetail(ticker) {
   const main = document.getElementById('mainContent');
@@ -3499,49 +3582,16 @@ function renderPortfolioChart(history, containerId) {
  // ✅ HOVER (overlay canvas)
  // =====================================================
 
- overlayCanvas.addEventListener('mousemove', e => {
-  const rect = overlayCanvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-
-  const index = Math.round(
-   (x - padding.left) /
-   (w - padding.left - padding.right) *
-   (history.length - 1)
-  );
-
-  if (index < 0 || index >= history.length) {
-   tooltip.style.display = 'none';
-   octx.clearRect(0, 0, w, h);
-   return;
-  }
-
-  const p = points[index];
-  const d = history[index];
-
-  // ✅ smaž jen overlay
-  octx.clearRect(0, 0, w, h);
-
-  // ✅ vertikální čára
-  octx.beginPath();
-  octx.strokeStyle = 'rgba(201,166,70,0.7)';
-  octx.lineWidth = 1;
-  octx.setLineDash([4, 4]);
-  octx.moveTo(p.x, padding.top);
-  octx.lineTo(p.x, h - padding.bottom);
-  octx.stroke();
-
-  tooltip.style.display = 'block';
-  tooltip.innerHTML =
-   new Date(d.date).toLocaleDateString('cs-CZ') +
-   '<br><strong>' + d.value.toFixed(4) + '</strong>';
-
-  tooltip.style.left = (p.x + 10) + 'px';
-  tooltip.style.top = (p.y) + 'px';
- });
-
- overlayCanvas.addEventListener('mouseleave', () => {
-  tooltip.style.display = 'none';
-  octx.clearRect(0, 0, w, h);
+ attachChartPointerInteraction({
+  canvas: overlayCanvas,
+  tooltip,
+  points,
+  series: history,
+  width: w,
+  height: h,
+  padding,
+  overlayContext: octx,
+  valueFormatter: value => Number(value).toFixed(4)
  });
  requestAnimationFrame(() => {
   const actualWidth = div.clientWidth || div.parentElement?.clientWidth || width;
