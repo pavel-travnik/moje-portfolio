@@ -1698,98 +1698,64 @@ function renderThreeColumnOverviewTable({
   getMetric,
   getPerf3Y = item => item?.perf3Y,
   getPerf5Y = item => item?.perf5Y,
+  getLastValue = item => item?.lastValue ?? item?.lastValuationValue ?? item?.lastRate ?? item?.lastExchangeRate ?? item?.rate ?? null,
+  getLastDate = item => item?.lastValuationDate ?? item?.lastDate ?? item?.date ?? null,
+  getLastValueSuffix = item => item?.currency || item?.mena || item?.Mena || '',
   getId,
   onSelect,
   metricLabel = 'Měna'
 }) {
   const sortKey = table.dataset.sortKey || 'name';
   const sortAsc = table.dataset.sortAsc !== 'false';
-
-  const getters = {
-    name: getName,
-    metric: getMetric,
-    perf3Y: getPerf3Y,
-    perf5Y: getPerf5Y
-  };
-
+  const getters = { name: getName, metric: getMetric, perf3Y: getPerf3Y, perf5Y: getPerf5Y, lastValue: getLastValue, lastValuationDate: getLastDate };
   const sortedData = [...data].sort((a, b) => {
     const getter = getters[sortKey] || getName;
     const A = normalizeOverviewSortValue(getter(a));
     const B = normalizeOverviewSortValue(getter(b));
-
     if (A < B) return sortAsc ? -1 : 1;
     if (A > B) return sortAsc ? 1 : -1;
     return 0;
   });
-
   table.innerHTML = `
     <table class="fund-table overview-table">
-      <thead>
-        <tr>
-          <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
-          <th data-key="metric" class="${sortKey === 'metric' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">${metricLabel}</th>
-          <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 3 roky</th>
-          <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 5 let</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${sortedData.map(item => {
-          const p3y = getPerf3Y(item);
-          const p5y = getPerf5Y(item);
-          const last = formatLastValuation(item);
-
-          return `
-            <tr data-id="${getId(item)}" ${last ? `title="Poslední ocenění: ${last}"` : ''}>
-              <td data-label="Název">${getName(item) || ''}</td>
-              <td data-label="${metricLabel}">${getMetric(item) || ''}</td>
-              <td data-label="Výnos 3 roky" class="${perfClass(p3y)}">${formatPerf3Y(p3y)}</td>
-              <td data-label="Výnos 5 let" class="${perfClass(p5y)}">${formatPerf5Y(p5y)}</td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // řazení klikem na hlavičku – stejné chování jako v penzích
+      <thead><tr>
+        <th data-key="name" class="${sortKey === 'name' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Název</th>
+        <th data-key="metric" class="${sortKey === 'metric' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">${metricLabel}</th>
+        <th data-key="perf3Y" class="${sortKey === 'perf3Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 3 roky</th>
+        <th data-key="perf5Y" class="${sortKey === 'perf5Y' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Výnos 5 let</th>
+        <th data-key="lastValue" class="${sortKey === 'lastValue' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Poslední ocenění</th>
+        <th data-key="lastValuationDate" class="${sortKey === 'lastValuationDate' ? (sortAsc ? 'sort-asc' : 'sort-desc') : ''}">Datum ocenění</th>
+      </tr></thead>
+      <tbody>${sortedData.map(item => {
+        const p3y = getPerf3Y(item), p5y = getPerf5Y(item);
+        const lastValue = getLastValue(item), lastDate = getLastDate(item), suffix = getLastValueSuffix(item);
+        const last = formatLastValuation(item);
+        return `<tr data-id="${getId(item)}" ${last ? `title="Poslední ocenění: ${last}"` : ''}>
+          <td data-label="Název">${getName(item) || ''}</td>
+          <td data-label="${metricLabel}">${getMetric(item) || ''}</td>
+          <td data-label="Výnos 3 roky" class="${perfClass(p3y)}">${formatPerf3Y(p3y)}</td>
+          <td data-label="Výnos 5 let" class="${perfClass(p5y)}">${formatPerf5Y(p5y)}</td>
+          <td data-label="Poslední ocenění">${formatOverviewValue(lastValue, { suffix })}</td>
+          <td data-label="Datum ocenění">${formatOverviewDate(lastDate)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
   table.querySelectorAll('th').forEach(th => {
     th.onclick = e => {
       e.stopPropagation();
       const key = th.dataset.key;
       if (!key) return;
-
       const currentKey = table.dataset.sortKey || 'name';
       const currentAsc = table.dataset.sortAsc !== 'false';
-
       table.dataset.sortKey = key;
       table.dataset.sortAsc = currentKey === key ? String(!currentAsc) : 'true';
-
-      renderThreeColumnOverviewTable({
-        table,
-        data,
-        getName,
-        getMetric,
-        getPerf3Y,
-        getPerf5Y,
-        getId,
-        onSelect,
-        metricLabel
-      });
+      renderThreeColumnOverviewTable({ table, data, getName, getMetric, getPerf3Y, getPerf5Y, getLastValue, getLastDate, getLastValueSuffix, getId, onSelect, metricLabel });
     };
   });
-
   const rows = table.querySelectorAll('tbody tr');
   rows.forEach(tr => {
-    tr.addEventListener('mouseenter', () => {
-      rows.forEach(r => r.classList.remove('active'));
-      tr.classList.add('active');
-    });
-
-    tr.addEventListener('click', () => {
-      rows.forEach(r => r.classList.remove('active'));
-      tr.classList.add('active');
-      onSelect(tr.dataset.id);
-    });
+    tr.addEventListener('mouseenter', () => { rows.forEach(r => r.classList.remove('active')); tr.classList.add('active'); });
+    tr.addEventListener('click', () => { rows.forEach(r => r.classList.remove('active')); tr.classList.add('active'); onSelect(tr.dataset.id); });
   });
 }
 
