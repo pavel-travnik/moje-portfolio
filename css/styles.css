@@ -3349,3 +3349,86 @@ MOBILNI DETAIL - OPRAVA PREKRYVU A PRAZDNEHO GRAFU v31
   border-radius: 50%;
   animation: tx-spin .8s linear infinite;
 }
+
+
+/* =====================================================
+FINALNI MOBILNI DETAIL v32
+- nadpis zustava nad zalozkami
+- zadne sticky prekryti
+- graf se vykresluje az po zobrazeni zalozky
+===================================================== */
+@media (min-width: 769px) {
+  .mobile-detail-tabs { display: none !important; }
+  .mobile-detail-tabs-ready > [data-detail-section] {
+    display: revert !important;
+    position: static !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .mobile-detail-tabs-ready > .kpi-row[data-detail-section] { display: flex !important; }
+  .mobile-detail-tabs-ready > .stock-detail-head[data-detail-section] { display: flex !important; }
+  .mobile-detail-tabs-ready > .period-row[data-detail-section] { display: flex !important; }
+  .mobile-detail-tabs-ready > .stock-risk-panel[data-detail-section] { display: block !important; }
+  .mobile-detail-tabs-ready > div[id^="chart-"][data-detail-section] { display: block !important; }
+}
+@media (max-width: 768px) {
+  .mobile-detail-tabs {
+    position: static !important;
+    inset: auto !important;
+    z-index: auto !important;
+    margin: 12px 0 18px !important;
+    scroll-margin-top: 0 !important;
+  }
+  .mobile-detail-tabs-ready > [data-detail-section] {
+    display: none !important;
+    position: static !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > [data-detail-section="summary"] { display: block !important; }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] { display: flex !important; }
+  .mobile-detail-tabs-ready[data-detail-active="risk"] > [data-detail-section="risk"] { display: block !important; }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > [data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > [data-detail-section="chart"] { display: block !important; }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > .period-row[data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > .period-row[data-detail-section="chart"] { display: grid !important; }
+  .mobile-detail-tabs-ready > h3 {
+    display: block !important;
+    margin-bottom: 6px !important;
+  }
+  #chart-stock,
+  #chart-portfolio,
+  #chart-podilovy-fond {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 240px;
+    overflow: hidden;
+  }
+}
+
+
+/* FINALNI OPRAVA MOBILNICH ZALOZEK A GRAFU v33 */
+.chart-empty { margin:16px 0; padding:16px; border:1px solid rgba(201,166,70,.38); border-radius:14px; background:rgba(201,166,70,.08); color:#333; }
+#chart-stock,#chart-portfolio,#chart-podilovy-fond,#chart-currency { width:100%; min-width:0; overflow:hidden; }
+@media (min-width:769px) {
+  .mobile-detail-tabs { display:none !important; }
+  .mobile-detail-tabs-ready > [data-detail-section] { position:static !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important; }
+  .mobile-detail-tabs-ready > .stock-detail-head[data-detail-section] { display:flex !important; }
+  .mobile-detail-tabs-ready > .kpi-row[data-detail-section] { display:flex !important; }
+  .mobile-detail-tabs-ready > .stock-risk-panel[data-detail-section] { display:block !important; }
+  .mobile-detail-tabs-ready > .period-row[data-detail-section] { display:flex !important; }
+  .mobile-detail-tabs-ready > div[id^="chart-"][data-detail-section] { display:block !important; }
+}
+@media (max-width:768px) {
+  .mobile-detail-tabs { position:static !important; top:auto !important; z-index:auto !important; }
+  .mobile-detail-tabs-ready > [data-detail-section] { display:none !important; position:static !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important; }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > [data-detail-section="summary"] { display:block !important; }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] { display:flex !important; }
+  .mobile-detail-tabs-ready[data-detail-active="risk"] > [data-detail-section="risk"] { display:block !important; }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > [data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > [data-detail-section="chart"] { display:block !important; }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > .period-row[data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > .period-row[data-detail-section="chart"] { display:grid !important; }
+}
