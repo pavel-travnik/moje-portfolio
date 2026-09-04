@@ -2133,6 +2133,117 @@ function renderInstrumentRiskMetrics(prefix, item) {
   setOptionalBenchmarkMetric(`${prefix}-risk-vs-bmk-5y`, vs5Y);
 }
 // ===================================================
+// MOBILNI ZALOZKY DETAILU INVESTICNIHO NASTROJE
+// Desktop zustava beze zmeny. Graf a porovnani sdileji stejny canvas,
+// prepnuti zalozky pouze meni rezim bez noveho nacteni zakladnich dat.
+// ===================================================
+function initMobileInstrumentDetailTabs(options = {}) {
+  const main = document.getElementById('mainContent');
+  if (!main) return;
+
+  const {
+    chartId,
+    compareToggleId = null,
+    hasRisk = true,
+    enableComparison = false
+  } = options;
+
+  main.classList.add('mobile-detail-tabs-ready');
+  main.dataset.detailActive = 'summary';
+
+  const summaryElements = [
+    ...main.querySelectorAll(':scope > h3, :scope > .stock-detail-head, :scope > .kpi-row, :scope > p.meta')
+  ];
+  summaryElements.forEach(el => el.dataset.detailSection = 'summary');
+
+  const riskPanel = main.querySelector(':scope > .stock-risk-panel');
+  if (riskPanel) riskPanel.dataset.detailSection = 'risk';
+
+  const periodRow = main.querySelector(':scope > .period-row');
+  const chart = chartId ? document.getElementById(chartId) : null;
+  if (periodRow) periodRow.dataset.detailSection = 'chart';
+  if (chart) chart.dataset.detailSection = 'chart';
+
+  const tabs = document.createElement('div');
+  tabs.className = 'mobile-detail-tabs';
+  tabs.setAttribute('role', 'tablist');
+  tabs.setAttribute('aria-label', 'Části detailu investičního nástroje');
+
+  const definitions = [
+    ['summary', 'Souhrn'],
+    ...(hasRisk && riskPanel ? [['risk', 'Riziko a výnos']] : []),
+    ['chart', 'Graf'],
+    ...(enableComparison && compareToggleId ? [['comparison', 'Porovnání']] : [])
+  ];
+
+  definitions.forEach(([key, label], index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mobile-detail-tab' + (index === 0 ? ' active' : '');
+    button.dataset.detailTab = key;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+    button.textContent = label;
+    tabs.appendChild(button);
+  });
+
+  const firstContent = main.querySelector(':scope > h3') || main.firstElementChild;
+  if (firstContent) main.insertBefore(tabs, firstContent);
+  else main.prepend(tabs);
+
+  function redrawVisibleChart() {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (!lastChartData || lastChartData.containerId !== chartId) return;
+        if (lastChartData.comparison) {
+          renderStockComparisonChart(
+            lastChartData.comparison.stockSeries,
+            lastChartData.comparison.benchmarkSeries,
+            lastChartData.containerId,
+            lastChartData.comparison.stockLabel,
+            lastChartData.comparison.benchmarkLabel
+          );
+        } else {
+          renderPortfolioChart(lastChartData.history, lastChartData.containerId);
+        }
+      });
+    });
+  }
+
+  function activateTab(key, button) {
+    main.dataset.detailActive = key;
+    tabs.querySelectorAll('.mobile-detail-tab').forEach(tab => {
+      const active = tab === button;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    const compareToggle = compareToggleId ? document.getElementById(compareToggleId) : null;
+    if (compareToggle && (key === 'chart' || key === 'comparison')) {
+      const shouldCompare = key === 'comparison';
+      if (compareToggle.checked !== shouldCompare) {
+        compareToggle.checked = shouldCompare;
+        compareToggle.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        redrawVisibleChart();
+      }
+    } else if (key === 'chart' || key === 'comparison') {
+      redrawVisibleChart();
+    }
+
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      tabs.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }
+
+  tabs.addEventListener('click', event => {
+    const button = event.target.closest('.mobile-detail-tab');
+    if (!button) return;
+    activateTab(button.dataset.detailTab, button);
+  });
+}
+
+// ===================================================
 // DETAIL FONDU
 // ===================================================
 
@@ -2228,6 +2339,7 @@ const main = document.getElementById('mainContent');
     .catch(err => console.error('Chyba načítání metadat fondu:', err));
 
   // ✅ DATA
+  initMobileInstrumentDetailTabs({ chartId: 'chart-portfolio', hasRisk: true });
   loadDPSData(isin, '3Y');
 }
 
@@ -2543,6 +2655,12 @@ function loadPodilovyFondDetail(isin) {
   }
 
   // ✅ data
+  initMobileInstrumentDetailTabs({
+    chartId: 'chart-podilovy-fond',
+    compareToggleId: 'pf-compare-index',
+    hasRisk: true,
+    enableComparison: true
+  });
   loadPodilovyFondData(isin, '3Y');
 }
 
@@ -3112,6 +3230,12 @@ function loadStockDetail(ticker) {
     });
   }
 
+  initMobileInstrumentDetailTabs({
+    chartId: 'chart-stock',
+    compareToggleId: isIndexDetail ? null : 'stock-compare-index',
+    hasRisk: showAdvanced,
+    enableComparison: !isIndexDetail
+  });
   loadStockData(ticker, '3Y');
 }
 
