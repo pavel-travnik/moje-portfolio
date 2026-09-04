@@ -376,9 +376,9 @@ window.clearPublicDataCache = clearPublicDataCache;
 // ===================================================
 // COOKIE CONSENT
 // ===================================================
-const COOKIE_CONSENT_KEY = 'mp_cookie_consent_v2';
+const COOKIE_CONSENT_KEY = 'mp_cookie_consent_v3';
 const COOKIE_CONSENT_COOKIE = 'cookieConsent';
-const COOKIE_CONSENT_VERSION = 2;
+const COOKIE_CONSENT_VERSION = 3;
 const COOKIE_CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
 const COOKIE_CONSENT_MAX_AGE_MS = COOKIE_CONSENT_MAX_AGE_SECONDS * 1000;
 
@@ -495,9 +495,15 @@ function showCookieBanner(force = false) {
   const dialog = backdrop.querySelector('.cookie-consent-box');
   const analytics = backdrop.querySelector('#cookie-analytics-choice');
   if (analytics && current?.analytics) analytics.checked = true;
-  backdrop.querySelector('#cookie-necessary')?.addEventListener('click', () => saveCookieConsent('necessary'));
-  backdrop.querySelector('#cookie-all')?.addEventListener('click', () => saveCookieConsent('all'));
-  backdrop.querySelector('#cookie-save')?.addEventListener('click', () => saveCookieConsent(analytics?.checked ? 'analytics' : 'necessary'));
+  backdrop.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (button.id === 'cookie-necessary') saveCookieConsent('necessary');
+    if (button.id === 'cookie-all') saveCookieConsent('all');
+    if (button.id === 'cookie-save') saveCookieConsent(analytics?.checked ? 'analytics' : 'necessary');
+  });
   backdrop.querySelector('[data-page="cookies"]')?.addEventListener('click', () => closeCookieBanner());
   dialog?.addEventListener('keydown', event => {
     if (event.key === 'Escape' && current) closeCookieBanner();
@@ -509,6 +515,7 @@ function resetCookieConsent() {
   try {
     localStorage.removeItem(COOKIE_CONSENT_KEY);
     localStorage.removeItem('mp_cookie_consent_v1');
+    localStorage.removeItem('mp_cookie_consent_v2');
   } catch (err) {
     console.warn('Cookie consent reset failed:', err);
   }
@@ -546,7 +553,7 @@ function initCookieConsent() {
   window.resetCookieConsent = resetCookieConsent;
   const consent = getCookieConsent();
   if (!consent) {
-    window.setTimeout(() => showCookieBanner(false), 500);
+    showCookieBanner(false);
     return;
   }
   setCookieConsentCookie(consent.choice);
@@ -1225,7 +1232,7 @@ function updateSeoForPage(page) {
   const section = normalizedPage.split('/')[0];
   const privatePage = section === 'portfolio';
   const seoByPage = {
-    uvod: ['Moje portfolio | ETF, akcie, fondy a penzijní spoření', 'Sledujte ETF, akcie, podílové fondy, penzijní spoření, indexy, kryptoměny a měny na jednom místě. Přehled výkonnosti, rizika a vývoje investic.'],
+    uvod: ['Moje portfolio | Přehled investic, ETF, akcií a fondů', 'Přehled investic na jednom místě. Sledujte ETF, akcie, podílové fondy, penzijní spoření, indexy, kryptoměny a měnové kurzy a vytvořte si vlastní portfolio.'],
     penze: ['Penzijní fondy | Výkonnost a riziko | Moje portfolio', 'Přehled penzijních účastnických fondů, jejich výkonnosti, rizikovosti, historického vývoje a posledního dostupného ocenění.'],
     'podilove-fondy': ['Podílové fondy | Výkonnost a srovnání | Moje portfolio', 'Přehled podílových fondů, jejich historické výkonnosti, rizika, měny fondu a posledního dostupného ocenění.'],
     akcie: ['Akcie | Ceny, výkonnost a riziko | Moje portfolio', 'Přehled vybraných akcií, historického vývoje cen, výkonnosti, rizikových ukazatelů a dalších tržních údajů.'],
@@ -1240,7 +1247,9 @@ function updateSeoForPage(page) {
     cookies: ['Nastavení cookies | Moje portfolio', 'Informace o používání nezbytných a volitelných cookies na webu Moje portfolio.']
   };
   const seo = seoByPage[section] || seoByPage.uvod;
-  const canonicalUrl = `https://www.moje-portfolio.cz/${normalizedPage}`;
+  const canonicalUrl = section === 'uvod'
+    ? 'https://www.moje-portfolio.cz/'
+    : `https://www.moje-portfolio.cz/${normalizedPage}`;
   document.title = seo[0];
   const setMeta = (selector, type, name, value) => {
     let el = document.head.querySelector(selector);
