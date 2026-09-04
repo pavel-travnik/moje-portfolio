@@ -3107,99 +3107,20 @@ async function ensureStockHistory(ticker) {
   return apiCache.stocks[ticker];
 }
 function attachChartPointerInteraction({ canvas, tooltip, points, series, width, height, padding, overlayContext, valueFormatter, secondaryPoints = null, secondarySeries = null, secondaryFormatter = null }) {
-  if (!canvas || !points?.length || !series?.length || !tooltip || !overlayContext) return;
-
-  canvas.style.pointerEvents = 'auto';
-  canvas.style.touchAction = 'pan-y';
-  canvas.style.cursor = 'crosshair';
-  canvas.style.zIndex = '3';
-  tooltip.style.position = 'absolute';
-  tooltip.style.pointerEvents = 'none';
-  tooltip.style.zIndex = '5';
-  tooltip.style.display = 'none';
-  tooltip.style.whiteSpace = 'nowrap';
-
-  function hide() {
-    tooltip.style.display = 'none';
-    overlayContext.clearRect(0, 0, canvas.width, canvas.height);
-  }
-
-  function nearestPointIndex(canvasX) {
-    let bestIndex = 0;
-    let bestDistance = Infinity;
-    points.forEach((point, index) => {
-      const distance = Math.abs(point.x - canvasX);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-    return bestIndex;
-  }
-
-  function show(event) {
-    const rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const source = event.touches?.[0] || event;
-    const clientX = source.clientX;
-    if (!Number.isFinite(clientX)) return;
-
-    const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
-    const index = nearestPointIndex(canvasX);
-    const point = points[index];
-    const item = series[index];
-    if (!point || !item) return hide();
-
-    overlayContext.clearRect(0, 0, canvas.width, canvas.height);
-    overlayContext.save();
-    overlayContext.beginPath();
-    overlayContext.strokeStyle = 'rgba(201,166,70,.95)';
-    overlayContext.lineWidth = 1;
-    overlayContext.setLineDash([4, 4]);
-    overlayContext.moveTo(point.x, padding.top);
-    overlayContext.lineTo(point.x, height - padding.bottom);
-    overlayContext.stroke();
-    overlayContext.setLineDash([]);
-
-    overlayContext.beginPath();
-    overlayContext.fillStyle = '#C9A646';
-    overlayContext.arc(point.x, point.y, 4, 0, Math.PI * 2);
-    overlayContext.fill();
-
-    const secondaryPoint = secondaryPoints?.[index];
-    const secondaryItem = secondarySeries?.[index];
-    if (secondaryPoint && secondaryItem) {
-      overlayContext.beginPath();
-      overlayContext.fillStyle = '#6c7a89';
-      overlayContext.arc(secondaryPoint.x, secondaryPoint.y, 4, 0, Math.PI * 2);
-      overlayContext.fill();
-    }
-    overlayContext.restore();
-
-    const dateText = new Date(item.date).toLocaleDateString('cs-CZ');
-    let content = `${dateText}<br><strong>${valueFormatter(item.value)}</strong>`;
-    if (secondaryItem) {
-      const formatSecondary = secondaryFormatter || valueFormatter;
-      content += `<br><span>${formatSecondary(secondaryItem.value)}</span>`;
-    }
-    tooltip.innerHTML = content;
-    tooltip.style.display = 'block';
-
-    const scaleX = rect.width / canvas.width;
-    const scaleY = rect.height / canvas.height;
-    const tooltipWidth = tooltip.offsetWidth || 140;
-    const tooltipHeight = tooltip.offsetHeight || 48;
-    const preferredLeft = point.x * scaleX + 12;
-    tooltip.style.left = Math.max(4, Math.min(rect.width - tooltipWidth - 4, preferredLeft)) + 'px';
-    tooltip.style.top = Math.max(4, Math.min(rect.height - tooltipHeight - 4, point.y * scaleY - tooltipHeight / 2)) + 'px';
-  }
-
-  canvas.addEventListener('pointermove', show, { passive: true });
-  canvas.addEventListener('pointerdown', show, { passive: true });
-  canvas.addEventListener('pointerleave', hide);
-  canvas.addEventListener('pointercancel', hide);
+  if (!canvas || !points?.length || !series?.length || !tooltip) return;
+  const host = canvas.parentElement;
+  host.style.position = 'relative'; host.style.overflow = 'hidden'; host.style.isolation = 'isolate';
+  canvas.style.pointerEvents = 'none';
+  host.querySelector('.chart-pointer-layer')?.remove();
+  const layer = document.createElement('div'); layer.className = 'chart-pointer-layer';
+  Object.assign(layer.style,{left:canvas.offsetLeft+'px',top:canvas.offsetTop+'px',width:(canvas.clientWidth||host.clientWidth||width)+'px',height:(canvas.clientHeight||height)+'px'});
+  const guide=document.createElement('div'); Object.assign(guide.style,{position:'absolute',top:padding.top+'px',bottom:padding.bottom+'px',width:'1px',borderLeft:'1px dashed rgba(201,166,70,.95)',display:'none',pointerEvents:'none'}); layer.appendChild(guide);
+  const dot=document.createElement('div'); Object.assign(dot.style,{position:'absolute',width:'8px',height:'8px',marginLeft:'-4px',marginTop:'-4px',borderRadius:'50%',background:'#C9A646',display:'none',pointerEvents:'none'}); layer.appendChild(dot);
+  const dot2=dot.cloneNode(); dot2.style.background='#6c7a89'; layer.appendChild(dot2);
+  function hide(){guide.style.display=dot.style.display=dot2.style.display=tooltip.style.display='none';}
+  function show(e){const r=layer.getBoundingClientRect(),cx=e.clientX??e.touches?.[0]?.clientX;if(!r.width||!Number.isFinite(cx))return;const x=(cx-r.left)*canvas.width/r.width;let k=0,d=Infinity;points.forEach((q,i)=>{const n=Math.abs(q.x-x);if(n<d){d=n;k=i;}});const q=points[k],item=series[k];if(!q||!item)return hide();const sx=r.width/canvas.width,sy=r.height/canvas.height,px=q.x*sx,py=q.y*sy;guide.style.left=px+'px';guide.style.display='block';dot.style.left=px+'px';dot.style.top=py+'px';dot.style.display='block';const q2=secondaryPoints?.[k],item2=secondarySeries?.[k];if(q2&&item2){dot2.style.left=q2.x*sx+'px';dot2.style.top=q2.y*sy+'px';dot2.style.display='block';}else dot2.style.display='none';tooltip.innerHTML=`${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${valueFormatter(item.value)}</strong>`+(item2?`<br>${(secondaryFormatter||valueFormatter)(item2.value)}`:'');tooltip.style.display='block';const tw=tooltip.offsetWidth||140,th=tooltip.offsetHeight||50;tooltip.style.left=canvas.offsetLeft+Math.max(4,Math.min(r.width-tw-4,px+12))+'px';tooltip.style.top=canvas.offsetTop+Math.max(4,Math.min(r.height-th-4,py-th/2))+'px';}
+  layer.addEventListener('pointermove',show,{passive:true});layer.addEventListener('pointerdown',show,{passive:true});layer.addEventListener('pointerleave',hide);host.appendChild(layer);
 }
-
 function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
   lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
   const div = document.getElementById(containerId);
@@ -3207,7 +3128,8 @@ function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, s
 
   div.innerHTML = '';
   div.style.position = 'relative';
-  div.style.overflow = 'visible';
+  div.style.overflow = 'hidden';
+  div.style.isolation = 'isolate';
 
   const legend = document.createElement('div');
   legend.className = 'stock-comparison-legend';
@@ -3443,41 +3365,17 @@ function renderStockRiskMetrics(data) {
   if (compareToggle && first.benchmarkTicker) compareToggle.closest('label')?.setAttribute('title', `Porovná vývoj s benchmarkem ${first.benchmarkTicker}.`);
 }
 
-async function loadStockData(ticker, period) {
-  const data = await ensureStockHistory(ticker);
-  const filtered = filterPeriod(data, period);
-  const finalData = filtered.length ? filtered : data;
-  const useCzk = isStockCzkMode();
-  const compareIndex = isStockCompareMode();
-  const displayRows = getStockDisplayRows(finalData, useCzk);
-  const stockRowsForChart = displayRows.length ? displayRows : finalData;
-  renderStockMeta(finalData);
-  renderStockKPI(stockRowsForChart);
-  renderStockRiskMetrics(finalData);
-  const chartData = stockRowsForChart.map(d => ({ date: d.date, value: getStockChartValue(d, useCzk) })).filter(d => d.value != null && !isNaN(Number(d.value)) && Number(d.value) > 0);
-  renderPeriodDifference(chartData);
-  if (compareIndex && stockRowsForChart.length) {
-    const benchmarkTicker = getBenchmarkTickerForStock(finalData[0]);
-    const benchmarkData = await ensureStockHistory(benchmarkTicker);
-    const stockName = getInstrumentDisplayName(finalData[0], ticker);
-    const benchmarkName = getInstrumentDisplayName(benchmarkData[0], benchmarkTicker);
-    updateBenchmarkInfo(benchmarkName, benchmarkTicker, true);
-    const benchmarkFiltered = filterPeriod(benchmarkData, period);
-    const benchmarkRows = benchmarkFiltered.length ? benchmarkFiltered : benchmarkData;
-    const alignedBenchmarkRows = alignBenchmarkToStockDates(stockRowsForChart, benchmarkRows, r => r.close);
-    const alignedStockRows = stockRowsForChart.filter(r => alignedBenchmarkRows.some(b => b.date === r.date));
-    const stockSeries = normalizeSeriesToBase100(alignedStockRows, r => getStockChartValue(r, useCzk));
-    const benchmarkSeries = normalizeSeriesToBase100(alignedBenchmarkRows, r => r.close);
-    if (stockSeries.length > 1 && benchmarkSeries.length > 1) {
-      renderStockComparisonChart(stockSeries, benchmarkSeries, 'chart-stock', formatComparisonLabel(stockName, finalData[0]?.ticker || ticker), formatComparisonLabel(benchmarkName, benchmarkTicker));
-      return;
-    }
-    console.warn('Porovnání s indexem nemá dostatek společných dat:', { ticker, benchmarkTicker, stockPoints: stockSeries.length, benchmarkPoints: benchmarkSeries.length });
-  }
-  updateBenchmarkInfo('', '', false);
-  renderPortfolioChart(chartData, 'chart-stock');
+function buildComparisonSeries(primaryRows, benchmarkRows, primaryGetter, benchmarkGetter) {
+ const b=(benchmarkRows||[]).map(r=>({time:new Date(r.date).getTime(),value:Number(benchmarkGetter(r))})).filter(x=>Number.isFinite(x.time)&&x.value>0).sort((x,y)=>x.time-y.time), pairs=[];
+ for(const r of primaryRows||[]){const t=new Date(r.date).getTime(),v=Number(primaryGetter(r));if(!Number.isFinite(t)||!(v>0)||!b.length)continue;let lo=0,hi=b.length-1;while(lo<=hi){const m=(lo+hi)>>1;if(b[m].time<t)lo=m+1;else hi=m-1;}const n=[b[lo],b[lo-1]].filter(Boolean).sort((x,y)=>Math.abs(x.time-t)-Math.abs(y.time-t))[0];if(n&&Math.abs(n.time-t)<=31*86400000)pairs.push({date:r.date,p:v,b:n.value});}
+ if(pairs.length<2)return{primary:[],benchmark:[]};const p0=pairs[0].p,b0=pairs[0].b;return{primary:pairs.map(x=>({date:x.date,value:x.p/p0*100})),benchmark:pairs.map(x=>({date:x.date,value:x.b/b0*100}))};
 }
-
+async function loadStockData(ticker, period) {
+ const req=window.__stockChartRequestId=(window.__stockChartRequestId||0)+1;
+ try{const data=await ensureStockHistory(ticker);if(req!==window.__stockChartRequestId)return;const filtered=filterPeriod(data,period),finalData=filtered.length?filtered:data,useCzk=isStockCzkMode(),displayRows=getStockDisplayRows(finalData,useCzk),rows=displayRows.length?displayRows:finalData;renderStockMeta(finalData);renderStockKPI(rows);renderStockRiskMetrics(finalData);const chartData=rows.map(d=>({date:d.date,value:getStockChartValue(d,useCzk)})).filter(d=>Number(d.value)>0);renderPeriodDifference(chartData);
+ if(isStockCompareMode()&&rows.length>1){const meta=(apiCache.stockUniverse||[]).find(x=>String(x.ticker||'')===String(ticker))||finalData[0]||{},bt=getBenchmarkTickerForStock(meta),bd=await ensureStockHistory(bt);if(req!==window.__stockChartRequestId||!isStockCompareMode())return;const bf=filterPeriod(bd,period),br=bf.length?bf:bd,pair=buildComparisonSeries(rows,br,r=>getStockChartValue(r,useCzk),r=>r.close);if(pair.primary.length>1){const bn=getInstrumentDisplayName(bd[0],bt);updateBenchmarkInfo(bn,bt,true);renderStockComparisonChart(pair.primary,pair.benchmark,'chart-stock',formatComparisonLabel(getInstrumentDisplayName(meta,ticker),ticker),formatComparisonLabel(bn,bt));return;}}
+ if(req!==window.__stockChartRequestId)return;updateBenchmarkInfo('','',false);renderPortfolioChart(chartData,'chart-stock');}catch(e){if(req!==window.__stockChartRequestId)return;console.error('Chyba grafu',e);}
+}
 function renderStockKPI(data) {
   if (!data.length) return;
   const useCzk = isStockCzkMode();
