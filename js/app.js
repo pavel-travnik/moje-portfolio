@@ -1368,7 +1368,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html`)
+    fetch(`/pages/${page}.html?v=20260904-v33`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -2141,6 +2141,10 @@ function initMobileInstrumentDetailTabs(options = {}) {
   const main = document.getElementById('mainContent');
   if (!main) return;
 
+  // Zalozky jsou zamerne pouze pro mobil. Desktop zustava v puvodnim
+  // souvislem rezimu, aby se graf vykreslil ihned ve viditelnem kontejneru.
+  if (!window.matchMedia('(max-width: 768px)').matches) return;
+
   const {
     chartId,
     compareToggleId = null,
@@ -2151,8 +2155,9 @@ function initMobileInstrumentDetailTabs(options = {}) {
   main.classList.add('mobile-detail-tabs-ready');
   main.dataset.detailActive = 'summary';
 
+  const heading = main.querySelector(':scope > h3');
   const summaryElements = [
-    ...main.querySelectorAll(':scope > h3, :scope > .stock-detail-head, :scope > .kpi-row, :scope > p.meta')
+    ...main.querySelectorAll(':scope > .stock-detail-head, :scope > .kpi-row, :scope > p.meta')
   ];
   summaryElements.forEach(el => el.dataset.detailSection = 'summary');
 
@@ -2187,8 +2192,8 @@ function initMobileInstrumentDetailTabs(options = {}) {
     tabs.appendChild(button);
   });
 
-  const firstContent = main.querySelector(':scope > h3') || main.firstElementChild;
-  if (firstContent) main.insertBefore(tabs, firstContent);
+  // Nadpis zustava vzdy nad zalozkami a nikdy neni prekryt.
+  if (heading) heading.insertAdjacentElement('afterend', tabs);
   else main.prepend(tabs);
 
   function redrawVisibleChart() {
@@ -2230,10 +2235,6 @@ function initMobileInstrumentDetailTabs(options = {}) {
     } else if (key === 'chart' || key === 'comparison') {
       redrawVisibleChart();
     }
-
-    if (window.matchMedia('(max-width: 768px)').matches) {
-      tabs.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
   }
 
   tabs.addEventListener('click', event => {
@@ -2242,7 +2243,6 @@ function initMobileInstrumentDetailTabs(options = {}) {
     activateTab(button.dataset.detailTab, button);
   });
 }
-
 // ===================================================
 // DETAIL FONDU
 // ===================================================
@@ -3349,10 +3349,24 @@ function downsampleHistory(history, maxPoints = 700) {
 }
 
 function renderPortfolioChart(history, containerId) {
+ history = (Array.isArray(history) ? history : [])
+  .map(point => ({ date: point?.date, value: Number(point?.value) }))
+  .filter(point => point.date && Number.isFinite(point.value));
  lastChartData = { history, containerId };
 
  const div = document.getElementById(containerId);
- if (!div || history.length < 2) return;
+ if (!div) return;
+ if (history.length < 2) {
+  div.innerHTML = '<p class="chart-empty">Pro zvolené období nejsou dostupná data pro graf.</p>';
+  div.style.height = 'auto';
+  return;
+ }
+ const detailRoot = div.closest('.mobile-detail-tabs-ready');
+ if (window.matchMedia('(max-width: 768px)').matches && detailRoot && !['chart', 'comparison'].includes(detailRoot.dataset.detailActive)) {
+  div.innerHTML = '';
+  div.style.height = '0px';
+  return;
+ }
 
  div.innerHTML = '';
  div.style.position = 'relative';
@@ -3369,6 +3383,8 @@ function renderPortfolioChart(history, containerId) {
  baseCanvas.style.position = 'absolute';
  baseCanvas.style.left = '0';
  baseCanvas.style.top = '0';
+ baseCanvas.style.width = '100%';
+ baseCanvas.style.height = '100%';
 
  // ✅ OVERLAY CANVAS (hover)
  const overlayCanvas = document.createElement('canvas');
@@ -3377,6 +3393,8 @@ function renderPortfolioChart(history, containerId) {
  overlayCanvas.style.position = 'absolute';
  overlayCanvas.style.left = '0';
  overlayCanvas.style.top = '0';
+ overlayCanvas.style.width = '100%';
+ overlayCanvas.style.height = '100%';
 
  div.appendChild(baseCanvas);
  div.appendChild(overlayCanvas);
