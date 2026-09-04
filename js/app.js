@@ -1370,7 +1370,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260904-v40`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260904-v41`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -3106,158 +3106,59 @@ async function ensureStockHistory(ticker) {
   }
   return apiCache.stocks[ticker];
 }
-function attachChartPointerInteraction({ canvas, tooltip, points, series, width, height, padding, overlayContext, valueFormatter, secondaryPoints = null, secondarySeries = null, secondaryFormatter = null }) {
-  if (!canvas || !points?.length || !series?.length || !tooltip) return;
-  const host = canvas.parentElement;
-  if (!host) return;
-  host.style.position = 'relative';
-  host.style.overflow = 'hidden';
-  canvas.style.pointerEvents = 'none';
-  host.querySelector('.chart-hit-layer')?.remove();
-  const hit = document.createElement('div');
-  hit.className = 'chart-hit-layer';
-  Object.assign(hit.style, { position:'absolute', left:canvas.offsetLeft+'px', top:canvas.offsetTop+'px', width:(canvas.clientWidth || host.clientWidth || width)+'px', height:(canvas.clientHeight || height)+'px', zIndex:'20', cursor:'crosshair', touchAction:'pan-y', background:'transparent' });
-  const guide = document.createElement('div');
-  guide.className = 'chart-guide-line';
-  const dot1 = document.createElement('div'); dot1.className = 'chart-guide-dot primary';
-  const dot2 = document.createElement('div'); dot2.className = 'chart-guide-dot secondary';
-  hit.append(guide, dot1, dot2);
-  Object.assign(tooltip.style, { position:'absolute', zIndex:'30', pointerEvents:'none', display:'none' });
-  const hide = () => { guide.style.display=dot1.style.display=dot2.style.display=tooltip.style.display='none'; };
-  const show = event => {
-    const rect=hit.getBoundingClientRect();
-    const clientX=event.clientX ?? event.touches?.[0]?.clientX;
-    if (!rect.width || !Number.isFinite(clientX)) return;
-    const x=(clientX-rect.left)*canvas.width/rect.width;
-    let index=0, best=Infinity;
-    points.forEach((p,i)=>{const d=Math.abs(p.x-x);if(d<best){best=d;index=i;}});
-    const point=points[index], item=series[index]; if(!point||!item)return hide();
-    const sx=rect.width/canvas.width, sy=rect.height/canvas.height, px=point.x*sx, py=point.y*sy;
-    Object.assign(guide.style,{display:'block',left:px+'px',top:padding.top*sy+'px',height:(height-padding.top-padding.bottom)*sy+'px'});
-    Object.assign(dot1.style,{display:'block',left:px+'px',top:py+'px'});
-    const p2=secondaryPoints?.[index], i2=secondarySeries?.[index];
-    if(p2&&i2) Object.assign(dot2.style,{display:'block',left:p2.x*sx+'px',top:p2.y*sy+'px'}); else dot2.style.display='none';
-    tooltip.innerHTML=`${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${valueFormatter(item.value)}</strong>`+(i2?`<br><span>${(secondaryFormatter||valueFormatter)(i2.value)}</span>`:'');
-    tooltip.style.display='block';
-    const tw=tooltip.offsetWidth||150, th=tooltip.offsetHeight||52;
-    tooltip.style.left=canvas.offsetLeft+Math.max(4,Math.min(rect.width-tw-4,px+12))+'px';
-    tooltip.style.top=canvas.offsetTop+Math.max(4,Math.min(rect.height-th-4,py-th/2))+'px';
-  };
-  hit.addEventListener('pointermove',show,{passive:true});
-  hit.addEventListener('pointerdown',show,{passive:true});
-  hit.addEventListener('pointerleave',hide);
-  hit.addEventListener('pointercancel',hide);
-  host.appendChild(hit);
-}
-function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
-  lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
+function attachChartPointerInteraction() { /* Legacy compatibility. SVG chart handles interaction directly. */ }
+
+function renderInteractiveSvgChart({ containerId, primarySeries, secondarySeries = null, primaryLabel = '', secondaryLabel = '', comparison = false }) {
   const div = document.getElementById(containerId);
-  if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
-
-  div.innerHTML = '';
-  div.style.position = 'relative';
-  div.style.overflow = 'hidden';
-  div.style.isolation = 'isolate';
-
-  const legend = document.createElement('div');
-  legend.className = 'stock-comparison-legend';
-  legend.setAttribute('aria-label', 'Legenda porovnání');
-  legend.innerHTML = `<span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line stock"></span><span>${stockLabel}</span></span><span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line benchmark"></span><span>Benchmark: ${benchmarkLabel}</span></span>`;
-  div.appendChild(legend);
-
-  const width = Math.max(div.clientWidth || 0, div.parentElement?.clientWidth || 0, 320);
-  const chartHeight = Math.min(width * .65, 320);
-  const legendHeight = Math.max(legend.offsetHeight || 0, 40);
-  const chartTop = legendHeight + 4;
-  div.style.height = chartTop + chartHeight + 'px';
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = chartHeight;
-  canvas.style.position = 'absolute';
-  canvas.style.left = '0';
-  canvas.style.top = chartTop + 'px';
-  canvas.style.width = '100%';
-  canvas.style.height = chartHeight + 'px';
-  div.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-
-  const padding = { top: 16, right: width < 520 ? 42 : 60, bottom: 34, left: 22 };
-  const allValues = [...stockSeries, ...benchmarkSeries].map(p => Number(p.value)).filter(Number.isFinite);
-  const min = Math.min(...allValues);
-  const max = Math.max(...allValues);
-  const range = max - min || 1;
-  const xForIndex = (index, length) => padding.left + (index / Math.max(1, length - 1)) * (width - padding.left - padding.right);
-  const yForValue = value => padding.top + ((max - Number(value)) / range) * (chartHeight - padding.top - padding.bottom);
-  const pointsFor = series => series.map((item, index) => ({ x: xForIndex(index, series.length), y: yForValue(item.value) }));
-  const stockPoints = pointsFor(stockSeries);
-  const benchmarkPoints = pointsFor(benchmarkSeries);
-
-  ctx.strokeStyle = '#e6e6e6';
-  ctx.fillStyle = '#666';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'right';
-  for (let i = 0; i <= 5; i++) {
-    const y = padding.top + (i / 5) * (chartHeight - padding.top - padding.bottom);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(width - padding.right, y);
-    ctx.stroke();
-    ctx.fillText((max - (i / 5) * range).toFixed(1), width - 6, y + 4);
+  if (!div) return;
+  const primary = (primarySeries || []).map(p => ({ date:p?.date, value:Number(p?.value) })).filter(p => p.date && Number.isFinite(p.value));
+  const secondary = (secondarySeries || []).map(p => ({ date:p?.date, value:Number(p?.value) })).filter(p => p.date && Number.isFinite(p.value));
+  if (primary.length < 2 || (comparison && secondary.length < 2)) {
+    div.innerHTML = '<p class="chart-empty">Pro zvolené období nejsou dostupná data pro graf.</p>';
+    div.style.height = 'auto';
+    return;
   }
-
-  function drawLine(points, color, lineWidth) {
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
-    ctx.stroke();
+  const mobileRoot = div.closest('.mobile-detail-tabs-ready');
+  if (matchMedia('(max-width: 768px)').matches && mobileRoot && !['chart','comparison'].includes(mobileRoot.dataset.detailActive)) {
+    div.innerHTML=''; div.style.height='0px'; return;
   }
-  drawLine(benchmarkPoints, '#6c7a89', 1.6);
-  drawLine(stockPoints, '#C9A646', 2.2);
+  div.innerHTML='';
+  div.classList.add('svg-chart-host');
+  div.style.height='auto';
+  const width=Math.max(div.getBoundingClientRect().width || div.parentElement?.getBoundingClientRect().width || 320,320);
+  const legendHeight=comparison ? 48 : 0;
+  const height=Math.min(width*.65,320);
+  const pad={top:18,right:width<520?46:64,bottom:36,left:22};
+  const all=comparison ? [...primary,...secondary] : primary;
+  const vals=all.map(p=>p.value), min=Math.min(...vals), max=Math.max(...vals), range=max-min||1;
+  const x=(i,n)=>pad.left+i/Math.max(1,n-1)*(width-pad.left-pad.right);
+  const y=v=>pad.top+(max-v)/range*(height-pad.top-pad.bottom);
+  const p1=primary.map((p,i)=>({x:x(i,primary.length),y:y(p.value)}));
+  const p2=secondary.map((p,i)=>({x:x(i,secondary.length),y:y(p.value)}));
+  const ns='http://www.w3.org/2000/svg';
+  if(comparison){const legend=document.createElement('div');legend.className='stock-comparison-legend';legend.innerHTML=`<span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line stock"></span>${primaryLabel}</span><span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line benchmark"></span>Benchmark: ${secondaryLabel}</span>`;div.appendChild(legend);}
+  const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.setAttribute('preserveAspectRatio','none');svg.classList.add('interactive-chart-svg');div.appendChild(svg);
+  for(let i=0;i<=5;i++){const yy=pad.top+i/5*(height-pad.top-pad.bottom);const line=document.createElementNS(ns,'line');line.setAttribute('x1',pad.left);line.setAttribute('x2',width-pad.right);line.setAttribute('y1',yy);line.setAttribute('y2',yy);line.setAttribute('class','chart-grid-line');svg.appendChild(line);const t=document.createElementNS(ns,'text');t.setAttribute('x',width-7);t.setAttribute('y',yy+4);t.setAttribute('class','chart-axis-label chart-axis-y');t.textContent=(max-i/5*range).toFixed(comparison?1:2);svg.appendChild(t);}
+  const tickCount=width<500?3:5, step=Math.max(1,Math.floor(primary.length/tickCount));
+  for(let i=0;i<primary.length;i+=step){const t=document.createElementNS(ns,'text');t.setAttribute('x',p1[i].x);t.setAttribute('y',height-8);t.setAttribute('class','chart-axis-label chart-axis-x');t.textContent=new Date(primary[i].date).toLocaleDateString('cs-CZ');svg.appendChild(t);}
+  const pathData=pts=>pts.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');
+  if(!comparison){const area=document.createElementNS(ns,'path');area.setAttribute('d',`M${p1[0].x} ${height-pad.bottom} `+pathData(p1)+` L${p1.at(-1).x} ${height-pad.bottom} Z`);area.setAttribute('class','chart-area');svg.appendChild(area);}
+  if(comparison){const b=document.createElementNS(ns,'path');b.setAttribute('d',pathData(p2));b.setAttribute('class','chart-line benchmark');svg.appendChild(b);}
+  const line=document.createElementNS(ns,'path');line.setAttribute('d',pathData(p1));line.setAttribute('class','chart-line primary');svg.appendChild(line);
+  const guide=document.createElementNS(ns,'line');guide.setAttribute('class','chart-svg-guide');guide.setAttribute('y1',pad.top);guide.setAttribute('y2',height-pad.bottom);guide.style.display='none';svg.appendChild(guide);
+  const dot=document.createElementNS(ns,'circle');dot.setAttribute('r',4);dot.setAttribute('class','chart-svg-dot primary');dot.style.display='none';svg.appendChild(dot);
+  const dot2=document.createElementNS(ns,'circle');dot2.setAttribute('r',4);dot2.setAttribute('class','chart-svg-dot secondary');dot2.style.display='none';svg.appendChild(dot2);
+  const hit=document.createElementNS(ns,'rect');hit.setAttribute('x',0);hit.setAttribute('y',0);hit.setAttribute('width',width);hit.setAttribute('height',height);hit.setAttribute('class','chart-svg-hit');svg.appendChild(hit);
+  const tip=document.createElement('div');tip.className='chart-hover-tooltip svg-chart-tooltip';div.appendChild(tip);
+  const hide=()=>{guide.style.display=dot.style.display=dot2.style.display=tip.style.display='none';};
+  const show=e=>{const r=svg.getBoundingClientRect();if(!r.width)return;const local=(e.clientX-r.left)*width/r.width;let k=0,best=Infinity;p1.forEach((p,i)=>{const d=Math.abs(p.x-local);if(d<best){best=d;k=i;}});const q=p1[k],item=primary[k];guide.setAttribute('x1',q.x);guide.setAttribute('x2',q.x);guide.style.display='';dot.setAttribute('cx',q.x);dot.setAttribute('cy',q.y);dot.style.display='';const sec=secondary[k],q2=p2[k];if(comparison&&sec&&q2){dot2.setAttribute('cx',q2.x);dot2.setAttribute('cy',q2.y);dot2.style.display='';}else dot2.style.display='none';tip.innerHTML=`${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${comparison?primaryLabel+': ':''}${item.value.toFixed(comparison?2:4)}</strong>`+(comparison&&sec?`<br>${secondaryLabel}: ${sec.value.toFixed(2)}`:'');tip.style.display='block';const px=q.x*r.width/width,py=q.y*r.height/height,tw=tip.offsetWidth||150,th=tip.offsetHeight||52;tip.style.left=Math.max(4,Math.min(r.width-tw-4,px+12))+'px';tip.style.top=(legendHeight+Math.max(4,Math.min(r.height-th-4,py-th/2)))+'px';};
+  hit.addEventListener('pointermove',show);hit.addEventListener('pointerdown',show);hit.addEventListener('pointerleave',hide);hit.addEventListener('pointercancel',hide);
+}
 
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#666';
-  const maxXTicks = width < 500 ? 3 : 5;
-  const step = Math.max(1, Math.floor(stockSeries.length / maxXTicks));
-  for (let i = 0; i < stockSeries.length; i += step) {
-    ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'), stockPoints[i].x, chartHeight - padding.bottom + 8);
-  }
 
-  const overlay = document.createElement('canvas');
-  overlay.width = width;
-  overlay.height = chartHeight;
-  overlay.style.position = 'absolute';
-  overlay.style.left = '0';
-  overlay.style.top = chartTop + 'px';
-  overlay.style.width = '100%';
-  overlay.style.height = chartHeight + 'px';
-  div.appendChild(overlay);
-
-  const tip = document.createElement('div');
-  tip.className = 'chart-hover-tooltip';
-  tip.style.background = 'rgba(82,82,82,0.95)';
-  tip.style.color = '#C9A646';
-  tip.style.padding = '6px 8px';
-  tip.style.fontSize = '11px';
-  tip.style.borderRadius = '6px';
-  tip.style.top = chartTop + 'px';
-  div.appendChild(tip);
-
-  attachChartPointerInteraction({
-    canvas: overlay,
-    tooltip: tip,
-    points: stockPoints,
-    series: stockSeries,
-    secondaryPoints: benchmarkPoints,
-    secondarySeries: benchmarkSeries,
-    width,
-    height: chartHeight,
-    padding,
-    overlayContext: overlay.getContext('2d'),
-    valueFormatter: value => `${stockLabel}: ${Number(value).toFixed(2)}`,
-    secondaryFormatter: value => `${benchmarkLabel}: ${Number(value).toFixed(2)}`
-  });
+function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
+  lastChartData={history:stockSeries,containerId,comparison:{stockSeries,benchmarkSeries,stockLabel,benchmarkLabel}};
+  renderInteractiveSvgChart({containerId,primarySeries:stockSeries,secondarySeries:benchmarkSeries,primaryLabel:stockLabel,secondaryLabel:benchmarkLabel,comparison:true});
 }
 function loadStockDetail(ticker) {
   const main = document.getElementById('mainContent');
@@ -3488,173 +3389,10 @@ function downsampleHistory(history, maxPoints = 700) {
 }
 
 function renderPortfolioChart(history, containerId) {
- history = (Array.isArray(history) ? history : [])
-  .map(point => ({ date: point?.date, value: Number(point?.value) }))
-  .filter(point => point.date && Number.isFinite(point.value));
- lastChartData = { history, containerId };
-
- const div = document.getElementById(containerId);
- if (!div) return;
- if (history.length < 2) {
-  div.innerHTML = '<p class="chart-empty">Pro zvolené období nejsou dostupná data pro graf.</p>';
-  div.style.height = 'auto';
-  return;
- }
- const detailRoot = div.closest('.mobile-detail-tabs-ready');
- if (window.matchMedia('(max-width: 768px)').matches && detailRoot && !['chart', 'comparison'].includes(detailRoot.dataset.detailActive)) {
-  div.innerHTML = '';
-  div.style.height = '0px';
-  return;
- }
-
- div.innerHTML = '';
- div.style.position = 'relative';
-
- 
- const width = Math.max(div.clientWidth || 0, div.parentElement?.clientWidth || 0, 320);
- const height = Math.min(width * 0.65, 320);
- div.style.height = height + 'px';
-
- // ✅ BASE CANVAS (graf)
- const baseCanvas = document.createElement('canvas');
- baseCanvas.width = width;
- baseCanvas.height = height;
- baseCanvas.style.position = 'absolute';
- baseCanvas.style.left = '0';
- baseCanvas.style.top = '0';
- baseCanvas.style.width = '100%';
- baseCanvas.style.height = '100%';
-
- // ✅ OVERLAY CANVAS (hover)
- const overlayCanvas = document.createElement('canvas');
- overlayCanvas.width = width;
- overlayCanvas.height = height;
- overlayCanvas.style.position = 'absolute';
- overlayCanvas.style.left = '0';
- overlayCanvas.style.top = '0';
- overlayCanvas.style.width = '100%';
- overlayCanvas.style.height = '100%';
-
- div.appendChild(baseCanvas);
- div.appendChild(overlayCanvas);
-
- // Tooltip
- const tooltip = document.createElement('div');
- tooltip.style.position = 'absolute';
- tooltip.style.pointerEvents = 'none';
- tooltip.style.background = 'rgba(82,82,82,0.95)';
- tooltip.style.color = '#C9A646';
- tooltip.style.padding = '6px 8px';
- tooltip.style.fontSize = '11px';
- tooltip.style.borderRadius = '6px';
- tooltip.style.display = 'none';
- tooltip.style.whiteSpace = 'nowrap';
- div.appendChild(tooltip);
-
- const ctx = baseCanvas.getContext('2d');
- const octx = overlayCanvas.getContext('2d');
-
- const padding = { top: 20, right: 60, bottom: 30, left: 20 };
-
- const values = history.map(p => p.value);
- const min = Math.min(...values);
- const max = Math.max(...values);
- const range = max - min || 1;
-
- const w = width;
- const h = height;
-
- const points = history.map((p, i) => ({
-  x: padding.left + (i / (history.length - 1)) * (w - padding.left - padding.right),
-  y: padding.top + ((max - p.value) / range) * (h - padding.top - padding.bottom)
- }));
-
- // =====================================================
- // ✅ BASE CHART (vykreslí se jen jednou)
- // =====================================================
-
- ctx.strokeStyle = '#e6e6e6';
- ctx.fillStyle = '#666';
- ctx.font = '12px Arial';
- ctx.textAlign = 'right';
-
- for (let i = 0; i <= 5; i++) {
-  const y = padding.top + (i / 5) * (h - padding.top - padding.bottom);
-  ctx.beginPath();
-  ctx.moveTo(padding.left, y);
-  ctx.lineTo(w - padding.right, y);
-  ctx.stroke();
-
-  ctx.fillText((max - (i / 5) * range).toFixed(2), w - 8, y + 4);
- }
-
- // AREA
- ctx.beginPath();
- ctx.moveTo(points[0].x, h - padding.bottom);
- points.forEach(pt => ctx.lineTo(pt.x, pt.y));
- ctx.lineTo(points.at(-1).x, h - padding.bottom);
-
- const gradient = ctx.createLinearGradient(0, padding.top, 0, h);
- gradient.addColorStop(0, 'rgba(201,162,70,0.35)');
- gradient.addColorStop(1, 'rgba(201,162,70,0.02)');
- ctx.fillStyle = gradient;
- ctx.fill();
-
- // LINE
- ctx.beginPath();
- ctx.strokeStyle = '#C9A646';
- ctx.lineWidth = 1.8;
- points.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y));
- ctx.stroke();
-
- // =====================================================
- // ✅ X AXIS
- // =====================================================
-
- ctx.textAlign = 'center';
- ctx.textBaseline = 'top';
- ctx.fillStyle = '#666';
-
- const maxXTicks = w < 500 ? 3 : 5;
- const step = Math.max(1, Math.floor(history.length / maxXTicks));
-
- for (let i = 0; i < history.length; i += step) {
-  const x = padding.left + (i / (history.length - 1)) * (w - padding.left - padding.right);
-  const d = new Date(history[i].date);
-
-  const label = d.toLocaleDateString('cs-CZ');
-
-  ctx.beginPath();
-  ctx.moveTo(x, h - padding.bottom);
-  ctx.lineTo(x, h - padding.bottom + 4);
-  ctx.stroke();
-
-  ctx.fillText(label, x, h - padding.bottom + 6);
- }
-
- // =====================================================
- // ✅ HOVER (overlay canvas)
- // =====================================================
-
- attachChartPointerInteraction({
-  canvas: overlayCanvas,
-  tooltip,
-  points,
-  series: history,
-  width: w,
-  height: h,
-  padding,
-  overlayContext: octx,
-  valueFormatter: value => Number(value).toFixed(4)
- });
- requestAnimationFrame(() => {
-  const actualWidth = div.clientWidth || div.parentElement?.clientWidth || width;
-  if (Math.abs(actualWidth - width) > 8 && lastChartData?.containerId === containerId) {
-   renderPortfolioChart(lastChartData.history, containerId);
-  }
- });
+  history=(Array.isArray(history)?history:[]).map(p=>({date:p?.date,value:Number(p?.value)})).filter(p=>p.date&&Number.isFinite(p.value));
+  lastChartData={history,containerId};
+  renderInteractiveSvgChart({containerId,primarySeries:history,comparison:false});
 }
-
 function renderPeriodDifference(data) {
   const box = document.getElementById('period-diff');
   if (!box || data.length < 2) {
