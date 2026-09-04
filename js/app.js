@@ -1370,7 +1370,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260904-v35`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260904-v40`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -3109,17 +3109,45 @@ async function ensureStockHistory(ticker) {
 function attachChartPointerInteraction({ canvas, tooltip, points, series, width, height, padding, overlayContext, valueFormatter, secondaryPoints = null, secondarySeries = null, secondaryFormatter = null }) {
   if (!canvas || !points?.length || !series?.length || !tooltip) return;
   const host = canvas.parentElement;
-  host.style.position = 'relative'; host.style.overflow = 'hidden'; host.style.isolation = 'isolate';
+  if (!host) return;
+  host.style.position = 'relative';
+  host.style.overflow = 'hidden';
   canvas.style.pointerEvents = 'none';
-  host.querySelector('.chart-pointer-layer')?.remove();
-  const layer = document.createElement('div'); layer.className = 'chart-pointer-layer';
-  Object.assign(layer.style,{left:canvas.offsetLeft+'px',top:canvas.offsetTop+'px',width:(canvas.clientWidth||host.clientWidth||width)+'px',height:(canvas.clientHeight||height)+'px'});
-  const guide=document.createElement('div'); Object.assign(guide.style,{position:'absolute',top:padding.top+'px',bottom:padding.bottom+'px',width:'1px',borderLeft:'1px dashed rgba(201,166,70,.95)',display:'none',pointerEvents:'none'}); layer.appendChild(guide);
-  const dot=document.createElement('div'); Object.assign(dot.style,{position:'absolute',width:'8px',height:'8px',marginLeft:'-4px',marginTop:'-4px',borderRadius:'50%',background:'#C9A646',display:'none',pointerEvents:'none'}); layer.appendChild(dot);
-  const dot2=dot.cloneNode(); dot2.style.background='#6c7a89'; layer.appendChild(dot2);
-  function hide(){guide.style.display=dot.style.display=dot2.style.display=tooltip.style.display='none';}
-  function show(e){const r=layer.getBoundingClientRect(),cx=e.clientX??e.touches?.[0]?.clientX;if(!r.width||!Number.isFinite(cx))return;const x=(cx-r.left)*canvas.width/r.width;let k=0,d=Infinity;points.forEach((q,i)=>{const n=Math.abs(q.x-x);if(n<d){d=n;k=i;}});const q=points[k],item=series[k];if(!q||!item)return hide();const sx=r.width/canvas.width,sy=r.height/canvas.height,px=q.x*sx,py=q.y*sy;guide.style.left=px+'px';guide.style.display='block';dot.style.left=px+'px';dot.style.top=py+'px';dot.style.display='block';const q2=secondaryPoints?.[k],item2=secondarySeries?.[k];if(q2&&item2){dot2.style.left=q2.x*sx+'px';dot2.style.top=q2.y*sy+'px';dot2.style.display='block';}else dot2.style.display='none';tooltip.innerHTML=`${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${valueFormatter(item.value)}</strong>`+(item2?`<br>${(secondaryFormatter||valueFormatter)(item2.value)}`:'');tooltip.style.display='block';const tw=tooltip.offsetWidth||140,th=tooltip.offsetHeight||50;tooltip.style.left=canvas.offsetLeft+Math.max(4,Math.min(r.width-tw-4,px+12))+'px';tooltip.style.top=canvas.offsetTop+Math.max(4,Math.min(r.height-th-4,py-th/2))+'px';}
-  layer.addEventListener('pointermove',show,{passive:true});layer.addEventListener('pointerdown',show,{passive:true});layer.addEventListener('pointerleave',hide);host.appendChild(layer);
+  host.querySelector('.chart-hit-layer')?.remove();
+  const hit = document.createElement('div');
+  hit.className = 'chart-hit-layer';
+  Object.assign(hit.style, { position:'absolute', left:canvas.offsetLeft+'px', top:canvas.offsetTop+'px', width:(canvas.clientWidth || host.clientWidth || width)+'px', height:(canvas.clientHeight || height)+'px', zIndex:'20', cursor:'crosshair', touchAction:'pan-y', background:'transparent' });
+  const guide = document.createElement('div');
+  guide.className = 'chart-guide-line';
+  const dot1 = document.createElement('div'); dot1.className = 'chart-guide-dot primary';
+  const dot2 = document.createElement('div'); dot2.className = 'chart-guide-dot secondary';
+  hit.append(guide, dot1, dot2);
+  Object.assign(tooltip.style, { position:'absolute', zIndex:'30', pointerEvents:'none', display:'none' });
+  const hide = () => { guide.style.display=dot1.style.display=dot2.style.display=tooltip.style.display='none'; };
+  const show = event => {
+    const rect=hit.getBoundingClientRect();
+    const clientX=event.clientX ?? event.touches?.[0]?.clientX;
+    if (!rect.width || !Number.isFinite(clientX)) return;
+    const x=(clientX-rect.left)*canvas.width/rect.width;
+    let index=0, best=Infinity;
+    points.forEach((p,i)=>{const d=Math.abs(p.x-x);if(d<best){best=d;index=i;}});
+    const point=points[index], item=series[index]; if(!point||!item)return hide();
+    const sx=rect.width/canvas.width, sy=rect.height/canvas.height, px=point.x*sx, py=point.y*sy;
+    Object.assign(guide.style,{display:'block',left:px+'px',top:padding.top*sy+'px',height:(height-padding.top-padding.bottom)*sy+'px'});
+    Object.assign(dot1.style,{display:'block',left:px+'px',top:py+'px'});
+    const p2=secondaryPoints?.[index], i2=secondarySeries?.[index];
+    if(p2&&i2) Object.assign(dot2.style,{display:'block',left:p2.x*sx+'px',top:p2.y*sy+'px'}); else dot2.style.display='none';
+    tooltip.innerHTML=`${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${valueFormatter(item.value)}</strong>`+(i2?`<br><span>${(secondaryFormatter||valueFormatter)(i2.value)}</span>`:'');
+    tooltip.style.display='block';
+    const tw=tooltip.offsetWidth||150, th=tooltip.offsetHeight||52;
+    tooltip.style.left=canvas.offsetLeft+Math.max(4,Math.min(rect.width-tw-4,px+12))+'px';
+    tooltip.style.top=canvas.offsetTop+Math.max(4,Math.min(rect.height-th-4,py-th/2))+'px';
+  };
+  hit.addEventListener('pointermove',show,{passive:true});
+  hit.addEventListener('pointerdown',show,{passive:true});
+  hit.addEventListener('pointerleave',hide);
+  hit.addEventListener('pointercancel',hide);
+  host.appendChild(hit);
 }
 function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
   lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
@@ -3365,16 +3393,53 @@ function renderStockRiskMetrics(data) {
   if (compareToggle && first.benchmarkTicker) compareToggle.closest('label')?.setAttribute('title', `Porovná vývoj s benchmarkem ${first.benchmarkTicker}.`);
 }
 
-function buildComparisonSeries(primaryRows, benchmarkRows, primaryGetter, benchmarkGetter) {
- const b=(benchmarkRows||[]).map(r=>({time:new Date(r.date).getTime(),value:Number(benchmarkGetter(r))})).filter(x=>Number.isFinite(x.time)&&x.value>0).sort((x,y)=>x.time-y.time), pairs=[];
- for(const r of primaryRows||[]){const t=new Date(r.date).getTime(),v=Number(primaryGetter(r));if(!Number.isFinite(t)||!(v>0)||!b.length)continue;let lo=0,hi=b.length-1;while(lo<=hi){const m=(lo+hi)>>1;if(b[m].time<t)lo=m+1;else hi=m-1;}const n=[b[lo],b[lo-1]].filter(Boolean).sort((x,y)=>Math.abs(x.time-t)-Math.abs(y.time-t))[0];if(n&&Math.abs(n.time-t)<=31*86400000)pairs.push({date:r.date,p:v,b:n.value});}
- if(pairs.length<2)return{primary:[],benchmark:[]};const p0=pairs[0].p,b0=pairs[0].b;return{primary:pairs.map(x=>({date:x.date,value:x.p/p0*100})),benchmark:pairs.map(x=>({date:x.date,value:x.b/b0*100}))};
+function buildPairedComparisonSeries(primaryRows, benchmarkRows, primaryGetter, benchmarkGetter) {
+  const benchmark=(benchmarkRows||[]).map(r=>({time:new Date(r.date).getTime(),value:Number(benchmarkGetter(r))})).filter(x=>Number.isFinite(x.time)&&x.value>0).sort((a,b)=>a.time-b.time);
+  const pairs=[];
+  for(const row of primaryRows||[]){
+    const time=new Date(row.date).getTime(), value=Number(primaryGetter(row));
+    if(!Number.isFinite(time)||!(value>0)||!benchmark.length)continue;
+    let lo=0,hi=benchmark.length-1;
+    while(lo<=hi){const mid=(lo+hi)>>1;if(benchmark[mid].time<time)lo=mid+1;else hi=mid-1;}
+    const nearest=[benchmark[lo],benchmark[lo-1]].filter(Boolean).sort((a,b)=>Math.abs(a.time-time)-Math.abs(b.time-time))[0];
+    if(nearest&&Math.abs(nearest.time-time)<=31*86400000)pairs.push({date:row.date,primary:value,benchmark:nearest.value});
+  }
+  if(pairs.length<2)return{primary:[],benchmark:[]};
+  const p0=pairs[0].primary,b0=pairs[0].benchmark;
+  return { primary:pairs.map(x=>({date:x.date,value:x.primary/p0*100})), benchmark:pairs.map(x=>({date:x.date,value:x.benchmark/b0*100})) };
 }
+
 async function loadStockData(ticker, period) {
- const req=window.__stockChartRequestId=(window.__stockChartRequestId||0)+1;
- try{const data=await ensureStockHistory(ticker);if(req!==window.__stockChartRequestId)return;const filtered=filterPeriod(data,period),finalData=filtered.length?filtered:data,useCzk=isStockCzkMode(),displayRows=getStockDisplayRows(finalData,useCzk),rows=displayRows.length?displayRows:finalData;renderStockMeta(finalData);renderStockKPI(rows);renderStockRiskMetrics(finalData);const chartData=rows.map(d=>({date:d.date,value:getStockChartValue(d,useCzk)})).filter(d=>Number(d.value)>0);renderPeriodDifference(chartData);
- if(isStockCompareMode()&&rows.length>1){const meta=(apiCache.stockUniverse||[]).find(x=>String(x.ticker||'')===String(ticker))||finalData[0]||{},bt=getBenchmarkTickerForStock(meta),bd=await ensureStockHistory(bt);if(req!==window.__stockChartRequestId||!isStockCompareMode())return;const bf=filterPeriod(bd,period),br=bf.length?bf:bd,pair=buildComparisonSeries(rows,br,r=>getStockChartValue(r,useCzk),r=>r.close);if(pair.primary.length>1){const bn=getInstrumentDisplayName(bd[0],bt);updateBenchmarkInfo(bn,bt,true);renderStockComparisonChart(pair.primary,pair.benchmark,'chart-stock',formatComparisonLabel(getInstrumentDisplayName(meta,ticker),ticker),formatComparisonLabel(bn,bt));return;}}
- if(req!==window.__stockChartRequestId)return;updateBenchmarkInfo('','',false);renderPortfolioChart(chartData,'chart-stock');}catch(e){if(req!==window.__stockChartRequestId)return;console.error('Chyba grafu',e);}
+  const requestId = window.__stockChartRequestId = (window.__stockChartRequestId || 0) + 1;
+  try {
+    const data=await ensureStockHistory(ticker);
+    if(requestId!==window.__stockChartRequestId)return;
+    const filtered=filterPeriod(data,period), finalData=filtered.length?filtered:data;
+    const useCzk=isStockCzkMode(), displayRows=getStockDisplayRows(finalData,useCzk), rows=displayRows.length?displayRows:finalData;
+    renderStockMeta(finalData); renderStockKPI(rows); renderStockRiskMetrics(finalData);
+    const chartData=rows.map(d=>({date:d.date,value:getStockChartValue(d,useCzk)})).filter(d=>Number(d.value)>0);
+    renderPeriodDifference(chartData);
+    if(isStockCompareMode()&&rows.length>1){
+      const meta=(apiCache.stockUniverse||[]).find(x=>String(x.ticker||'').trim()===String(ticker||'').trim())||finalData[0]||{};
+      const benchmarkTicker=getBenchmarkTickerForStock(meta);
+      const benchmarkData=await ensureStockHistory(benchmarkTicker);
+      if(requestId!==window.__stockChartRequestId||!isStockCompareMode())return;
+      const bf=filterPeriod(benchmarkData,period), br=bf.length?bf:benchmarkData;
+      const paired=buildPairedComparisonSeries(rows,br,r=>getStockChartValue(r,useCzk),r=>r.close);
+      if(paired.primary.length>1){
+        const benchmarkName=getInstrumentDisplayName(benchmarkData[0],benchmarkTicker);
+        updateBenchmarkInfo(benchmarkName,benchmarkTicker,true);
+        renderStockComparisonChart(paired.primary,paired.benchmark,'chart-stock',formatComparisonLabel(getInstrumentDisplayName(meta,ticker),ticker),formatComparisonLabel(benchmarkName,benchmarkTicker));
+        return;
+      }
+      console.warn('Porovnání nemá dostatek spárovaných dat',{ticker,benchmarkTicker});
+    }
+    if(requestId!==window.__stockChartRequestId)return;
+    updateBenchmarkInfo('','',false); renderPortfolioChart(chartData,'chart-stock');
+  } catch(error) {
+    if(requestId!==window.__stockChartRequestId)return;
+    console.error('Chyba vykreslení grafu',error);
+  }
 }
 function renderStockKPI(data) {
   if (!data.length) return;
