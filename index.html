@@ -27,7 +27,7 @@
       "inLanguage": "cs-CZ"
     }
     </script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260904-v30">
+    <link rel="stylesheet" href="/css/styles.css?v=20260904-v31">
 </head>
 <body>
 <!-- ================= HEADER ================= -->
@@ -65,25 +65,11 @@
 </header>
 <!-- ================= LAYOUT ================= -->
 <div class="layout">
-    <main id="mainContent" class="content">
-        <div class="home-hero">
-            <img src="img/fondy.png" alt="Fondy" class="hero-img">
+    <main id="mainContent" class="content" aria-live="polite">
+        <div class="initial-page-loader" role="status">
+            <span class="initial-page-loader-coin" aria-hidden="true"></span>
+            <span>Načítám úvodní stránku…</span>
         </div>
-        <div class="home-grid">
-            <div class="home-card" data-page="penze">Penzijní fondy</div>
-            <div class="home-card" data-page="podilove-fondy">Podílové fondy</div>
-            <div class="home-card" data-page="akcie">Akcie</div>
-            <div class="home-card" data-page="indexy">Indexy</div>
-            <div class="home-card" data-page="etf">ETF</div>
-            <div class="home-card" data-page="crypto">Crypto</div>
-            <div class="home-card" data-page="meny">Měny</div>
-        </div>
-
-        <section class="seo-text" aria-labelledby="seo-heading">
-            <h2 id="seo-heading">Sledujte své investice přehledně na jednom místě</h2>
-            <p>Moje portfolio nabízí přehled penzijních a podílových fondů, ETF, akcií, indexů, kryptoměn a měnových kurzů. U jednotlivých nástrojů můžete sledovat historický vývoj, výkonnost, rizikovost a poslední dostupné ocenění.</p>
-            <p>Po přihlášení si můžete vytvořit vlastní investiční portfolio, evidovat transakce a sledovat jeho hodnotu i rozložení. Informace mají pouze informativní charakter a nepředstavují investiční doporučení ani finanční poradenství.</p>
-        </section>
     </main>
     <aside class="sidebar">
         <div class="side-grid">
@@ -108,7 +94,7 @@
     <div class="footer-risk">Investování je spojeno s rizikem. Hodnota investice může kolísat.</div>
 </footer>
 <!-- ================= SCRIPTS ================= -->
-<script src="/js/app.js?v=20260904-v30"></script>
-<script src="/js/portfolio.js?v=20260904-v30"></script>
+<script src="/js/app.js?v=20260904-v31"></script>
+<script src="/js/portfolio.js?v=20260904-v31"></script>
 </body>
 </html>
