@@ -1370,7 +1370,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260904-v42`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260904-v43`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -3358,8 +3358,8 @@ function renderStockKPI(data) {
   document.getElementById('stock-kpi-volume').textContent = last.volume?.toLocaleString('cs-CZ') ?? ' - ';
   const divThisYearEl = document.getElementById('stock-kpi-dividend-this-year');
   const divLastYearEl = document.getElementById('stock-kpi-dividend-last-year');
-  if (divThisYearEl) { const value = useCzk ? first.dividendThisYearCzk : first.dividendThisYear; divThisYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4); divThisYearEl.className = Number(value || 0) > 0 ? 'pos' : ''; }
-  if (divLastYearEl) { const value = useCzk ? first.dividendLastYearCzk : first.dividendLastYear; divLastYearEl.textContent = formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4); divLastYearEl.className = Number(value || 0) > 0 ? 'pos' : ''; }
+  if (divThisYearEl) { const value = useCzk ? first.dividendThisYearCzk : first.dividendThisYear; const hasDividend = value != null && Number.isFinite(Number(value)) && Number(value) !== 0; divThisYearEl.textContent = hasDividend ? formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4) : '—'; divThisYearEl.className = Number(value || 0) > 0 ? 'pos' : ''; }
+  if (divLastYearEl) { const value = useCzk ? first.dividendLastYearCzk : first.dividendLastYear; const hasDividend = value != null && Number.isFinite(Number(value)) && Number(value) !== 0; divLastYearEl.textContent = hasDividend ? formatStockMoney(value, useCzk ? 'CZK' : originalCurrency, useCzk ? 2 : 4) : '—'; divLastYearEl.className = Number(value || 0) > 0 ? 'pos' : ''; }
   if (prev) {
     const prevValue = getStockChartValue(prev, useCzk);
     const diff = lastValue != null && prevValue != null ? lastValue - prevValue : null;
@@ -3406,7 +3406,7 @@ function renderPeriodDifference(data) {
   const diff = last.value - first.value;
   const pct = (diff / first.value) * 100;
 
-  box.innerHTML = `Změna&nbsp;${diff.toFixed(4)} (<strong>${pct.toFixed(2)} %</strong>)`;
+  box.innerHTML = `Změna&nbsp;<strong>${pct.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %</strong>`;
 
   box.className =
     'period-diff ' + (diff >= 0 ? 'pos' : 'neg');
