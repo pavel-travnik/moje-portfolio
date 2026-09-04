@@ -3434,3 +3434,13 @@ FINALNI MOBILNI DETAIL v32
 }
 
 /* Build v34: cookie recursion startup fix */
+
+
+/* GRAF HOVER A POROVNANI v35 */
+.chart-hover-tooltip {
+  position:absolute; display:none; pointer-events:none; z-index:5;
+  padding:6px 8px; border-radius:6px; white-space:nowrap;
+  background:rgba(82,82,82,.96); color:#C9A646; font-size:11px;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+}
+#chart-stock canvas,#chart-portfolio canvas,#chart-podilovy-fond canvas,#chart-currency canvas { max-width:100%; }
