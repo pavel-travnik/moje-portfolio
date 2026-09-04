@@ -3455,3 +3455,14 @@ FINALNI MOBILNI DETAIL v32
 .chart-guide-dot.primary{background:#C9A646}.chart-guide-dot.secondary{background:#6c7a89}
 .chart-hover-tooltip{z-index:30!important;pointer-events:none!important;background:rgba(55,55,55,.97)!important;color:#C9A646!important;border:1px solid rgba(201,166,70,.55)!important}
 @media(max-width:768px){.mobile-detail-tabs{position:relative!important;z-index:40!important}.mobile-detail-tabs-ready[data-detail-active="chart"]>div[id^="chart-"][data-detail-section="chart"],.mobile-detail-tabs-ready[data-detail-active="comparison"]>div[id^="chart-"][data-detail-section="chart"]{display:block!important;position:relative!important;pointer-events:auto!important}}
+
+
+/* SVG GRAF FINAL v41 */
+.svg-chart-host{position:relative!important;width:100%!important;min-width:0!important;overflow:hidden!important;isolation:isolate!important}
+.interactive-chart-svg{display:block;width:100%;height:auto;min-height:240px;overflow:visible;touch-action:pan-y}
+.chart-grid-line{stroke:#e6e6e6;stroke-width:1}
+.chart-axis-label{fill:#666;font:12px Arial,sans-serif;pointer-events:none}.chart-axis-y{text-anchor:end}.chart-axis-x{text-anchor:middle}
+.chart-area{fill:rgba(201,162,70,.18)}.chart-line{fill:none;vector-effect:non-scaling-stroke}.chart-line.primary{stroke:#C9A646;stroke-width:2}.chart-line.benchmark{stroke:#6c7a89;stroke-width:1.8}
+.chart-svg-guide{stroke:#C9A646;stroke-width:1;stroke-dasharray:4 4;vector-effect:non-scaling-stroke;pointer-events:none}.chart-svg-dot.primary{fill:#C9A646}.chart-svg-dot.secondary{fill:#6c7a89}
+.chart-svg-hit{fill:transparent;pointer-events:all;cursor:crosshair;touch-action:pan-y}.svg-chart-tooltip{position:absolute!important;z-index:5!important;display:none;pointer-events:none!important}
+@media(max-width:768px){.interactive-chart-svg{min-height:220px}.mobile-detail-tabs{z-index:10!important}}
