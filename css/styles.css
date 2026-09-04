@@ -3432,3 +3432,5 @@ FINALNI MOBILNI DETAIL v32
   .mobile-detail-tabs-ready[data-detail-active="chart"] > .period-row[data-detail-section="chart"],
   .mobile-detail-tabs-ready[data-detail-active="comparison"] > .period-row[data-detail-section="chart"] { display:grid !important; }
 }
+
+/* Build v34: cookie recursion startup fix */
