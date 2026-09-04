@@ -3358,7 +3358,7 @@ function renderPortfolioChart(history, containerId) {
  div.style.position = 'relative';
 
  
- const width = div.clientWidth;
+ const width = Math.max(div.clientWidth || 0, div.parentElement?.clientWidth || 0, 320);
  const height = Math.min(width * 0.65, 320);
  div.style.height = height + 'px';
 
@@ -3522,6 +3522,12 @@ function renderPortfolioChart(history, containerId) {
  overlayCanvas.addEventListener('mouseleave', () => {
   tooltip.style.display = 'none';
   octx.clearRect(0, 0, w, h);
+ });
+ requestAnimationFrame(() => {
+  const actualWidth = div.clientWidth || div.parentElement?.clientWidth || width;
+  if (Math.abs(actualWidth - width) > 8 && lastChartData?.containerId === containerId) {
+   renderPortfolioChart(lastChartData.history, containerId);
+  }
  });
 }
 
