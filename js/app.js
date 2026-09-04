@@ -1370,7 +1370,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260904-v41`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260904-v42`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -3142,7 +3142,7 @@ function renderInteractiveSvgChart({ containerId, primarySeries, secondarySeries
   const tickCount=width<500?3:5, step=Math.max(1,Math.floor(primary.length/tickCount));
   for(let i=0;i<primary.length;i+=step){const t=document.createElementNS(ns,'text');t.setAttribute('x',p1[i].x);t.setAttribute('y',height-8);t.setAttribute('class','chart-axis-label chart-axis-x');t.textContent=new Date(primary[i].date).toLocaleDateString('cs-CZ');svg.appendChild(t);}
   const pathData=pts=>pts.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');
-  if(!comparison){const area=document.createElementNS(ns,'path');area.setAttribute('d',`M${p1[0].x} ${height-pad.bottom} `+pathData(p1)+` L${p1.at(-1).x} ${height-pad.bottom} Z`);area.setAttribute('class','chart-area');svg.appendChild(area);}
+  if(!comparison){const area=document.createElementNS(ns,'path');area.setAttribute('d',`M${p1[0].x} ${height-pad.bottom} L${p1[0].x} ${p1[0].y} `+p1.slice(1).map(p=>`L${p.x} ${p.y}`).join(' ')+` L${p1.at(-1).x} ${height-pad.bottom} Z`);area.setAttribute('class','chart-area');svg.appendChild(area);}
   if(comparison){const b=document.createElementNS(ns,'path');b.setAttribute('d',pathData(p2));b.setAttribute('class','chart-line benchmark');svg.appendChild(b);}
   const line=document.createElementNS(ns,'path');line.setAttribute('d',pathData(p1));line.setAttribute('class','chart-line primary');svg.appendChild(line);
   const guide=document.createElementNS(ns,'line');guide.setAttribute('class','chart-svg-guide');guide.setAttribute('y1',pad.top);guide.setAttribute('y2',height-pad.bottom);guide.style.display='none';svg.appendChild(guide);
