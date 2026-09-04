@@ -2706,6 +2706,7 @@ async function loadPodilovyFondData(isin, period) {
         getInstrumentDisplayName(fund, isin), formatComparisonLabel(benchmarkName, benchmarkTicker));
       return;
     }
+    console.warn('Porovnání fondu s indexem nemá dostatek společných dat:', { isin, benchmarkTicker, fundPoints: fundNormalized.length, benchmarkPoints: benchmarkNormalized.length });
   }
   updatePodilovyFondBenchmarkInfo('', '', false);
   renderPortfolioChart(fundSeries, 'chart-podilovy-fond');
@@ -3112,7 +3113,9 @@ function alignBenchmarkToStockDates(stockRows, benchmarkRows, benchmarkGetter) {
     .sort((a, b) => a.__time - b.__time);
   if (!benchmark.length) return [];
 
-  const toleranceMs = 7 * 24 * 60 * 60 * 1000;
+  // U denních, týdenních i nepravidelných řad vybereme vždy nejbližší dostupný
+  // benchmark. Maximální tolerance je 31 dní, aby fungovaly také měsíční fondy.
+  const toleranceMs = 31 * 24 * 60 * 60 * 1000;
   return (stockRows || []).map(stockRow => {
     const target = new Date(stockRow?.date).getTime();
     if (!Number.isFinite(target)) return null;
@@ -3137,87 +3140,208 @@ async function ensureStockHistory(ticker) {
   }
   return apiCache.stocks[ticker];
 }
-function attachChartPointerInteraction({ canvas, tooltip, points, series, width, height, padding, overlayContext, valueFormatter }) {
-  if (!canvas || !points?.length || !series?.length) return;
+function attachChartPointerInteraction({ canvas, tooltip, points, series, width, height, padding, overlayContext, valueFormatter, secondaryPoints = null, secondarySeries = null, secondaryFormatter = null }) {
+  if (!canvas || !points?.length || !series?.length || !tooltip || !overlayContext) return;
+
   canvas.style.pointerEvents = 'auto';
   canvas.style.touchAction = 'pan-y';
   canvas.style.cursor = 'crosshair';
   canvas.style.zIndex = '3';
+  tooltip.style.position = 'absolute';
+  tooltip.style.pointerEvents = 'none';
   tooltip.style.zIndex = '5';
+  tooltip.style.display = 'none';
+  tooltip.style.whiteSpace = 'nowrap';
 
   function hide() {
     tooltip.style.display = 'none';
-    overlayContext.clearRect(0, 0, width, height);
+    overlayContext.clearRect(0, 0, canvas.width, canvas.height);
   }
+
+  function nearestPointIndex(canvasX) {
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+    points.forEach((point, index) => {
+      const distance = Math.abs(point.x - canvasX);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+    return bestIndex;
+  }
+
   function show(event) {
     const rect = canvas.getBoundingClientRect();
-    if (!rect.width) return;
-    const clientX = event.clientX ?? event.touches?.[0]?.clientX;
+    if (!rect.width || !rect.height) return;
+    const source = event.touches?.[0] || event;
+    const clientX = source.clientX;
     if (!Number.isFinite(clientX)) return;
+
     const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
-    const usable = width - padding.left - padding.right;
-    const index = Math.max(0, Math.min(series.length - 1,
-      Math.round(((canvasX - padding.left) / usable) * (series.length - 1))));
+    const index = nearestPointIndex(canvasX);
     const point = points[index];
     const item = series[index];
     if (!point || !item) return hide();
 
-    overlayContext.clearRect(0, 0, width, height);
+    overlayContext.clearRect(0, 0, canvas.width, canvas.height);
     overlayContext.save();
     overlayContext.beginPath();
-    overlayContext.strokeStyle = 'rgba(201,166,70,.9)';
+    overlayContext.strokeStyle = 'rgba(201,166,70,.95)';
     overlayContext.lineWidth = 1;
     overlayContext.setLineDash([4, 4]);
     overlayContext.moveTo(point.x, padding.top);
     overlayContext.lineTo(point.x, height - padding.bottom);
     overlayContext.stroke();
     overlayContext.setLineDash([]);
+
     overlayContext.beginPath();
     overlayContext.fillStyle = '#C9A646';
     overlayContext.arc(point.x, point.y, 4, 0, Math.PI * 2);
     overlayContext.fill();
+
+    const secondaryPoint = secondaryPoints?.[index];
+    const secondaryItem = secondarySeries?.[index];
+    if (secondaryPoint && secondaryItem) {
+      overlayContext.beginPath();
+      overlayContext.fillStyle = '#6c7a89';
+      overlayContext.arc(secondaryPoint.x, secondaryPoint.y, 4, 0, Math.PI * 2);
+      overlayContext.fill();
+    }
     overlayContext.restore();
 
+    const dateText = new Date(item.date).toLocaleDateString('cs-CZ');
+    let content = `${dateText}<br><strong>${valueFormatter(item.value)}</strong>`;
+    if (secondaryItem) {
+      const formatSecondary = secondaryFormatter || valueFormatter;
+      content += `<br><span>${formatSecondary(secondaryItem.value)}</span>`;
+    }
+    tooltip.innerHTML = content;
     tooltip.style.display = 'block';
-    tooltip.innerHTML = `${new Date(item.date).toLocaleDateString('cs-CZ')}<br><strong>${valueFormatter(item.value)}</strong>`;
-    const tooltipWidth = tooltip.offsetWidth || 120;
-    tooltip.style.left = Math.max(4, Math.min(rect.width - tooltipWidth - 4, point.x * (rect.width / canvas.width) + 10)) + 'px';
-    tooltip.style.top = Math.max(4, point.y * (rect.height / canvas.height) - 8) + 'px';
+
+    const scaleX = rect.width / canvas.width;
+    const scaleY = rect.height / canvas.height;
+    const tooltipWidth = tooltip.offsetWidth || 140;
+    const tooltipHeight = tooltip.offsetHeight || 48;
+    const preferredLeft = point.x * scaleX + 12;
+    tooltip.style.left = Math.max(4, Math.min(rect.width - tooltipWidth - 4, preferredLeft)) + 'px';
+    tooltip.style.top = Math.max(4, Math.min(rect.height - tooltipHeight - 4, point.y * scaleY - tooltipHeight / 2)) + 'px';
   }
-  canvas.addEventListener('pointermove', show);
-  canvas.addEventListener('pointerdown', show);
+
+  canvas.addEventListener('pointermove', show, { passive: true });
+  canvas.addEventListener('pointerdown', show, { passive: true });
   canvas.addEventListener('pointerleave', hide);
   canvas.addEventListener('pointercancel', hide);
 }
 
 function renderStockComparisonChart(stockSeries, benchmarkSeries, containerId, stockLabel, benchmarkLabel) {
   lastChartData = { history: stockSeries, containerId, comparison: { stockSeries, benchmarkSeries, stockLabel, benchmarkLabel } };
-  const div = document.getElementById(containerId); if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
-  div.innerHTML = ''; div.style.position = 'relative';
-  const legend = document.createElement('div'); legend.className = 'stock-comparison-legend'; legend.setAttribute('aria-label', 'Legenda porovnání');
+  const div = document.getElementById(containerId);
+  if (!div || stockSeries.length < 2 || benchmarkSeries.length < 2) return;
+
+  div.innerHTML = '';
+  div.style.position = 'relative';
+  div.style.overflow = 'visible';
+
+  const legend = document.createElement('div');
+  legend.className = 'stock-comparison-legend';
+  legend.setAttribute('aria-label', 'Legenda porovnání');
   legend.innerHTML = `<span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line stock"></span><span>${stockLabel}</span></span><span class="stock-comparison-legend-item"><span class="stock-comparison-legend-line benchmark"></span><span>Benchmark: ${benchmarkLabel}</span></span>`;
   div.appendChild(legend);
-  const width = div.clientWidth || div.parentElement?.clientWidth || 320; const chartHeight = Math.min(width * .65, 320); const legendHeight = legend.offsetHeight || 40;
-  div.style.height = chartHeight + legendHeight + 4 + 'px';
-  const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = chartHeight; div.appendChild(canvas); const ctx = canvas.getContext('2d');
-  const padding = { top: 16, right: width < 520 ? 42 : 60, bottom: 34, left: 22 }; const allValues = [...stockSeries,...benchmarkSeries].map(p=>p.value); const min=Math.min(...allValues); const max=Math.max(...allValues); const range=max-min||1;
-  function xy(series,i){ return { x: padding.left+(i/(series.length-1))*(width-padding.left-padding.right), y: padding.top+((max-series[i].value)/range)*(chartHeight-padding.top-padding.bottom) }; }
-  ctx.strokeStyle='#e6e6e6'; ctx.fillStyle='#666'; ctx.font='12px Arial'; ctx.textAlign='right';
-  for(let i=0;i<=5;i++){ const y=padding.top+(i/5)*(chartHeight-padding.top-padding.bottom); ctx.beginPath(); ctx.moveTo(padding.left,y); ctx.lineTo(width-padding.right,y); ctx.stroke(); ctx.fillText((max-(i/5)*range).toFixed(1),width-6,y+4); }
-  function drawLine(series,color,lineWidth){ ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=lineWidth; series.forEach((_,i)=>{const p=xy(series,i); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}); ctx.stroke(); }
-  drawLine(benchmarkSeries,'#6c7a89',1.6); drawLine(stockSeries,'#C9A646',2.2);
-  ctx.textAlign='center'; ctx.fillStyle='#666'; const maxXTicks=width<500?3:5; const step=Math.max(1,Math.floor(stockSeries.length/maxXTicks));
-  for(let i=0;i<stockSeries.length;i+=step){ const p=xy(stockSeries,i); ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'),p.x,chartHeight-padding.bottom+8); }
+
+  const width = Math.max(div.clientWidth || 0, div.parentElement?.clientWidth || 0, 320);
+  const chartHeight = Math.min(width * .65, 320);
+  const legendHeight = Math.max(legend.offsetHeight || 0, 40);
+  const chartTop = legendHeight + 4;
+  div.style.height = chartTop + chartHeight + 'px';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = chartHeight;
+  canvas.style.position = 'absolute';
+  canvas.style.left = '0';
+  canvas.style.top = chartTop + 'px';
+  canvas.style.width = '100%';
+  canvas.style.height = chartHeight + 'px';
+  div.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  const padding = { top: 16, right: width < 520 ? 42 : 60, bottom: 34, left: 22 };
+  const allValues = [...stockSeries, ...benchmarkSeries].map(p => Number(p.value)).filter(Number.isFinite);
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
+  const range = max - min || 1;
+  const xForIndex = (index, length) => padding.left + (index / Math.max(1, length - 1)) * (width - padding.left - padding.right);
+  const yForValue = value => padding.top + ((max - Number(value)) / range) * (chartHeight - padding.top - padding.bottom);
+  const pointsFor = series => series.map((item, index) => ({ x: xForIndex(index, series.length), y: yForValue(item.value) }));
+  const stockPoints = pointsFor(stockSeries);
+  const benchmarkPoints = pointsFor(benchmarkSeries);
+
+  ctx.strokeStyle = '#e6e6e6';
+  ctx.fillStyle = '#666';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const y = padding.top + (i / 5) * (chartHeight - padding.top - padding.bottom);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+    ctx.fillText((max - (i / 5) * range).toFixed(1), width - 6, y + 4);
+  }
+
+  function drawLine(points, color, lineWidth) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+    ctx.stroke();
+  }
+  drawLine(benchmarkPoints, '#6c7a89', 1.6);
+  drawLine(stockPoints, '#C9A646', 2.2);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#666';
+  const maxXTicks = width < 500 ? 3 : 5;
+  const step = Math.max(1, Math.floor(stockSeries.length / maxXTicks));
+  for (let i = 0; i < stockSeries.length; i += step) {
+    ctx.fillText(new Date(stockSeries[i].date).toLocaleDateString('cs-CZ'), stockPoints[i].x, chartHeight - padding.bottom + 8);
+  }
 
   const overlay = document.createElement('canvas');
-  overlay.width = width; overlay.height = chartHeight;
-  overlay.style.position = 'absolute'; overlay.style.left = '0'; overlay.style.top = legendHeight + 4 + 'px';
-  overlay.style.width = '100%'; overlay.style.height = chartHeight + 'px';
+  overlay.width = width;
+  overlay.height = chartHeight;
+  overlay.style.position = 'absolute';
+  overlay.style.left = '0';
+  overlay.style.top = chartTop + 'px';
+  overlay.style.width = '100%';
+  overlay.style.height = chartHeight + 'px';
   div.appendChild(overlay);
-  const tip = document.createElement('div'); tip.className = 'chart-hover-tooltip'; div.appendChild(tip);
-  const overlayContext = overlay.getContext('2d');
-  const stockPoints = stockSeries.map((_, i) => xy(stockSeries, i));
-  attachChartPointerInteraction({ canvas: overlay, tooltip: tip, points: stockPoints, series: stockSeries, width, height: chartHeight, padding, overlayContext, valueFormatter: value => Number(value).toFixed(2) });
+
+  const tip = document.createElement('div');
+  tip.className = 'chart-hover-tooltip';
+  tip.style.background = 'rgba(82,82,82,0.95)';
+  tip.style.color = '#C9A646';
+  tip.style.padding = '6px 8px';
+  tip.style.fontSize = '11px';
+  tip.style.borderRadius = '6px';
+  tip.style.top = chartTop + 'px';
+  div.appendChild(tip);
+
+  attachChartPointerInteraction({
+    canvas: overlay,
+    tooltip: tip,
+    points: stockPoints,
+    series: stockSeries,
+    secondaryPoints: benchmarkPoints,
+    secondarySeries: benchmarkSeries,
+    width,
+    height: chartHeight,
+    padding,
+    overlayContext: overlay.getContext('2d'),
+    valueFormatter: value => `${stockLabel}: ${Number(value).toFixed(2)}`,
+    secondaryFormatter: value => `${benchmarkLabel}: ${Number(value).toFixed(2)}`
+  });
 }
 function loadStockDetail(ticker) {
   const main = document.getElementById('mainContent');
@@ -3382,6 +3506,7 @@ async function loadStockData(ticker, period) {
       renderStockComparisonChart(stockSeries, benchmarkSeries, 'chart-stock', formatComparisonLabel(stockName, finalData[0]?.ticker || ticker), formatComparisonLabel(benchmarkName, benchmarkTicker));
       return;
     }
+    console.warn('Porovnání s indexem nemá dostatek společných dat:', { ticker, benchmarkTicker, stockPoints: stockSeries.length, benchmarkPoints: benchmarkSeries.length });
   }
   updateBenchmarkInfo('', '', false);
   renderPortfolioChart(chartData, 'chart-stock');
