@@ -3295,3 +3295,57 @@ MOBILNI ZALOZKY DETAILU INVESTICNIHO NASTROJE v29
   .mobile-detail-tabs { gap: 6px; padding: 8px; }
   .mobile-detail-tab { font-size: 12px; padding: 7px 6px; }
 }
+
+
+/* =====================================================
+MOBILNI DETAIL - OPRAVA PREKRYVU A PRAZDNEHO GRAFU v31
+===================================================== */
+@media (max-width: 768px) {
+  .mobile-detail-tabs {
+    position: static !important;
+    top: auto !important;
+    margin: 0 0 18px !important;
+  }
+  .mobile-detail-tabs-ready > [data-detail-section="chart"] {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="chart"] > [data-detail-section="chart"],
+  .mobile-detail-tabs-ready[data-detail-active="comparison"] > [data-detail-section="chart"] {
+    position: static !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .stock-detail-head[data-detail-section="summary"] {
+    display: block !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] {
+    display: flex !important;
+  }
+}
+
+
+/* Prvotni SPA shell bez historickeho obsahu */
+.initial-page-loader {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  color: #666;
+  font-size: 14px;
+}
+.initial-page-loader-coin {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(201,166,70,.28);
+  border-top-color: #c9a646;
+  border-radius: 50%;
+  animation: tx-spin .8s linear infinite;
+}
