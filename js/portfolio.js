@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-09-03-mobile-loader-v27';
+const PORTFOLIO_BUILD = '2026-09-07-mobile-tables-v28';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';
@@ -86,11 +86,15 @@ const fmtNumber = (value, decimals = 2) =>
 
   
 const GOLD_PALETTE = [
+  '#7A5A12', // tmavá zlatá
+  '#A8872F',
   '#C9A646',
   '#D8B85A',
-  '#E3C97A',
-  '#B89A3C',
-  '#A8872F'
+  '#E8CF82',
+  '#F1DFA6', // světlá zlatá
+  '#6B7280', // tmavší šedá
+  '#9CA3AF',
+  '#D1D5DB'  // světlá šedá
 ];
 
 let CURRENT_PORTFOLIO_POSITIONS = [];
@@ -114,6 +118,21 @@ function ensurePortfolioUiStyles() {
   const style = document.createElement('style');
   style.id = styleId;
   style.textContent = `
+    /* Jednotné zlaté a zalomené záhlaví portfoliových tabulek. */
+    #instruments-table thead th,
+    #transactions-table thead th {
+      background: #C9A646 !important;
+      color: #111827 !important;
+      white-space: normal !important;
+      overflow-wrap: anywhere !important;
+      word-break: normal !important;
+      line-height: 1.15 !important;
+      vertical-align: middle !important;
+    }
+    #instruments-table thead th .th-line,
+    #transactions-table thead th .th-line {
+      display: block !important;
+    }
     @media (max-width: 768px) {
       #instruments-table, #transactions-table {
         display: table !important;
@@ -175,6 +194,17 @@ function ensurePortfolioUiStyles() {
       }
       #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
         width: 32% !important; text-align: right !important; white-space: nowrap !important;
+      }
+      /* Více vzduchu kolem hlavní akce na mobilu. */
+      #tab-transactions .toolbar {
+        padding-top: 14px !important;
+        padding-bottom: 14px !important;
+      }
+      #btn-add-transaction {
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        min-height: 44px !important;
+        padding: 10px 16px !important;
       }
     }
   `;
