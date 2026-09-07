@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-09-07-unified-tables-v29';
+const PORTFOLIO_BUILD = '2026-09-07-mobile-tables-v28';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';
@@ -84,19 +84,18 @@ const fmtNumber = (value, decimals = 2) =>
     maximumFractionDigits: decimals
   }).format(value);
 
-const isPortfolioMobile = () => window.matchMedia('(max-width: 768px)').matches;
-const portfolioDecimals = (desktopDecimals = 2) => isPortfolioMobile() ? 0 : desktopDecimals;
-const fmtPortfolioNumber = (value, desktopDecimals = 2) =>
-  fmtNumber(value, portfolioDecimals(desktopDecimals));
-
   
-const GOLD_PALETTE = ['#7A5A12', '#F1DFA6', '#D1D5DB', '#6B7280', '#9CA3AF'];
-const PORTFOLIO_ALLOCATION_COLORS = Object.freeze({
-  'Akcie': '#7A5A12',
-  'Penze': '#F1DFA6',
-  'Fondy': '#D1D5DB',
-  'ETF': '#6B7280'
-});
+const GOLD_PALETTE = [
+  '#7A5A12', // tmavá zlatá
+  '#A8872F',
+  '#C9A646',
+  '#D8B85A',
+  '#E8CF82',
+  '#F1DFA6', // světlá zlatá
+  '#6B7280', // tmavší šedá
+  '#9CA3AF',
+  '#D1D5DB'  // světlá šedá
+];
 
 let CURRENT_PORTFOLIO_POSITIONS = [];
 let portfolioInstrumentFilter = null;
@@ -122,9 +121,8 @@ function ensurePortfolioUiStyles() {
     /* Jednotné zlaté a zalomené záhlaví portfoliových tabulek. */
     #instruments-table thead th,
     #transactions-table thead th {
-      background: transparent !important;
-      color: #C9A646 !important;
-      border-bottom: 2px solid #C9A646 !important;
+      background: #C9A646 !important;
+      color: #111827 !important;
       white-space: normal !important;
       overflow-wrap: anywhere !important;
       word-break: normal !important;
@@ -643,7 +641,7 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null, options 
 
   // přiřazení barev
   data.forEach((d, i) => {
-    d._color = PORTFOLIO_ALLOCATION_COLORS[d.label] || GOLD_PALETTE[i % GOLD_PALETTE.length];
+    d._color = GOLD_PALETTE[i % GOLD_PALETTE.length];
   });
   if (!isDrilldown) {
     const legend = document.createElement('div');
@@ -1635,13 +1633,13 @@ function renderPortfolioInstruments(positions, options = {}) {
         <td data-label="Typ">${assetTypeLabel(p.asset_type)}</td>
         <td data-label="Název">${positionDisplayName(p)}</td>
         <td data-label="Počet kusů">
-          ${p.quantity != null ? fmtPortfolioNumber(p.quantity, 1) : '—'}
+          ${p.quantity != null ? fmtNumber(p.quantity, 1) : '—'}
         </td>
-        <td data-label="Cena za kus">${unitPrice === null ? '—' : fmtPortfolioNumber(unitPrice, 4) + ' CZK'}</td>
-        <td data-label="Hodnota">${Number.isFinite(instrumentValue) ? fmtPortfolioNumber(instrumentValue, 0) + ' CZK' : '—'}</td>
-        <td data-label="Výnos nástroje 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtPortfolioNumber(perf3Y * 100, 2) + ' %'}</td>
-        <td data-label="Podíl">${weight === null ? '—' : fmtPortfolioNumber(weight * 100, 2) + ' %'}</td>
-        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">${formatSignedPortfolioMoney(unrealized, portfolioDecimals(1))}</td>
+        <td data-label="Cena za kus">${unitPrice === null ? '—' : fmtNumber(unitPrice, 4) + ' CZK'}</td>
+        <td data-label="Hodnota">${Number.isFinite(instrumentValue) ? fmtNumber(instrumentValue, 0) + ' CZK' : '—'}</td>
+        <td data-label="Výnos nástroje 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtNumber(perf3Y * 100, 2) + ' %'}</td>
+        <td data-label="Podíl">${weight === null ? '—' : fmtNumber(weight * 100, 2) + ' %'}</td>
+        <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">${formatSignedPortfolioMoney(unrealized, 1)}</td>
         <td data-label="Poslední ocenění">
           ${formatPortfolioDate(positionLastValuationDate(p))}
         </td>
@@ -1747,9 +1745,9 @@ function renderPortfolioTransactions(trades) {
         <td data-label="Datum">${tradeDateText}</td>
         <td data-label="Typ">${assetTypeLabel(t.asset_type)} · ${positionDisplayName(t)}</td>
         <td data-label="Směr">${t.trade_type || '—'}</td>
-        <td data-label="Množství">${fmtPortfolioNumber(quantity, 2)}</td>
-        <td data-label="Nákupní cena za kus">${unitPrice === null ? '—' : fmtPortfolioNumber(unitPrice, 4) + ' ' + currency}</td>
-        <td data-label="Vstupní investice">${inputInvestment === null ? '—' : fmtPortfolioNumber(inputInvestment, 2) + ' ' + currency}</td>
+        <td data-label="Množství">${fmtNumber(quantity, 2)}</td>
+        <td data-label="Nákupní cena za kus">${unitPrice === null ? '—' : fmtNumber(unitPrice, 4) + ' ' + currency}</td>
+        <td data-label="Vstupní investice">${inputInvestment === null ? '—' : fmtNumber(inputInvestment, 2) + ' ' + currency}</td>
         <td data-label="Stav" class="${isActive ? 'trade-status-active' : 'trade-status-cancelled'}">${isActive ? 'Aktivní' : 'Storno'}</td>
         <td data-label="Akce">${isActive ? '<button type="button" class="pill-button trade-correct-btn">Opravit</button>' : '—'}</td>`;
       tr.querySelector('.trade-correct-btn')?.addEventListener('click', event => {
