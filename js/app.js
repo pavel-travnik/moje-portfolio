@@ -1240,7 +1240,7 @@ function updateSeoForPage(page) {
     akcie: ['Akcie | Ceny, výkonnost a riziko | Moje portfolio', 'Přehled vybraných akcií, historického vývoje cen, výkonnosti, rizikových ukazatelů a dalších tržních údajů.'],
     etf: ['ETF | Přehled, výkonnost a riziko | Moje portfolio', 'Přehled vybraných ETF včetně historického vývoje ceny, výkonnosti, rizika a posledního dostupného ocenění.'],
     indexy: ['Akciové indexy | Historický vývoj | Moje portfolio', 'Přehled vybraných světových akciových indexů, jejich hodnoty, dlouhodobé výkonnosti a historického vývoje.'],
-    vyhledavani: ['Vyhledávání investičních nástrojů | Moje portfolio', 'Vyhledávání a filtrování akcií, ETF, fondů, penzijních fondů, indexů, kryptoměn a měn podle zadaných kritérií.'],
+    vyhledavani: ['Vyhledávání investičních nástrojů | Moje portfolio', 'Vyhledávání a filtrování investičních nástrojů podle typu, měny, výnosu a rizika.'],
     crypto: ['Kryptoměny | Ceny a historický vývoj | Moje portfolio', 'Přehled vybraných kryptoměn a digitálních aktiv včetně cen, výkonnosti a historického vývoje.'],
     meny: ['Měnové kurzy | Vývoj kurzů vůči CZK | Moje portfolio', 'Přehled vybraných měnových kurzů vůči české koruně, jejich aktuálních hodnot a historického vývoje.'],
     slovnik: ['Investiční slovníček | Moje portfolio', 'Srozumitelné vysvětlení základních pojmů z oblasti investování, fondů, ETF, akcií, rizika a výkonnosti.'],
@@ -1380,7 +1380,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260907-v44`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260907-v45`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
@@ -4000,238 +4000,21 @@ function checkSession() {
 })();
 
 
-// ===================================================
-// HOME MARKET OVERVIEW + GLOBAL INSTRUMENT SEARCH v44
-// ===================================================
-const HOME_INDEX_PREFERENCES = ['^GSPC', '^DJI', '^IXIC', '^GDAXI'];
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, char => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  }[char]));
+// HOME INDEXY + GLOBALNI VYHLEDAVANI v45
+const HOME_INDEX_PREFERENCES=['^GSPC','^DJI','^IXIC','^GDAXI'];
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function metricNumber(item,...keys){for(const k of keys){const v=item?.[k];if(v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v)))return Number(v);}return null;}
+function selectHomeIndexes(list,count=4){const a=Array.isArray(list)?list:[],r=[];HOME_INDEX_PREFERENCES.forEach(t=>{const x=a.find(i=>String(i.ticker||'').toUpperCase()===t);if(x&&!r.includes(x))r.push(x)});a.forEach(x=>{if(r.length<count&&!r.includes(x))r.push(x)});return r.slice(0,count);}
+function miniIndexSvg(rows){const a=(rows||[]).map(x=>Number(x.close)).filter(Number.isFinite);if(a.length<2)return '<div class="market-sparkline-empty">Historie není dostupná</div>';const w=320,h=92,p=5,min=Math.min(...a),max=Math.max(...a),range=max-min||1;const pts=a.map((v,i)=>`${(p+i/Math.max(1,a.length-1)*(w-2*p)).toFixed(1)},${(p+(max-v)/range*(h-2*p)).toFixed(1)}`).join(' ');return `<svg class="market-sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" class="${a.at(-1)>=a[0]?'positive':'negative'}"></polyline></svg>`;}
+async function initHomeMarketOverview(){
+ const main=document.getElementById('mainContent');if(!main)return;
+ let section=main.querySelector('#home-market-overview');
+ if(!section){section=document.createElement('section');section.id='home-market-overview';section.className='section home-market-section';section.innerHTML='<div class="home-section-head"><div><p class="hero-eyebrow">Aktuální stav trhů</p><h2>Vývoj hlavních indexů</h2></div><a class="pill-button home-search-button" href="/vyhledavani" data-page="vyhledavani">Vyhledat instrumenty</a></div><p class="home-market-note">Poslední dostupná hodnota a vývoj za 1 rok.</p><div id="home-market-grid" class="home-market-grid"><p>Načítám hlavní indexy…</p></div>';main.querySelector('.section')?.insertAdjacentElement('beforebegin',section);}
+ const grid=section.querySelector('#home-market-grid');if(!grid||grid.dataset.loading==='true'||grid.dataset.loaded==='true')return;grid.dataset.loading='true';
+ try{await ensureStockUniverse();const indexes=selectHomeIndexes(apiCache.indexesList,4);const cards=await Promise.all(indexes.map(async item=>{try{const history=await ensureStockHistory(item.ticker),f=filterPeriod(history,'1Y'),rows=(f.length?f:history).slice(-260),last=rows.at(-1),prev=rows.at(-2),change=last&&prev&&Number(prev.close)?(Number(last.close)/Number(prev.close)-1)*100:null;return{item,rows,last,change}}catch(e){console.warn('Index load failed',item.ticker,e);return{item,rows:[],last:null,change:null}}}));if(!cards.length){grid.innerHTML='<p>V databázi nejsou dostupné aktivní indexy.</p>';return;}grid.innerHTML=cards.map(({item,rows,last,change})=>{const detail=`indexy/${encodeURIComponent(item.ticker)}`,value=last&&Number.isFinite(Number(last.close))?Number(last.close).toLocaleString('cs-CZ',{maximumFractionDigits:2}):'—',date=last?.date?new Date(last.date).toLocaleDateString('cs-CZ'):'—',cls=change===null?'':change>=0?'pos':'neg',ct=change===null?'—':`${change>=0?'+':''}${change.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2})} %`;return `<a class="market-index-card" href="/${detail}" data-page="${detail}"><div class="market-index-head"><div><strong>${escapeHtml(item.name||item.ticker)}</strong><small>${escapeHtml(item.ticker)}</small></div><span class="${cls}">${ct}</span></div>${miniIndexSvg(rows)}<div class="market-index-foot"><strong>${value} ${escapeHtml(last?.currency||item.currency||'')}</strong><small>${date}</small></div></a>`}).join('');grid.dataset.loaded='true';}catch(e){console.error(e);grid.innerHTML='<p>Aktuální přehled indexů se nepodařilo načíst.</p>'}finally{grid.dataset.loading='false'}
 }
-
-function numericMetric(item, ...keys) {
-  for (const key of keys) {
-    const value = item?.[key];
-    if (value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))) return Number(value);
-  }
-  return null;
-}
-
-function selectHomeIndexes(indexes, count = 4) {
-  const list = Array.isArray(indexes) ? indexes : [];
-  const selected = [];
-  HOME_INDEX_PREFERENCES.forEach(ticker => {
-    const match = list.find(item => String(item.ticker || '').toUpperCase() === ticker.toUpperCase());
-    if (match && !selected.includes(match)) selected.push(match);
-  });
-  list.forEach(item => {
-    if (selected.length < count && !selected.includes(item)) selected.push(item);
-  });
-  return selected.slice(0, count);
-}
-
-function miniIndexSvg(rows) {
-  const data = (rows || []).map(row => Number(row.close)).filter(Number.isFinite);
-  if (data.length < 2) return '<div class="market-sparkline-empty">Historie není dostupná</div>';
-  const width = 320, height = 92, pad = 5;
-  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
-  const points = data.map((value, index) => {
-    const x = pad + index / Math.max(1, data.length - 1) * (width - pad * 2);
-    const y = pad + (max - value) / range * (height - pad * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  const positive = data.at(-1) >= data[0];
-  return `<svg class="market-sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
-    <polyline points="${points}" class="${positive ? 'positive' : 'negative'}"></polyline>
-  </svg>`;
-}
-
-async function initHomeMarketOverview() {
-  const main = document.getElementById('mainContent');
-  if (!main || main.querySelector('#home-market-overview')) return;
-  const section = document.createElement('section');
-  section.id = 'home-market-overview';
-  section.className = 'section home-market-section';
-  section.innerHTML = `
-    <div class="home-section-head">
-      <div><p class="hero-eyebrow">Aktuální stav trhů</p><h2>Vývoj hlavních indexů</h2></div>
-      <a class="pill-button home-search-button" href="/vyhledavani" data-page="vyhledavani">Vyhledat instrumenty</a>
-    </div>
-    <p class="home-market-note">Poslední dostupná hodnota a vývoj za 1 rok. Kliknutím otevřete detail indexu.</p>
-    <div id="home-market-grid" class="home-market-grid"><p>Načítám hlavní indexy…</p></div>`;
-  const firstContentSection = main.querySelector('.section');
-  if (firstContentSection) firstContentSection.insertAdjacentElement('beforebegin', section);
-  else main.appendChild(section);
-  const grid = section.querySelector('#home-market-grid');
-  try {
-    await ensureStockUniverse();
-    const indexes = selectHomeIndexes(apiCache.indexesList, 4);
-    const cards = await Promise.all(indexes.map(async item => {
-      try {
-        const history = await ensureStockHistory(item.ticker);
-        const yearRows = filterPeriod(history, '1Y');
-        const rows = (yearRows.length ? yearRows : history).slice(-260);
-        const last = rows.at(-1), previous = rows.at(-2);
-        const change = last && previous && Number(previous.close) ? (Number(last.close) / Number(previous.close) - 1) * 100 : null;
-        return { item, rows, last, change };
-      } catch (error) {
-        console.warn('Domácí přehled indexu se nepodařilo načíst:', item.ticker, error);
-        return { item, rows: [], last: null, change: null };
-      }
-    }));
-    if (!cards.length) {
-      grid.innerHTML = '<p>V databázi nejsou dostupné žádné aktivní indexy.</p>';
-      return;
-    }
-    grid.innerHTML = cards.map(({ item, rows, last, change }) => {
-      const detail = `indexy/${encodeURIComponent(item.ticker)}`;
-      const value = last && Number.isFinite(Number(last.close))
-        ? Number(last.close).toLocaleString('cs-CZ', { maximumFractionDigits: 2 })
-        : '—';
-      const date = last?.date ? new Date(last.date).toLocaleDateString('cs-CZ') : '—';
-      const cls = change === null ? '' : change >= 0 ? 'pos' : 'neg';
-      const changeText = change === null ? '—' : `${change >= 0 ? '+' : ''}${change.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
-      return `<a class="market-index-card" href="/${detail}" data-page="${detail}">
-        <div class="market-index-head"><div><strong>${escapeHtml(item.name || item.ticker)}</strong><small>${escapeHtml(item.ticker)}</small></div><span class="${cls}">${changeText}</span></div>
-        ${miniIndexSvg(rows)}
-        <div class="market-index-foot"><strong>${value} ${escapeHtml(last?.currency || item.currency || '')}</strong><small>${date}</small></div>
-      </a>`;
-    }).join('');
-  } catch (error) {
-    console.error('Načtení hlavních indexů selhalo:', error);
-    grid.innerHTML = '<p>Aktuální přehled indexů se nyní nepodařilo načíst.</p>';
-  }
-}
-
-function normalizeSearchInstrument(item, type, route, id) {
-  return {
-    source: item,
-    type,
-    route,
-    id,
-    name: item?.name || item?.Name || item?.companyName || item?.CompanyName || id || '—',
-    code: item?.ticker || item?.code || item?.isin || item?.ISIN || id || '',
-    currency: item?.currency || item?.mena || item?.Mena || '',
-    perf3Y: numericMetric(item, 'perf3Y', 'Perf3Y', 'performance3Y'),
-    perf5Y: numericMetric(item, 'perf5Y', 'Perf5Y', 'performance5Y'),
-    risk: numericMetric(item, 'riskCategory', 'RiskCategory', 'srri'),
-    lastValue: getLastValue(item),
-    lastDate: getLastValuationDate(item)
-  };
-}
-
-async function loadGlobalInstrumentUniverse() {
-  const [stocks, funds, dps, currencies] = await Promise.all([
-    ensureStockUniverse(),
-    ensurePodiloveFondyList(),
-    cachedJsonFetch(publicDataProxyUrl('dps-list')),
-    cachedJsonFetch(publicDataProxyUrl('currencies-list'))
-  ]);
-  const result = [];
-  (stocks || []).forEach(item => {
-    const sector = item.sector;
-    const type = sector === 'ETF' ? 'ETF' : sector === 'Cryptocurrency' ? 'Kryptoměny' : sector === 'Index' ? 'Indexy' : 'Akcie';
-    const route = sector === 'ETF' ? 'etf' : sector === 'Cryptocurrency' ? 'crypto' : sector === 'Index' ? 'indexy' : 'akcie';
-    result.push(normalizeSearchInstrument(item, type, route, item.ticker));
-  });
-  (funds || []).forEach(item => result.push(normalizeSearchInstrument(item, 'Podílové fondy', 'podilove-fondy', item.isin || item.ISIN)));
-  (dps || []).forEach(item => result.push(normalizeSearchInstrument(item, 'Penze', 'penze', item.isin || item.ISIN)));
-  (currencies || []).forEach(item => result.push(normalizeSearchInstrument(item, 'Měny', 'meny', item.code)));
-  return result.filter(item => item.id);
-}
-
-function searchNumber(id) {
-  const raw = document.getElementById(id)?.value.trim().replace(',', '.');
-  return raw === '' || raw === undefined ? null : Number(raw);
-}
-
-function renderInstrumentSearchPage() {
-  const main = document.getElementById('mainContent');
-  if (!main) return;
-  main.innerHTML = `
-    <section class="section-intro"><div class="intro-heading"><span class="icon-badge" aria-hidden="true">⌕</span><div>
-      <h2>Vyhledávání investičních nástrojů</h2>
-      <p class="intro-lead">Vyhledejte instrument podle názvu, tickeru nebo ISIN a omezte výsledky podle typu, měny, výnosu a rizikové kategorie.</p>
-    </div></div></section>
-    <form id="instrument-search-form" class="instrument-search-form">
-      <label class="search-wide">Název, ticker nebo ISIN<input id="search-text" type="search" autocomplete="off" placeholder="Např. Apple, S&P 500, CZ000…"></label>
-      <label>Typ<select id="search-type"><option value="">Všechny typy</option></select></label>
-      <label>Měna<select id="search-currency"><option value="">Všechny měny</option></select></label>
-      <label>Výnos 3Y od (%)<input id="search-perf3-min" type="number" step="0.1" inputmode="decimal"></label>
-      <label>Výnos 3Y do (%)<input id="search-perf3-max" type="number" step="0.1" inputmode="decimal"></label>
-      <label>Výnos 5Y od (%)<input id="search-perf5-min" type="number" step="0.1" inputmode="decimal"></label>
-      <label>Výnos 5Y do (%)<input id="search-perf5-max" type="number" step="0.1" inputmode="decimal"></label>
-      <label>Riziko od<select id="search-risk-min"><option value="">Bez omezení</option>${[1,2,3,4,5,6,7].map(x => `<option>${x}</option>`).join('')}</select></label>
-      <label>Riziko do<select id="search-risk-max"><option value="">Bez omezení</option>${[1,2,3,4,5,6,7].map(x => `<option>${x}</option>`).join('')}</select></label>
-      <div class="instrument-search-actions"><button type="submit" class="btn-primary">Vyhledat</button><button type="reset" class="btn-secondary">Zrušit filtry</button></div>
-    </form>
-    <div id="instrument-search-summary" class="instrument-search-summary" aria-live="polite">Načítám instrumenty…</div>
-    <div id="instrument-search-results" class="instrument-search-results"></div>`;
-  const form = document.getElementById('instrument-search-form');
-  const results = document.getElementById('instrument-search-results');
-  const summary = document.getElementById('instrument-search-summary');
-  let universe = [];
-
-  function matchesRange(value, min, max) {
-    if (min === null && max === null) return true;
-    if (value === null || !Number.isFinite(Number(value))) return false;
-    return (min === null || value >= min) && (max === null || value <= max);
-  }
-  function applyFilters() {
-    const query = (document.getElementById('search-text').value || '').trim().toLocaleLowerCase('cs');
-    const type = document.getElementById('search-type').value;
-    const currency = document.getElementById('search-currency').value;
-    const p3min = searchNumber('search-perf3-min'), p3max = searchNumber('search-perf3-max');
-    const p5min = searchNumber('search-perf5-min'), p5max = searchNumber('search-perf5-max');
-    const rmin = searchNumber('search-risk-min'), rmax = searchNumber('search-risk-max');
-    const filtered = universe.filter(item => {
-      const haystack = `${item.name} ${item.code} ${item.type}`.toLocaleLowerCase('cs');
-      return (!query || haystack.includes(query)) && (!type || item.type === type) &&
-        (!currency || item.currency === currency) && matchesRange(item.perf3Y, p3min, p3max) &&
-        matchesRange(item.perf5Y, p5min, p5max) && matchesRange(item.risk, rmin, rmax);
-    });
-    renderSearchResults(filtered, universe.length, results, summary);
-  }
-  form.addEventListener('submit', event => { event.preventDefault(); applyFilters(); });
-  form.addEventListener('reset', () => setTimeout(applyFilters));
-  let debounce;
-  form.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 180); });
-  loadGlobalInstrumentUniverse().then(items => {
-    universe = items;
-    const types = [...new Set(items.map(item => item.type))].sort((a,b) => a.localeCompare(b, 'cs'));
-    const currencies = [...new Set(items.map(item => item.currency).filter(Boolean))].sort();
-    document.getElementById('search-type').insertAdjacentHTML('beforeend', types.map(x => `<option>${escapeHtml(x)}</option>`).join(''));
-    document.getElementById('search-currency').insertAdjacentHTML('beforeend', currencies.map(x => `<option>${escapeHtml(x)}</option>`).join(''));
-    applyFilters();
-  }).catch(error => {
-    console.error('Globální vyhledávání se nepodařilo načíst:', error);
-    summary.textContent = 'Instrumenty se nepodařilo načíst.';
-  });
-}
-
-function renderSearchResults(items, total, container, summary) {
-  summary.textContent = `Nalezeno ${items.length.toLocaleString('cs-CZ')} z ${total.toLocaleString('cs-CZ')} instrumentů`;
-  if (!items.length) {
-    container.innerHTML = '<p class="search-empty">Zadaným kritériím neodpovídá žádný instrument.</p>';
-    return;
-  }
-  const groups = [...new Set(items.map(item => item.type))];
-  container.innerHTML = groups.map(type => {
-    const rows = items.filter(item => item.type === type).sort((a,b) => a.name.localeCompare(b.name, 'cs'));
-    return `<section class="search-result-group"><h3>${escapeHtml(type)} <small>${rows.length}</small></h3>
-      <div class="search-table-wrap"><table class="fund-table search-results-table"><thead><tr>
-        <th>Název</th><th>Kód / ISIN</th><th>Měna</th><th>Výnos 3Y</th><th>Výnos 5Y</th><th>Riziko</th><th>Poslední ocenění</th><th>Datum</th>
-      </tr></thead><tbody>${rows.map(item => `<tr class="clickable" data-page="${item.route}/${encodeURIComponent(item.id)}">
-        <td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.code)}</td><td>${escapeHtml(item.currency || '—')}</td>
-        <td class="${item.perf3Y === null ? '' : item.perf3Y >= 0 ? 'pos' : 'neg'}">${formatPerf(item.perf3Y)}</td>
-        <td class="${item.perf5Y === null ? '' : item.perf5Y >= 0 ? 'pos' : 'neg'}">${formatPerf(item.perf5Y)}</td>
-        <td>${item.risk === null ? '—' : `${item.risk} / 7`}</td>
-        <td>${formatOverviewValue(item.lastValue, { suffix: item.currency })}</td><td>${formatOverviewDate(item.lastDate)}</td>
-      </tr>`).join('')}</tbody></table></div></section>`;
-  }).join('');
-  container.querySelectorAll('tbody tr[data-page]').forEach(row => {
-    row.addEventListener('click', () => loadPage(row.dataset.page));
-  });
-}
+function normalizeSearchInstrument(item,type,route,id){return{type,route,id,name:item?.name||item?.Name||id||'—',code:item?.ticker||item?.code||item?.isin||item?.ISIN||id||'',currency:item?.currency||item?.mena||item?.Mena||'',perf3Y:metricNumber(item,'perf3Y','Perf3Y'),perf5Y:metricNumber(item,'perf5Y','Perf5Y'),risk:metricNumber(item,'riskCategory','RiskCategory','srri'),lastValue:getLastValue(item),lastDate:getLastValuationDate(item)}}
+async function loadGlobalInstrumentUniverse(){const[stocks,funds,dps,currencies]=await Promise.all([ensureStockUniverse(),ensurePodiloveFondyList(),cachedJsonFetch(publicDataProxyUrl('dps-list')),cachedJsonFetch(publicDataProxyUrl('currencies-list'))]),r=[];(stocks||[]).forEach(x=>{const sec=x.sector,type=sec==='ETF'?'ETF':sec==='Cryptocurrency'?'Kryptoměny':sec==='Index'?'Indexy':'Akcie',route=sec==='ETF'?'etf':sec==='Cryptocurrency'?'crypto':sec==='Index'?'indexy':'akcie';r.push(normalizeSearchInstrument(x,type,route,x.ticker))});(funds||[]).forEach(x=>r.push(normalizeSearchInstrument(x,'Podílové fondy','podilove-fondy',x.isin||x.ISIN)));(dps||[]).forEach(x=>r.push(normalizeSearchInstrument(x,'Penze','penze',x.isin||x.ISIN)));(currencies||[]).forEach(x=>r.push(normalizeSearchInstrument(x,'Měny','meny',x.code)));return r.filter(x=>x.id)}
+function searchNumber(id){const r=document.getElementById(id)?.value.trim().replace(',','.');return r===''||r===undefined?null:Number(r)}
+function renderInstrumentSearchPage(){const main=document.getElementById('mainContent');if(!main)return;main.innerHTML=`<section class="section-intro"><div class="intro-heading"><span class="icon-badge">⌕</span><div><h2>Vyhledávání investičních nástrojů</h2><p class="intro-lead">Vyhledejte instrument podle názvu, tickeru nebo ISIN a omezte výsledky podle typu, měny, výnosu a rizika.</p></div></div></section><form id="instrument-search-form" class="instrument-search-form"><label class="search-wide">Název, ticker nebo ISIN<input id="search-text" type="search"></label><label>Typ<select id="search-type"><option value="">Všechny typy</option></select></label><label>Měna<select id="search-currency"><option value="">Všechny měny</option></select></label><label>Výnos 3Y od (%)<input id="search-perf3-min" type="number" step="0.1"></label><label>Výnos 3Y do (%)<input id="search-perf3-max" type="number" step="0.1"></label><label>Výnos 5Y od (%)<input id="search-perf5-min" type="number" step="0.1"></label><label>Výnos 5Y do (%)<input id="search-perf5-max" type="number" step="0.1"></label><label>Riziko od<select id="search-risk-min"><option value="">Bez omezení</option>${[1,2,3,4,5,6,7].map(x=>`<option>${x}</option>`).join('')}</select></label><label>Riziko do<select id="search-risk-max"><option value="">Bez omezení</option>${[1,2,3,4,5,6,7].map(x=>`<option>${x}</option>`).join('')}</select></label><div class="instrument-search-actions"><button type="submit" class="btn-primary">Vyhledat</button><button type="reset" class="btn-secondary">Zrušit filtry</button></div></form><div id="instrument-search-summary" class="instrument-search-summary">Načítám instrumenty…</div><div id="instrument-search-results"></div>`;const form=document.getElementById('instrument-search-form'),results=document.getElementById('instrument-search-results'),summary=document.getElementById('instrument-search-summary');let universe=[];const range=(v,min,max)=>(min===null&&max===null)||v!==null&&(!Number.isFinite(min)||v>=min)&&(!Number.isFinite(max)||v<=max);function apply(){const q=document.getElementById('search-text').value.trim().toLocaleLowerCase('cs'),type=document.getElementById('search-type').value,curr=document.getElementById('search-currency').value,p3a=searchNumber('search-perf3-min'),p3b=searchNumber('search-perf3-max'),p5a=searchNumber('search-perf5-min'),p5b=searchNumber('search-perf5-max'),ra=searchNumber('search-risk-min'),rb=searchNumber('search-risk-max');renderSearchResults(universe.filter(x=>(!q||`${x.name} ${x.code}`.toLocaleLowerCase('cs').includes(q))&&(!type||x.type===type)&&(!curr||x.currency===curr)&&range(x.perf3Y,p3a,p3b)&&range(x.perf5Y,p5a,p5b)&&range(x.risk,ra,rb)),universe.length,results,summary)}form.onsubmit=e=>{e.preventDefault();apply()};form.onreset=()=>setTimeout(apply);form.oninput=apply;loadGlobalInstrumentUniverse().then(a=>{universe=a;const types=[...new Set(a.map(x=>x.type))].sort(),curr=[...new Set(a.map(x=>x.currency).filter(Boolean))].sort();document.getElementById('search-type').insertAdjacentHTML('beforeend',types.map(x=>`<option>${escapeHtml(x)}</option>`).join(''));document.getElementById('search-currency').insertAdjacentHTML('beforeend',curr.map(x=>`<option>${escapeHtml(x)}</option>`).join(''));apply()}).catch(()=>summary.textContent='Instrumenty se nepodařilo načíst.')}
+function renderSearchResults(items,total,c,s){s.textContent=`Nalezeno ${items.length} z ${total} instrumentů`;if(!items.length){c.innerHTML='<p class="search-empty">Zadaným kritériím neodpovídá žádný instrument.</p>';return}c.innerHTML=[...new Set(items.map(x=>x.type))].map(type=>{const rows=items.filter(x=>x.type===type).sort((a,b)=>a.name.localeCompare(b.name,'cs'));return `<section class="search-result-group"><h3>${type} <small>${rows.length}</small></h3><div class="search-table-wrap"><table class="fund-table search-results-table"><thead><tr><th>Název</th><th>Kód / ISIN</th><th>Měna</th><th>Výnos 3Y</th><th>Výnos 5Y</th><th>Riziko</th><th>Poslední ocenění</th><th>Datum</th></tr></thead><tbody>${rows.map(x=>`<tr data-page="${x.route}/${encodeURIComponent(x.id)}"><td>${escapeHtml(x.name)}</td><td>${escapeHtml(x.code)}</td><td>${escapeHtml(x.currency||'—')}</td><td>${formatPerf(x.perf3Y)}</td><td>${formatPerf(x.perf5Y)}</td><td>${x.risk===null?'—':x.risk+' / 7'}</td><td>${formatOverviewValue(x.lastValue,{suffix:x.currency})}</td><td>${formatOverviewDate(x.lastDate)}</td></tr>`).join('')}</tbody></table></div></section>`}).join('');c.querySelectorAll('tr[data-page]').forEach(r=>r.onclick=()=>loadPage(r.dataset.page))}
