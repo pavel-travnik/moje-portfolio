@@ -3471,3 +3471,20 @@ FINALNI MOBILNI DETAIL v32
 
 /* v43: procentni zmena v grafu je zvyraznena bez absolutni hodnoty a zavorek. */
 .period-diff strong{font-weight:800!important;}
+
+/* PORTFOLIO TABULKY - FINAL v29 */
+#instruments-table,#transactions-table{width:100%!important;border-collapse:collapse!important}
+#instruments-table thead th,#transactions-table thead th{background:transparent!important;color:var(--gold,#c9a646)!important;border-bottom:2px solid var(--gold,#c9a646)!important;font-weight:600!important}
+#instruments-table tbody tr:nth-child(even),#transactions-table tbody tr:nth-child(even){background:var(--row-alt,#f2f2f2)}
+#instruments-table tbody tr:hover,#transactions-table tbody tr:hover{background:var(--gold-light,rgba(201,166,70,.15))}
+#instruments-table th:nth-child(n+3),#instruments-table td:nth-child(n+3),#transactions-table th:nth-child(4),#transactions-table td:nth-child(4),#transactions-table th:nth-child(5),#transactions-table td:nth-child(5),#transactions-table th:nth-child(6),#transactions-table td:nth-child(6){text-align:right!important}
+@media(max-width:768px){
+#instruments-table th[data-key="quantity"],#instruments-table td[data-label="Počet kusů"],#transactions-table th[data-key="quantity"],#transactions-table td[data-label="Množství"]{display:none!important}
+#instruments-table th:nth-child(2),#instruments-table td:nth-child(2),#instruments-table th:nth-child(5),#instruments-table td:nth-child(5),#instruments-table th:nth-child(8),#instruments-table td:nth-child(8){display:table-cell!important}
+#instruments-table th:nth-child(2),#instruments-table td:nth-child(2){width:44%!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important}
+#instruments-table td:nth-child(2){line-height:1.25!important;max-height:3.1em;overflow:hidden!important}
+#instruments-table th:nth-child(5),#instruments-table td:nth-child(5){width:25%!important;text-align:right!important;white-space:nowrap!important}
+#instruments-table th:nth-child(8),#instruments-table td:nth-child(8){width:31%!important;text-align:right!important;white-space:nowrap!important}
+#transactions-table th:nth-child(6),#transactions-table td:nth-child(6){text-align:right!important}
+}
+
