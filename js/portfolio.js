@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-09-07-portfolio-tables-v32';
+const PORTFOLIO_BUILD = '2026-09-08-portfolio-summary-tables-v33';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';
@@ -86,15 +86,7 @@ const fmtNumber = (value, decimals = 2) =>
 
   
 const GOLD_PALETTE = [
-  '#7A5A12', // tmavá zlatá
-  '#A8872F',
-  '#C9A646',
-  '#D8B85A',
-  '#E8CF82',
-  '#F1DFA6', // světlá zlatá
-  '#6B7280', // tmavší šedá
-  '#9CA3AF',
-  '#D1D5DB'  // světlá šedá
+  '#7A5A12', '#E8CF82', '#9B741B', '#F1DFA6', '#B88F2D', '#D8B85A'
 ];
 
 let CURRENT_PORTFOLIO_POSITIONS = [];
@@ -426,14 +418,17 @@ function openCreatePortfolioModal() {
         </div>
         <div class="portfolio-kpi-grid">
           <div class="portfolio-kpi-primary">
-            <div class="kpi portfolio-kpi-highlight"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+            <div class="kpi portfolio-kpi-highlight portfolio-value-stack">
+              <div class="portfolio-value-line"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+              <div class="portfolio-value-line"><span>Suma investic</span><strong id="pf-kpi-invested">—</strong></div>
+              <div class="portfolio-value-line"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
+            </div>
           </div>
           <div class="portfolio-kpi-pair">
             <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
-            <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
+            <div class="kpi"><span>Poslední přepočet</span><strong id="pf-kpi-last-valuation">—</strong></div>
           </div>
           <div class="portfolio-kpi-secondary">
-            <div class="kpi portfolio-kpi-highlight"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
             <div class="kpi"><span>Vážený výnos nakoupených nástrojů 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
             <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
             <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
@@ -456,7 +451,7 @@ function openCreatePortfolioModal() {
             <option value="return3y">Výnos nástroje 3Y</option>
             <option value="weight">Podíl</option>
             <option value="unrealizedPnl">Nerealizovaný zisk</option>
-            <option value="lastValuation">Poslední ocenění</option>
+            <option value="lastValuation">Poslední přepočet</option>
           </select>
           <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
@@ -470,7 +465,7 @@ function openCreatePortfolioModal() {
             <th data-key="return3y"><span class="th-line">Výnos nástroje</span><span class="th-line">3Y</span></th>
             <th data-key="weight">Podíl</th>
             <th data-key="unrealizedPnl"><span class="th-line">Nerealizovaný</span><span class="th-line">zisk</span></th>
-            <th data-key="lastValuation"><span class="th-line">Poslední</span><span class="th-line">ocenění</span></th>
+            <th data-key="lastValuation"><span class="th-line">Poslední</span><span class="th-line">přepočet</span></th>
           </tr></thead>
           <tbody id="portfolio-instruments"></tbody>
           <tfoot id="portfolio-instruments-total"></tfoot>
@@ -500,14 +495,14 @@ function openCreatePortfolioModal() {
         </div>
         <table class="fund-table" id="transactions-table">
           <thead><tr>
-            <th data-key="date">Datum</th>
-            <th data-key="instrument">Typ</th>
-            <th data-key="type">Směr</th>
-            <th data-key="quantity">Počet kusů</th>
-            <th data-key="price">Nákupní cena za kus</th>
-            <th data-key="investment">Vstupní investice</th>
-            <th data-key="status">Stav</th>
-            <th data-key="action">Akce</th>
+            <th data-key="date"><span class="th-line">Datum</span></th>
+            <th data-key="instrument"><span class="th-line">Typ</span></th>
+            <th data-key="type"><span class="th-line">Směr</span></th>
+            <th data-key="quantity"><span class="th-line">Počet</span><span class="th-line">kusů</span></th>
+            <th data-key="price"><span class="th-line">Nákupní cena</span><span class="th-line">za kus</span></th>
+            <th data-key="investment"><span class="th-line">Vstupní</span><span class="th-line">investice</span></th>
+            <th data-key="status"><span class="th-line">Stav</span></th>
+            <th data-key="action"><span class="th-line">Akce</span></th>
           </tr></thead>
           <tbody id="portfolio-transactions"></tbody>
         </table>
@@ -621,6 +616,7 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null, options 
   if (!el || !data.length) return;
 
   el.innerHTML = '';
+  el.classList.toggle('allocation-chart-layout', !isDrilldown);
 
   const size = isDrilldown ? 140 : 230;
   const canvas = document.createElement('canvas');
@@ -1507,6 +1503,8 @@ function renderPortfolioOverview(data) {
     ? withInvestment.reduce((sum, x) => sum + x.unrealized, 0)
     : null;
   const unrealizedPct = unrealized !== null && totalInvestment > 0 ? unrealized / totalInvestment : null;
+  const investedEl = document.getElementById('pf-kpi-invested');
+  if (investedEl) investedEl.textContent = totalInvestment > 0 ? `${fmtNumber(totalInvestment, 0)} CZK` : '—';
   const unrealizedEl = document.getElementById('pf-kpi-unrealized');
   const unrealizedPctEl = document.getElementById('pf-kpi-unrealized-pct');
   if (unrealizedEl) {
@@ -1640,7 +1638,7 @@ function renderPortfolioInstruments(positions, options = {}) {
         <td data-label="Výnos nástroje 3Y" class="${perf3Y === null ? '' : perf3Y >= 0 ? 'pos' : 'neg'}">${perf3Y === null ? '—' : (perf3Y > 0 ? '+' : '') + fmtNumber(perf3Y * 100, 2) + ' %'}</td>
         <td data-label="Podíl">${weight === null ? '—' : fmtNumber(weight * 100, 2) + ' %'}</td>
         <td data-label="Nerealizovaný zisk" class="${unrealized === null ? '' : unrealized >= 0 ? 'pos' : 'neg'}">${formatSignedPortfolioMoney(unrealized, 1)}</td>
-        <td data-label="Poslední ocenění">
+        <td data-label="Poslední přepočet">
           ${formatPortfolioDate(positionLastValuationDate(p))}
         </td>
       `;
