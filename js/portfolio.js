@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-09-08-portfolio-value-v35';
+const PORTFOLIO_BUILD = '2026-09-08-portfolio-value-tables-v36';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';
@@ -454,7 +454,7 @@ function openCreatePortfolioModal() {
           </select>
           <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
-        <table class="fund-table" id="instruments-table">
+        <table class="fund-table overview-table portfolio-detail-table" id="instruments-table">
           <thead><tr>
             <th data-key="type">Typ</th>
             <th data-key="name">Název</th>
@@ -492,7 +492,7 @@ function openCreatePortfolioModal() {
           </select>
           <button id="tx-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
-        <table class="fund-table" id="transactions-table">
+        <table class="fund-table overview-table portfolio-transactions-table" id="transactions-table">
           <thead><tr>
             <th data-key="date">Datum</th>
             <th data-key="instrument">Typ</th>
