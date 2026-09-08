@@ -1380,7 +1380,7 @@ if (!page || page === "undefined") {
     // ===============================
     // STANDARD PAGE LOAD
     // ===============================
-    fetch(`/pages/${page}.html?v=20260907-v45`, { cache: 'no-store' })
+    fetch(`/pages/${page}.html?v=20260908-v48`, { cache: 'no-store' })
         .then(res => {
             if (!res.ok) throw new Error();
             return res.text();
