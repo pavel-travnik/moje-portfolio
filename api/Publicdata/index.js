@@ -3,7 +3,10 @@ const https = require('https');
 const DEFAULT_APIM_BASE_URL = 'https://portfolio-apimpt.azure-api.net/portfolio-func-app';
 const APIM_BASE_URL = (process.env.INTERNAL_APIM_BASE_URL || DEFAULT_APIM_BASE_URL).replace(/\/+$/, '');
 const APIM_KEY = process.env.INTERNAL_APIM_SUBSCRIPTION_KEY || '';
-const CACHE_TTL_SECONDS = Math.max(60, Number(process.env.PUBLIC_PROXY_CACHE_TTL_SECONDS || 21600));
+const DEFAULT_CACHE_TTL_SECONDS = Math.max(60, Number(process.env.PUBLIC_PROXY_CACHE_TTL_SECONDS || 21600));
+const HOME_INDEX_CACHE_TTL_SECONDS = Math.max(60, Number(process.env.HOME_INDEX_CACHE_TTL_SECONDS || 600));
+const BROWSER_CACHE_TTL_SECONDS = Math.max(0, Number(process.env.PUBLIC_PROXY_BROWSER_CACHE_TTL_SECONDS || 60));
+const HOME_INDEX_TICKERS = new Set(String(process.env.HOME_INDEX_TICKERS || '^FTSE,^DJI,^IXIC,^GDAXI').split(',').map(value => value.trim().toUpperCase()).filter(Boolean));
 const MAX_CACHE_ITEMS = Math.max(50, Number(process.env.PUBLIC_PROXY_MAX_CACHE_ITEMS || 500));
 const MAX_RESPONSE_BYTES = Math.max(65536, Number(process.env.PUBLIC_PROXY_MAX_RESPONSE_BYTES || 5242880));
 const BACKEND_TIMEOUT_MS = Math.min(40000, Math.max(5000, Number(process.env.PUBLIC_PROXY_BACKEND_TIMEOUT_MS || 40000)));
@@ -33,9 +36,22 @@ const BASE_HEADERS = Object.freeze({
 });
 
 function reply(status, body, headers = {}) {
-  return { status, headers: { ...BASE_HEADERS, 'cache-control': 'public, max-age=300', ...headers }, body: JSON.stringify(body) };
+  return { status, headers: { ...BASE_HEADERS, 'cache-control': `public, max-age=${BROWSER_CACHE_TTL_SECONDS}`, ...headers }, body: JSON.stringify(body) };
 }
 function param(req, name) { return req.query?.[name] || req.params?.[name] || ''; }
+function cachePolicy(type, id = '') {
+  const isHomeIndex = type === 'stock' && HOME_INDEX_TICKERS.has(String(id || '').toUpperCase());
+  const ttlSeconds = isHomeIndex ? HOME_INDEX_CACHE_TTL_SECONDS : DEFAULT_CACHE_TTL_SECONDS;
+  return { ttlSeconds, browserMaxAge: Math.min(BROWSER_CACHE_TTL_SECONDS, ttlSeconds), isHomeIndex };
+}
+function cacheHeaders(status, policy, ageSeconds = 0) {
+  return {
+    'x-proxy-cache': status,
+    'x-proxy-cache-age': String(Math.max(0, Math.floor(ageSeconds))),
+    'x-proxy-cache-ttl': String(policy.ttlSeconds),
+    'cache-control': `public, max-age=${policy.browserMaxAge}, stale-while-revalidate=30, stale-if-error=${policy.ttlSeconds}`
+  };
+}
 function cleanCache(now) {
   for (const [key, value] of cache) if (!value || value.staleUntil <= now) cache.delete(key);
   while (cache.size >= MAX_CACHE_ITEMS) cache.delete(cache.keys().next().value);
@@ -86,8 +102,9 @@ module.exports = async function (context, req) {
 
   const key = normalizedId ? `${type}:${normalizedId}` : type;
   const now = Date.now();
+  const policy = cachePolicy(type, normalizedId);
   const hit = cache.get(key);
-  if (hit && hit.expiresAt > now) { context.res = reply(200, hit.data, { 'x-proxy-cache': 'HIT' }); return; }
+  if (hit && hit.expiresAt > now) { context.res = reply(200, hit.data, cacheHeaders('HIT', policy, (now - (hit.cachedAt || now)) / 1000)); return; }
 
   if (!pending.has(key)) {
     const target = new URL(APIM_BASE_URL + cfg.path);
@@ -96,14 +113,15 @@ module.exports = async function (context, req) {
     if (APIM_KEY) headers['Ocp-Apim-Subscription-Key'] = APIM_KEY;
     pending.set(key, requestJson(target.toString(), headers).then(data => {
       cleanCache(Date.now());
-      cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_SECONDS * 1000, staleUntil: Date.now() + CACHE_TTL_SECONDS * 2000 });
+      const cachedAt = Date.now();
+      cache.set(key, { data, cachedAt, expiresAt: cachedAt + policy.ttlSeconds * 1000, staleUntil: cachedAt + policy.ttlSeconds * 2 * 1000 });
       return data;
     }).finally(() => pending.delete(key)));
   }
 
   try {
     const data = await pending.get(key);
-    context.res = reply(200, data, { 'x-proxy-cache': 'MISS' });
+    context.res = reply(200, data, cacheHeaders('MISS', policy, 0));
   } catch (error) {
     const message = String(error?.message || '');
     let errorCode = 'UPSTREAM_ERROR';
@@ -132,8 +150,8 @@ module.exports = async function (context, req) {
 
     if (hit?.data) {
       context.res = reply(200, hit.data, {
-        'x-proxy-cache': 'STALE',
-        'cache-control': 'public, max-age=60'
+        ...cacheHeaders('STALE', policy, hit.cachedAt ? (Date.now() - hit.cachedAt) / 1000 : 0),
+        'cache-control': 'public, max-age=30, stale-if-error=300'
       });
       return;
     }
