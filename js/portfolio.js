@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-09-07-portfolio-tables-v32';
+const PORTFOLIO_BUILD = '2026-09-08-portfolio-value-v35';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';
@@ -86,15 +86,8 @@ const fmtNumber = (value, decimals = 2) =>
 
   
 const GOLD_PALETTE = [
-  '#7A5A12', // tmavá zlatá
-  '#A8872F',
-  '#C9A646',
-  '#D8B85A',
-  '#E8CF82',
-  '#F1DFA6', // světlá zlatá
-  '#6B7280', // tmavší šedá
-  '#9CA3AF',
-  '#D1D5DB'  // světlá šedá
+  '#7A5A12', // tmavě zlatá
+  '#E8CF82'  // světle zlatá
 ];
 
 let CURRENT_PORTFOLIO_POSITIONS = [];
@@ -426,11 +419,12 @@ function openCreatePortfolioModal() {
         </div>
         <div class="portfolio-kpi-grid">
           <div class="portfolio-kpi-primary">
-            <div class="kpi portfolio-kpi-highlight"><span>Hodnota</span><strong id="pf-kpi-value">—</strong></div>
+            <div class="kpi portfolio-kpi-highlight"><span>Aktuální hodnota portfolia</span><strong id="pf-kpi-value">—</strong></div>
           </div>
           <div class="portfolio-kpi-pair">
+            <div class="kpi"><span>Vstupní investice</span><strong id="pf-kpi-input-investment">—</strong></div>
             <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
-            <div class="kpi"><span>Poslední ocenění</span><strong id="pf-kpi-last-valuation">—</strong></div>
+            <div class="kpi"><span>Poslední přepočet</span><strong id="pf-kpi-last-valuation">—</strong></div>
           </div>
           <div class="portfolio-kpi-secondary">
             <div class="kpi portfolio-kpi-highlight"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
@@ -460,7 +454,7 @@ function openCreatePortfolioModal() {
           </select>
           <button id="inst-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
-        <table class="fund-table overview-table portfolio-detail-table" id="instruments-table">
+        <table class="fund-table" id="instruments-table">
           <thead><tr>
             <th data-key="type">Typ</th>
             <th data-key="name">Název</th>
@@ -498,7 +492,7 @@ function openCreatePortfolioModal() {
           </select>
           <button id="tx-sort-dir" class="sort-dir-btn sort-asc" type="button"></button>
         </div>
-        <table class="fund-table overview-table portfolio-transactions-table" id="transactions-table">
+        <table class="fund-table" id="transactions-table">
           <thead><tr>
             <th data-key="date">Datum</th>
             <th data-key="instrument">Typ</th>
@@ -621,6 +615,7 @@ function renderAllocationDonut(data, containerId, totalValueCZK = null, options 
   if (!el || !data.length) return;
 
   el.innerHTML = '';
+  el.classList.toggle('allocation-chart-layout', !isDrilldown);
 
   const size = isDrilldown ? 140 : 230;
   const canvas = document.createElement('canvas');
@@ -1507,6 +1502,8 @@ function renderPortfolioOverview(data) {
     ? withInvestment.reduce((sum, x) => sum + x.unrealized, 0)
     : null;
   const unrealizedPct = unrealized !== null && totalInvestment > 0 ? unrealized / totalInvestment : null;
+  const inputInvestmentEl = document.getElementById('pf-kpi-input-investment');
+  if (inputInvestmentEl) inputInvestmentEl.textContent = totalInvestment > 0 ? `${fmtNumber(totalInvestment, 0)} CZK` : '—';
   const unrealizedEl = document.getElementById('pf-kpi-unrealized');
   const unrealizedPctEl = document.getElementById('pf-kpi-unrealized-pct');
   if (unrealizedEl) {
