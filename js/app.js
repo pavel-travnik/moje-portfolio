@@ -3109,13 +3109,27 @@ function alignBenchmarkToStockDates(stockRows, benchmarkRows, benchmarkGetter) {
   }).filter(Boolean);
 }
 async function ensureStockHistory(ticker) {
-  if (!apiCache.stocks[ticker]) {
-    let data = await cachedJsonFetch(publicDataProxyUrl('stock', ticker));
+  const normalizedTicker = String(ticker || '').trim();
+  if (!normalizedTicker) return [];
+
+  if (!apiCache.stocks[normalizedTicker]) {
+    let data = await cachedJsonFetch(publicDataProxyUrl('stock', normalizedTicker));
     if (!Array.isArray(data)) data = [];
+
+    // Fallback pro indexove tickery se specialnim znakem ^.
+    // Pokud public-data proxy vrati prazdnou historii, zkusime prime APIM API.
+    if (!data.length) {
+      const directUrl = `${STOCK_API_URL}?ticker=${encodeURIComponent(normalizedTicker)}`;
+      console.warn('Public proxy vratila prazdnou historii, zkousim prime stock API:', normalizedTicker);
+      const directData = await cachedJsonFetch(directUrl, { forceRefresh: true });
+      if (Array.isArray(directData)) data = directData;
+    }
+
+    data = data.filter(row => !row?.ticker || String(row.ticker).trim() === normalizedTicker);
     data.sort((a, b) => new Date(a.date) - new Date(b.date));
-    apiCache.stocks[ticker] = data;
+    apiCache.stocks[normalizedTicker] = data;
   }
-  return apiCache.stocks[ticker];
+  return apiCache.stocks[normalizedTicker];
 }
 function attachChartPointerInteraction() { /* Legacy compatibility. SVG chart handles interaction directly. */ }
 
@@ -4000,7 +4014,7 @@ function checkSession() {
 })();
 
 
-// HOME INDEXY + GLOBALNI VYHLEDAVANI v45
+// HOME INDEXY + GLOBALNI VYHLEDAVANI v46
 const HOME_INDEX_PREFERENCES=['^GSPC','^DJI','^IXIC','^GDAXI'];
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function metricNumber(item,...keys){for(const k of keys){const v=item?.[k];if(v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v)))return Number(v);}return null;}
