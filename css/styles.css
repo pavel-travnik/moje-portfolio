@@ -3777,78 +3777,23 @@ UVODNI DLAZDICE v48
 
 
 /* =====================================================
-PORTFOLIO TABULKY v34 - STEJNY VZHLED JAKO INVESTICNI NASTROJE
-Tento blok musi zustat na konci souboru kvuli starsim override pravidlum.
+PORTFOLIO HODNOTA v35 - FINALNI ROZLOZENI
 ===================================================== */
-#instruments-table.fund-table,
-#transactions-table.fund-table {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  background: transparent !important;
+.portfolio-kpi-pair { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+#portfolio-allocation-chart.allocation-chart-layout {
+  display: grid !important;
+  grid-template-columns: minmax(230px, 260px) minmax(230px, 1fr) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 22px !important;
+  max-width: 760px;
+  margin: 18px auto 0;
 }
-#instruments-table.fund-table thead th,
-#transactions-table.fund-table thead th {
-  background: transparent !important;
-  color: var(--gold, #c9a646) !important;
-  border: 0 !important;
-  border-bottom: 2px solid var(--gold, #c9a646) !important;
-  font-weight: 600 !important;
-  text-align: left;
-}
-#instruments-table.fund-table tbody td,
-#transactions-table.fund-table tbody td {
-  background: transparent !important;
-  color: var(--text-dark, #1f1f1f);
-  border: 0 !important;
-  border-bottom: 1px solid var(--gray-200, #e5e7eb) !important;
-}
-#instruments-table.fund-table tbody tr:nth-child(even),
-#transactions-table.fund-table tbody tr:nth-child(even) {
-  background: var(--row-alt, #f2f2f2) !important;
-}
-#instruments-table.fund-table tbody tr:nth-child(odd),
-#transactions-table.fund-table tbody tr:nth-child(odd) {
-  background: #fff !important;
-}
-#instruments-table.fund-table tbody tr:hover,
-#transactions-table.fund-table tbody tr:hover,
-#instruments-table.fund-table tbody tr.active,
-#transactions-table.fund-table tbody tr.active {
-  background: var(--gold-light, rgba(201,166,70,.15)) !important;
-}
-#instruments-table.fund-table tbody tr:hover td,
-#transactions-table.fund-table tbody tr:hover td,
-#instruments-table.fund-table tbody tr.active td,
-#transactions-table.fund-table tbody tr.active td {
-  background: transparent !important;
-}
-#instruments-table.fund-table th:nth-child(n+3),
-#instruments-table.fund-table td:nth-child(n+3),
-#transactions-table.fund-table th:nth-child(4),
-#transactions-table.fund-table td:nth-child(4),
-#transactions-table.fund-table th:nth-child(5),
-#transactions-table.fund-table td:nth-child(5),
-#transactions-table.fund-table th:nth-child(6),
-#transactions-table.fund-table td:nth-child(6) {
-  text-align: right !important;
-}
-#instruments-table.fund-table thead .th-line,
-#transactions-table.fund-table thead .th-line {
-  display: block !important;
-  line-height: 1.15 !important;
-}
+#portfolio-allocation-chart.allocation-chart-layout canvas { grid-column: 1; grid-row: 1; justify-self: end !important; }
+#portfolio-allocation-chart.allocation-chart-layout .allocation-legend { grid-column: 2; grid-row: 1; justify-self: start !important; }
 @media (max-width: 768px) {
-  #instruments-table.fund-table thead th,
-  #transactions-table.fund-table thead th {
-    background: transparent !important;
-    color: var(--gold, #c9a646) !important;
-    border-bottom: 2px solid var(--gold, #c9a646) !important;
-    white-space: normal !important;
-    overflow-wrap: normal !important;
-    word-break: normal !important;
-  }
-  #instruments-table.fund-table tbody td,
-  #transactions-table.fund-table tbody td {
-    background: transparent !important;
-  }
+  .portfolio-kpi-pair { grid-template-columns: 1fr !important; }
+  #portfolio-allocation-chart.allocation-chart-layout { grid-template-columns: minmax(0, 1fr) !important; gap: 14px !important; }
+  #portfolio-allocation-chart.allocation-chart-layout canvas { grid-column: 1; grid-row: 1; justify-self: center !important; }
+  #portfolio-allocation-chart.allocation-chart-layout .allocation-legend { grid-column: 1; grid-row: 2; justify-self: stretch !important; width: 100%; min-width: 0; }
 }
