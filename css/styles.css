@@ -2941,128 +2941,6 @@ PORTFOLIO - DETAIL, TRANSAKCE A HODNOTA - FINAL 2026-08-30
 }
 
 /* =====================================================
-PORTFOLIO MOBILE TABLES - FINAL v24
-Detail: Nazev, Hodnota, Nerealizovany zisk
-Transakce: Typ, Smer, Vstupni investice
-===================================================== */
-@media (max-width: 768px) {
-  #instruments-table,
-  #transactions-table {
-    display: table !important;
-    width: 100% !important;
-    table-layout: fixed !important;
-    border-collapse: collapse !important;
-  }
-
-  #instruments-table thead,
-  #transactions-table thead {
-    display: table-header-group !important;
-  }
-
-  #instruments-table tbody,
-  #transactions-table tbody {
-    display: table-row-group !important;
-  }
-
-  #instruments-table tr,
-  #transactions-table tr {
-    display: table-row !important;
-    width: auto !important;
-    margin: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-  }
-
-  #instruments-table th,
-  #instruments-table td,
-  #transactions-table th,
-  #transactions-table td {
-    display: none !important;
-    padding: 8px 5px !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    font-size: 12px !important;
-    line-height: 1.25 !important;
-    vertical-align: middle !important;
-  }
-
-  #instruments-table td::before,
-  #transactions-table td::before {
-    content: none !important;
-    display: none !important;
-  }
-
-  /* Detail portfolia: sloupce 2, 5 a 8. */
-  #instruments-table th:nth-child(2),
-  #instruments-table td:nth-child(2),
-  #instruments-table th:nth-child(5),
-  #instruments-table td:nth-child(5),
-  #instruments-table th:nth-child(8),
-  #instruments-table td:nth-child(8) {
-    display: table-cell !important;
-  }
-
-  #instruments-table th:nth-child(2),
-  #instruments-table td:nth-child(2) {
-    width: 44% !important;
-    text-align: left !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-
-  #instruments-table th:nth-child(5),
-  #instruments-table td:nth-child(5) {
-    width: 25% !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-  }
-
-  #instruments-table th:nth-child(8),
-  #instruments-table td:nth-child(8) {
-    width: 31% !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-  }
-
-  #instruments-table tfoot {
-    display: none !important;
-  }
-
-  /* Transakce: sloupce 2, 3 a 6. */
-  #transactions-table th:nth-child(2),
-  #transactions-table td:nth-child(2),
-  #transactions-table th:nth-child(3),
-  #transactions-table td:nth-child(3),
-  #transactions-table th:nth-child(6),
-  #transactions-table td:nth-child(6) {
-    display: table-cell !important;
-  }
-
-  #transactions-table th:nth-child(2),
-  #transactions-table td:nth-child(2) {
-    width: 50% !important;
-    text-align: left !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-
-  #transactions-table th:nth-child(3),
-  #transactions-table td:nth-child(3) {
-    width: 18% !important;
-    text-align: center !important;
-    white-space: nowrap !important;
-  }
-
-  #transactions-table th:nth-child(6),
-  #transactions-table td:nth-child(6) {
-    width: 32% !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-  }
-}
-
-
-
-/* =====================================================
    UVODNI STRANKA - FINALNI OPRAVY 2026-09-01
 ===================================================== */
 .hero { max-width: 760px; }
@@ -3472,176 +3350,6 @@ FINALNI MOBILNI DETAIL v32
 /* v43: procentni zmena v grafu je zvyraznena bez absolutni hodnoty a zavorek. */
 .period-diff strong{font-weight:800!important;}
 
-/* =====================================================
-FINALNI TABULKY PORTFOLIA A PREHLEDU - v32
-Tento blok je zamerne posledni, aby neplatila starsi konfliktni pravidla.
-===================================================== */
-/* Prehledy investicnich nastroju: ciselne hodnoty doprava. */
-.overview-table th:nth-child(n+3),
-.overview-table td:nth-child(n+3),
-#fundTable .dps-overview-table th:nth-child(n+2),
-#fundTable .dps-overview-table td:nth-child(n+2) {
-  text-align: right !important;
-}
-
-/* Desktopovy vzhled detailu a transakci portfolia. */
-#instruments-table,
-#transactions-table {
-  display: table !important;
-  width: 100% !important;
-  table-layout: fixed !important;
-  border-collapse: collapse !important;
-}
-#instruments-table thead,
-#transactions-table thead { display: table-header-group !important; }
-#instruments-table tbody,
-#transactions-table tbody { display: table-row-group !important; }
-#instruments-table tr,
-#transactions-table tr { display: table-row !important; }
-#instruments-table th,
-#transactions-table th {
-  display: table-cell !important;
-  background: transparent !important;
-  color: var(--gold, #c9a646) !important;
-  border-bottom: 2px solid var(--gold, #c9a646) !important;
-  font-weight: 600 !important;
-}
-#instruments-table td,
-#transactions-table td {
-  display: table-cell !important;
-  border-bottom: 1px solid #e5e7eb !important;
-}
-#instruments-table tbody tr:nth-child(even),
-#transactions-table tbody tr:nth-child(even) {
-  background: var(--row-alt, #f2f2f2) !important;
-}
-#instruments-table tbody tr:hover,
-#transactions-table tbody tr:hover,
-#instruments-table tbody tr.active,
-#transactions-table tbody tr.active {
-  background: var(--gold-light, rgba(201,166,70,.15)) !important;
-}
-#instruments-table th:nth-child(n+3),
-#instruments-table td:nth-child(n+3),
-#transactions-table th:nth-child(4),
-#transactions-table td:nth-child(4),
-#transactions-table th:nth-child(5),
-#transactions-table td:nth-child(5),
-#transactions-table th:nth-child(6),
-#transactions-table td:nth-child(6) {
-  text-align: right !important;
-}
-
-@media (max-width: 768px) {
-  /* Spolecne mobilni provedeni skutecne tabulky. */
-  #instruments-table,
-  #transactions-table {
-    display: table !important;
-    width: 100% !important;
-    table-layout: fixed !important;
-    border-collapse: collapse !important;
-  }
-  #instruments-table thead,
-  #transactions-table thead { display: table-header-group !important; }
-  #instruments-table tbody,
-  #transactions-table tbody { display: table-row-group !important; }
-  #instruments-table tr,
-  #transactions-table tr {
-    display: table-row !important;
-    margin: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-  }
-  #instruments-table th,
-  #instruments-table td,
-  #transactions-table th,
-  #transactions-table td {
-    display: none !important;
-    padding: 8px 5px !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    font-size: 11px !important;
-    line-height: 1.2 !important;
-    vertical-align: middle !important;
-  }
-  #instruments-table td::before,
-  #transactions-table td::before {
-    content: none !important;
-    display: none !important;
-  }
-
-  /* Detail portfolia: Nazev, Hodnota, Nerealizovany zisk. */
-  #instruments-table th:nth-child(2),
-  #instruments-table td:nth-child(2),
-  #instruments-table th:nth-child(5),
-  #instruments-table td:nth-child(5),
-  #instruments-table th:nth-child(8),
-  #instruments-table td:nth-child(8) {
-    display: table-cell !important;
-  }
-  #instruments-table th:nth-child(2),
-  #instruments-table td:nth-child(2) {
-    width: 44% !important;
-    text-align: left !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-  #instruments-table td:nth-child(2) {
-    max-height: 2.4em !important;
-    overflow: hidden !important;
-  }
-  #instruments-table th:nth-child(5),
-  #instruments-table td:nth-child(5) {
-    width: 25% !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-  }
-  #instruments-table th:nth-child(8),
-  #instruments-table td:nth-child(8) {
-    width: 31% !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-  }
-  #instruments-table th[data-key="quantity"],
-  #instruments-table td[data-label="Počet kusů"],
-  #instruments-table tfoot {
-    display: none !important;
-  }
-
-  /* Transakce: Typ/nastroj, Smer, Vstupni investice. */
-  #transactions-table th:nth-child(2),
-  #transactions-table td:nth-child(2),
-  #transactions-table th:nth-child(3),
-  #transactions-table td:nth-child(3),
-  #transactions-table th:nth-child(6),
-  #transactions-table td:nth-child(6) {
-    display: table-cell !important;
-  }
-  #transactions-table th:nth-child(2),
-  #transactions-table td:nth-child(2) {
-    width: 50% !important;
-    text-align: left !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-  #transactions-table th:nth-child(3),
-  #transactions-table td:nth-child(3) {
-    width: 18% !important;
-    text-align: center !important;
-    white-space: nowrap !important;
-  }
-  #transactions-table th:nth-child(6),
-  #transactions-table td:nth-child(6) {
-    width: 32% !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-  }
-  #transactions-table th[data-key="quantity"],
-  #transactions-table td[data-label="Množství"] {
-    display: none !important;
-  }
-}
-
-
 /* UVOD + SEARCH v45 */
 .home-market-section{padding:32px 0 42px}.home-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}.home-section-head h2{margin:0}.home-market-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.market-index-card{display:block;padding:16px;border:1px solid rgba(201,166,70,.36);border-radius:16px;background:#fff;color:#111}.market-index-head,.market-index-foot{display:flex;justify-content:space-between;gap:10px}.market-index-head strong,.market-index-head small{display:block}.market-sparkline{width:100%;height:92px;margin:10px 0}.market-sparkline polyline{fill:none;stroke-width:2.3}.market-sparkline .positive{stroke:#27804a}.market-sparkline .negative{stroke:#b13b32}.market-sparkline-empty{height:92px;display:grid;place-items:center}.instrument-search-form{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:20px;border:1px solid rgba(201,166,70,.35);border-radius:18px;background:#fffaf0}.instrument-search-form label{display:grid;gap:6px}.instrument-search-form .search-wide{grid-column:span 2}.instrument-search-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px}.instrument-search-summary{margin:16px 0;padding:12px;border-left:3px solid #c9a646;background:rgba(201,166,70,.09)}.search-result-group{margin-bottom:28px}.search-table-wrap{overflow-x:auto}.search-results-table{min-width:900px}.search-results-table tbody tr{cursor:pointer}.home-search-intro{padding:8px 0 32px!important}.home-search-cta{display:inline-flex!important;width:auto!important;min-height:44px;margin-top:16px;align-items:center;justify-content:center}.landing .btn-primary:hover,.landing .btn-secondary:hover,.landing .pill-button:hover,.landing a.btn-primary:hover,.landing a.btn-secondary:hover,.landing a.pill-button:hover{background:var(--gold,#c9a646)!important;border-color:var(--gold,#c9a646)!important;color:#111!important;-webkit-text-fill-color:#111!important;text-decoration:none!important}@media(min-width:1025px){.sidebar{max-height:none!important;overflow:visible!important;scrollbar-width:none!important}.sidebar::-webkit-scrollbar{display:none!important}}@media(max-width:1100px){.home-market-grid{grid-template-columns:repeat(2,1fr)}.instrument-search-form{grid-template-columns:repeat(2,1fr)}}@media(max-width:768px){.home-section-head{flex-direction:column;align-items:stretch}.home-market-grid{grid-template-columns:1fr}.instrument-search-form{grid-template-columns:1fr}.instrument-search-form .search-wide,.instrument-search-actions{grid-column:auto}.home-search-cta{width:100%!important}.search-results-table th,.search-results-table td{display:table-cell!important}.search-results-table thead{display:table-header-group!important}}
 
@@ -3776,25 +3484,6 @@ UVODNI DLAZDICE v48
 }
 
 
-/* PORTFOLIO HODNOTA A TABULKY v36 - FINALNI OVERRIDE */
-.portfolio-kpi-pair{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-#portfolio-allocation-chart.allocation-chart-layout{display:grid!important;grid-template-columns:minmax(230px,260px) minmax(230px,1fr)!important;align-items:center!important;justify-content:center!important;gap:22px!important;max-width:760px;margin:18px auto 0}
-#portfolio-allocation-chart.allocation-chart-layout canvas{grid-column:1;grid-row:1;justify-self:end!important}
-#portfolio-allocation-chart.allocation-chart-layout .allocation-legend{grid-column:2;grid-row:1;justify-self:start!important}
-#instruments-table.fund-table,#transactions-table.fund-table{display:table!important;width:100%!important;table-layout:fixed!important;border-collapse:collapse!important;background:transparent!important}
-#instruments-table.fund-table thead,#transactions-table.fund-table thead{display:table-header-group!important}
-#instruments-table.fund-table tbody,#transactions-table.fund-table tbody{display:table-row-group!important}
-#instruments-table.fund-table tr,#transactions-table.fund-table tr{display:table-row!important}
-#instruments-table.fund-table thead th,#transactions-table.fund-table thead th{display:table-cell!important;height:52px!important;padding:8px 10px!important;background:transparent!important;color:var(--gold,#c9a646)!important;border:0!important;border-bottom:2px solid var(--gold,#c9a646)!important;font-weight:600!important;line-height:1.15!important;vertical-align:middle!important;white-space:normal!important}
-#instruments-table.fund-table tbody td,#transactions-table.fund-table tbody td{display:table-cell!important;padding:10px!important;background:transparent!important;border:0!important;border-bottom:1px solid #e5e7eb!important;vertical-align:middle!important}
-#instruments-table.fund-table tbody tr:nth-child(odd),#transactions-table.fund-table tbody tr:nth-child(odd){background:#fff!important}
-#instruments-table.fund-table tbody tr:nth-child(even),#transactions-table.fund-table tbody tr:nth-child(even){background:var(--row-alt,#f2f2f2)!important}
-#instruments-table.fund-table tbody tr:hover,#transactions-table.fund-table tbody tr:hover,#instruments-table.fund-table tbody tr.active,#transactions-table.fund-table tbody tr.active{background:var(--gold-light,rgba(201,166,70,.15))!important}
-#instruments-table.fund-table tbody tr:hover td,#transactions-table.fund-table tbody tr:hover td,#instruments-table.fund-table tbody tr.active td,#transactions-table.fund-table tbody tr.active td{background:transparent!important}
-#instruments-table.fund-table th:nth-child(n+3),#instruments-table.fund-table td:nth-child(n+3),#transactions-table.fund-table th:nth-child(4),#transactions-table.fund-table td:nth-child(4),#transactions-table.fund-table th:nth-child(5),#transactions-table.fund-table td:nth-child(5),#transactions-table.fund-table th:nth-child(6),#transactions-table.fund-table td:nth-child(6){text-align:right!important}
-@media(max-width:768px){.portfolio-kpi-pair{grid-template-columns:1fr!important}#portfolio-allocation-chart.allocation-chart-layout{grid-template-columns:1fr!important;gap:14px!important}#portfolio-allocation-chart.allocation-chart-layout canvas{grid-column:1;grid-row:1;justify-self:center!important}#portfolio-allocation-chart.allocation-chart-layout .allocation-legend{grid-column:1;grid-row:2;justify-self:stretch!important;width:100%}#instruments-table.fund-table th,#instruments-table.fund-table td,#transactions-table.fund-table th,#transactions-table.fund-table td{display:none!important;padding:8px 5px!important;font-size:11px!important;line-height:1.2!important}#instruments-table.fund-table td::before,#transactions-table.fund-table td::before{content:none!important;display:none!important}#instruments-table.fund-table th:nth-child(2),#instruments-table.fund-table td:nth-child(2),#instruments-table.fund-table th:nth-child(5),#instruments-table.fund-table td:nth-child(5),#instruments-table.fund-table th:nth-child(8),#instruments-table.fund-table td:nth-child(8){display:table-cell!important}#instruments-table.fund-table th:nth-child(2),#instruments-table.fund-table td:nth-child(2){width:44%!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important}#instruments-table.fund-table th:nth-child(5),#instruments-table.fund-table td:nth-child(5){width:25%!important;text-align:right!important;white-space:nowrap!important}#instruments-table.fund-table th:nth-child(8),#instruments-table.fund-table td:nth-child(8){width:31%!important;text-align:right!important;white-space:nowrap!important}#instruments-table.fund-table tfoot{display:none!important}#transactions-table.fund-table th:nth-child(2),#transactions-table.fund-table td:nth-child(2),#transactions-table.fund-table th:nth-child(3),#transactions-table.fund-table td:nth-child(3),#transactions-table.fund-table th:nth-child(6),#transactions-table.fund-table td:nth-child(6){display:table-cell!important}#transactions-table.fund-table th:nth-child(2),#transactions-table.fund-table td:nth-child(2){width:50%!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important}#transactions-table.fund-table th:nth-child(3),#transactions-table.fund-table td:nth-child(3){width:18%!important;text-align:center!important;white-space:nowrap!important}#transactions-table.fund-table th:nth-child(6),#transactions-table.fund-table td:nth-child(6){width:32%!important;text-align:right!important;white-space:nowrap!important}}
-
-
 /* =====================================================
 DETAIL INVESTICNIHO NASTROJE - PREHLEDNE KPI v50
 ===================================================== */
@@ -3878,59 +3567,115 @@ DETAIL INVESTICNIHO NASTROJE - PREHLEDNE KPI v50
 
 
 /* =====================================================
-PORTFOLIO - PREHLED A MOBILNI TABULKY v37
-Stejny vzor hlavni hodnoty jako detail investicniho nastroje.
-Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
+MOBILE DETAIL + PORTFOLIO - CLEAN FINAL v38
+Jediný finální blok pro mobilní KPI a portfolio tabulky.
 ===================================================== */
-.portfolio-current-value {
-  width: min(100%, 520px);
-  min-height: 118px;
-}
-.portfolio-kpi-primary {
-  display: block !important;
-}
-.portfolio-kpi-primary .instrument-current-value {
-  width: 100%;
-  max-width: 520px;
-}
-.portfolio-kpi-pair {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-}
-.portfolio-unrealized-kpi {
-  background: rgba(201,166,70,.08) !important;
-  border-color: rgba(201,166,70,.40) !important;
-}
-.mobile-th-label { display: none; }
 
-/* Desktop i mobil: stejna zlata typografie a spodni linka hlavicky. */
+/* Mobilní souhrn detailu nástroje: nižší a kompaktní dlaždice. */
+@media (max-width: 768px) {
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    align-items: start !important;
+    gap: 8px !important;
+    margin: 10px 0 14px !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .kpi {
+    align-self: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 10px 11px !important;
+    border-radius: 10px !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .instrument-current-value {
+    grid-column: 1 / -1 !important;
+    min-height: 0 !important;
+    padding: 12px 13px 11px 17px !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .kpi > span {
+    margin: 0 0 3px !important;
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .kpi > strong {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .instrument-current-value > strong {
+    font-size: 23px !important;
+  }
+  .mobile-detail-tabs-ready[data-detail-active="summary"] .instrument-value-date,
+  .mobile-detail-tabs-ready[data-detail-active="summary"] .instrument-change-absolute {
+    margin-top: 3px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+/* Portfolio desktop: zachování standardního tabulkového vzhledu. */
+#instruments-table.fund-table,
+#transactions-table.fund-table {
+  display: table !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+#instruments-table.fund-table thead,
+#transactions-table.fund-table thead { display: table-header-group !important; }
+#instruments-table.fund-table tbody,
+#transactions-table.fund-table tbody { display: table-row-group !important; }
+#instruments-table.fund-table tr,
+#transactions-table.fund-table tr { display: table-row !important; }
 #instruments-table.fund-table thead th,
 #transactions-table.fund-table thead th {
+  display: table-cell !important;
+  height: 52px !important;
+  padding: 8px 10px !important;
   background: transparent !important;
   color: var(--gold, #c9a646) !important;
   border: 0 !important;
   border-bottom: 2px solid var(--gold, #c9a646) !important;
-  font-weight: 650 !important;
-  vertical-align: middle !important;
+  font-weight: 600 !important;
   line-height: 1.15 !important;
+  vertical-align: middle !important;
 }
+#instruments-table.fund-table tbody td,
+#transactions-table.fund-table tbody td {
+  display: table-cell !important;
+  padding: 10px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  vertical-align: middle !important;
+}
+.mobile-th-label { display: none; }
 
+/* Portfolio Hodnota: na mobilu je každá vedlejší dlaždice samostatně. */
 @media (max-width: 768px) {
-  .portfolio-kpi-pair,
-  .portfolio-kpi-secondary {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-  .portfolio-kpi-grid .kpi {
-    padding: 12px !important;
-  }
-  .portfolio-current-value {
+  #tab-value .portfolio-kpi-grid,
+  #tab-value .portfolio-kpi-primary,
+  #tab-value .portfolio-kpi-pair,
+  #tab-value .portfolio-kpi-secondary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     width: 100% !important;
+    gap: 9px !important;
+  }
+  #tab-value .portfolio-kpi-grid .kpi {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 12px 14px !important;
+  }
+  #tab-value .portfolio-current-value {
     max-width: none !important;
-    min-height: 108px;
-    padding: 15px 16px 14px 19px !important;
+    padding: 14px 15px 13px 19px !important;
   }
 
-  /* Skutecne kompaktni tabulky, ne mobilni karty. */
+  /* Společný mobilní tabulkový režim. */
   #instruments-table.fund-table,
   #transactions-table.fund-table {
     display: table !important;
@@ -3946,7 +3691,9 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
   #instruments-table.fund-table tr,
   #transactions-table.fund-table tr {
     display: table-row !important;
-    background: transparent;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
   }
   #instruments-table.fund-table th,
   #instruments-table.fund-table td,
@@ -3955,6 +3702,7 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
     display: none !important;
     box-sizing: border-box !important;
     min-width: 0 !important;
+    height: auto !important;
     padding: 8px 4px !important;
     border-bottom: 1px solid #e5e7eb !important;
     font-size: 10.5px !important;
@@ -3963,13 +3711,9 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
   }
   #instruments-table.fund-table thead th,
   #transactions-table.fund-table thead th {
-    height: 44px !important;
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
+    height: 42px !important;
     color: var(--gold, #c9a646) !important;
-    text-align: left;
     white-space: normal !important;
-    overflow-wrap: normal !important;
     word-break: normal !important;
   }
   #instruments-table.fund-table td::before,
@@ -3988,32 +3732,27 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
     background: var(--gold-light, rgba(201,166,70,.15)) !important;
   }
 
-  /* Detail: Nazev, Hodnota, Zisk. */
+  /* Detail portfolia: pouze Název, Hodnota, Zisk. */
   #instruments-table.fund-table th:nth-child(2),
   #instruments-table.fund-table td:nth-child(2),
   #instruments-table.fund-table th:nth-child(5),
   #instruments-table.fund-table td:nth-child(5),
   #instruments-table.fund-table th:nth-child(8),
-  #instruments-table.fund-table td:nth-child(8) {
-    display: table-cell !important;
-  }
+  #instruments-table.fund-table td:nth-child(8) { display: table-cell !important; }
   #instruments-table.fund-table th:nth-child(2),
   #instruments-table.fund-table td:nth-child(2) {
-    width: 42% !important;
+    width: 43% !important;
     text-align: left !important;
     white-space: normal !important;
     overflow-wrap: anywhere !important;
   }
   #instruments-table.fund-table td:nth-child(2) {
-    display: -webkit-box !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    max-height: 3.05em;
+    max-height: 2.65em !important;
     overflow: hidden !important;
   }
   #instruments-table.fund-table th:nth-child(5),
   #instruments-table.fund-table td:nth-child(5) {
-    width: 28% !important;
+    width: 27% !important;
     text-align: right !important;
     white-space: nowrap !important;
     font-variant-numeric: tabular-nums;
@@ -4027,7 +3766,7 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
   }
   #instruments-table.fund-table tfoot { display: none !important; }
 
-  /* Transakce: Datum, Typ, Smer, Vstupni investice. */
+  /* Transakce: pouze Datum, Typ, Směr, Investice. */
   #transactions-table.fund-table th:nth-child(1),
   #transactions-table.fund-table td:nth-child(1),
   #transactions-table.fund-table th:nth-child(2),
@@ -4035,27 +3774,22 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
   #transactions-table.fund-table th:nth-child(3),
   #transactions-table.fund-table td:nth-child(3),
   #transactions-table.fund-table th:nth-child(6),
-  #transactions-table.fund-table td:nth-child(6) {
-    display: table-cell !important;
-  }
+  #transactions-table.fund-table td:nth-child(6) { display: table-cell !important; }
   #transactions-table.fund-table th:nth-child(1),
   #transactions-table.fund-table td:nth-child(1) {
-    width: 19% !important;
+    width: 20% !important;
     text-align: left !important;
     white-space: nowrap !important;
   }
   #transactions-table.fund-table th:nth-child(2),
   #transactions-table.fund-table td:nth-child(2) {
-    width: 37% !important;
+    width: 35% !important;
     text-align: left !important;
     white-space: normal !important;
     overflow-wrap: anywhere !important;
   }
   #transactions-table.fund-table td:nth-child(2) {
-    display: -webkit-box !important;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    max-height: 3.05em;
+    max-height: 2.65em !important;
     overflow: hidden !important;
   }
   #transactions-table.fund-table th:nth-child(3),
@@ -4066,27 +3800,15 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
   }
   #transactions-table.fund-table th:nth-child(6),
   #transactions-table.fund-table td:nth-child(6) {
-    width: 30% !important;
+    width: 31% !important;
     text-align: right !important;
     white-space: nowrap !important;
     font-variant-numeric: tabular-nums;
   }
   .desktop-th-label { display: none !important; }
   .mobile-th-label { display: inline !important; }
-  #tab-instruments .mobile-sort,
-  #tab-transactions .mobile-sort {
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  #tab-instruments .mobile-sort label,
-  #tab-transactions .mobile-sort label { font-size: 11px; }
-  #tab-instruments .mobile-sort select,
-  #tab-transactions .mobile-sort select {
-    min-width: 0;
-    padding: 8px;
-    font-size: 12px;
-  }
 }
+
 @media (max-width: 390px) {
   #instruments-table.fund-table th,
   #instruments-table.fund-table td,
@@ -4096,12 +3818,4 @@ Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
     padding-right: 3px !important;
     font-size: 9.5px !important;
   }
-  #transactions-table.fund-table th:nth-child(1),
-  #transactions-table.fund-table td:nth-child(1) { width: 20% !important; }
-  #transactions-table.fund-table th:nth-child(2),
-  #transactions-table.fund-table td:nth-child(2) { width: 35% !important; }
-  #transactions-table.fund-table th:nth-child(3),
-  #transactions-table.fund-table td:nth-child(3) { width: 14% !important; }
-  #transactions-table.fund-table th:nth-child(6),
-  #transactions-table.fund-table td:nth-child(6) { width: 31% !important; }
 }
