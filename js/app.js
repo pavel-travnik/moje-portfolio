@@ -2239,9 +2239,10 @@ const main = document.getElementById('mainContent');
     </p>
 
     <div class="kpi-row">
-      <div class="kpi">
-        <span>Poslední hodnota</span>
+      <div class="kpi instrument-current-value">
+        <span>Aktuální hodnota</span>
         <strong id="kpi-last"> - </strong>
+        <small id="kpi-last-date" class="instrument-value-date">Datum ocenění se načítá</small>
       </div>
 
       <div class="kpi">
@@ -2383,8 +2384,9 @@ function renderFundKPI(data) {
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
   
-   document.getElementById('kpi-last').textContent =
-    `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
+  document.getElementById('kpi-last').textContent = `${last.value.toFixed(4)} ${last.currency}`;
+  const dateEl = document.getElementById('kpi-last-date');
+  if (dateEl) dateEl.textContent = `Ocenění k ${dateStr}`;
 
 
   if (prev) {
@@ -2515,8 +2517,9 @@ function renderPodilovyFondMeta(fund) {
   const currencyEl = document.getElementById('pf-kpi-currency');
   const link = document.getElementById('pf-url');
 
-  if (nameEl && name) nameEl.textContent = name;
   if (titleEl && name) titleEl.textContent = name;
+  const detailMeta = document.getElementById('pf-instrument-meta');
+  if (detailMeta) detailMeta.textContent = [fund.isin || fund.ISIN, currency, manager].filter(Boolean).join(' · ');
   if (managerEl) managerEl.textContent = manager || '—';
   if (currencyEl) currencyEl.textContent = currency || '—';
 
@@ -2538,7 +2541,7 @@ function loadPodilovyFondDetail(isin) {
   main.innerHTML = `
   <h3 id="pf-title">Detail fondu</h3>
   <div class="stock-detail-head">
-    <p class="meta"><span id="pf-name"> - </span><br><small>ID: ${isin}</small></p>
+    <p id="pf-instrument-meta" class="instrument-detail-meta">${isin}</p>
     <div class="stock-detail-actions">
       <label class="stock-czk-toggle" title="Porovná vývoj fondu s benchmark indexem.">
         <input type="checkbox" id="pf-compare-index" aria-label="Porovnat s indexem">
@@ -2549,9 +2552,10 @@ function loadPodilovyFondDetail(isin) {
   </div>
 
   <div class="kpi-row">
-    <div class="kpi">
-      <span>Poslední kurz</span>
+    <div class="kpi instrument-current-value">
+      <span>Aktuální hodnota</span>
       <strong id="pf-kpi-last">-</strong>
+      <small id="pf-kpi-last-date" class="instrument-value-date">Datum ocenění se načítá</small>
     </div>
     <div class="kpi">
       <span>Změna</span>
@@ -2697,8 +2701,9 @@ function renderPodilovyFondKPI(data) {
   const prev = data.at(-2);
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
-  document.getElementById('pf-kpi-last').textContent =
-    `${last.value.toFixed(4)} ${last.currency} (${dateStr})`;
+  document.getElementById('pf-kpi-last').textContent = `${last.value.toFixed(4)} ${last.currency}`;
+  const dateEl = document.getElementById('pf-kpi-last-date');
+  if (dateEl) dateEl.textContent = `Ocenění k ${dateStr}`;
 
 
   if (prev) {
@@ -3197,7 +3202,7 @@ function loadStockDetail(ticker) {
   main.innerHTML = `
     <h3 id="stock-title">Detail akcie</h3>
     <div class="stock-detail-head">
-      <p><strong id="stock-name"> - </strong><br><small>ID: ${ticker}</small></p>
+      <p id="stock-instrument-meta" class="instrument-detail-meta">${ticker}</p>
       ${showAdvanced ? `
       <div class="stock-detail-actions">
         <label class="stock-czk-toggle" title="Přepne cenu a graf na CZK, pokud je dostupný přepočet.">
@@ -3214,13 +3219,12 @@ function loadStockDetail(ticker) {
     </div>
 
     <div class="kpi-row">
-      <div class="kpi"><span>Poslední cena</span><strong id="stock-kpi-last"> - </strong></div>
+      <div class="kpi instrument-current-value"><span>Aktuální cena</span><strong id="stock-kpi-last"> - </strong><small id="stock-kpi-last-date" class="instrument-value-date">Datum ocenění se načítá</small></div>
       <div class="kpi"><span>Denní změna</span><strong id="stock-kpi-change"> - </strong></div>
       <div class="kpi"><span>Objem</span><strong id="stock-kpi-volume"> - </strong></div>
-      <div class="kpi"><span>Burza</span><strong id="stock-kpi-exchange"> - </strong></div>
       ${!isIndexDetail ? `
-      <div class="kpi"><span>Dividendy letos</span><strong id="stock-kpi-dividend-this-year"> - </strong></div>
-      <div class="kpi"><span>Dividendy loni</span><strong id="stock-kpi-dividend-last-year"> - </strong></div>` : ''}
+      <div class="kpi instrument-secondary-kpi"><span>Dividendy letos</span><strong id="stock-kpi-dividend-this-year"> - </strong></div>
+      <div class="kpi instrument-secondary-kpi"><span>Dividendy loni</span><strong id="stock-kpi-dividend-last-year"> - </strong></div>` : ''}
     </div>
 
     <p id="stock-meta" class="meta"> - </p>
@@ -3293,10 +3297,11 @@ function loadStockDetail(ticker) {
 function renderStockMeta(data) {
   if (!data.length) return;
   const first = data[0];
-  const exchangeEl = document.getElementById('stock-kpi-exchange');
-  if (exchangeEl) exchangeEl.textContent = first.exchange || ' - ';
-  document.getElementById('stock-name').textContent = first.name || first.ticker;
   document.getElementById('stock-title').textContent = first.name || first.ticker;
+  const detailMeta = document.getElementById('stock-instrument-meta');
+  if (detailMeta) {
+    detailMeta.textContent = [first.ticker, first.currency, first.exchange].filter(Boolean).join(' · ');
+  }
   const symbol = first.symbolData || first.ticker;
   const exchange = first.exchange;
   const url = exchange ? `https://www.tradingview.com/symbols/${exchange}:${symbol}/` : null;
@@ -3379,7 +3384,9 @@ function renderStockKPI(data) {
   const originalCurrency = last.currency ?? '';
   const displayCurrency = useCzk ? 'CZK' : originalCurrency;
   const lastValue = getStockChartValue(last, useCzk);
-  document.getElementById('stock-kpi-last').textContent = lastValue != null ? `${formatStockMoney(lastValue, displayCurrency, 2)} (${dateStr})` : '—';
+  document.getElementById('stock-kpi-last').textContent = lastValue != null ? formatStockMoney(lastValue, displayCurrency, 2) : '—';
+  const dateEl = document.getElementById('stock-kpi-last-date');
+  if (dateEl) dateEl.textContent = `Ocenění k ${dateStr}`;
   document.getElementById('stock-kpi-volume').textContent = last.volume?.toLocaleString('cs-CZ') ?? ' - ';
   const divThisYearEl = document.getElementById('stock-kpi-dividend-this-year');
   const divLastYearEl = document.getElementById('stock-kpi-dividend-last-year');
@@ -3390,7 +3397,10 @@ function renderStockKPI(data) {
     const diff = lastValue != null && prevValue != null ? lastValue - prevValue : null;
     const pct = diff != null && prevValue ? (diff / prevValue) * 100 : null;
     const el = document.getElementById('stock-kpi-change');
-    if (diff != null && pct != null) { el.textContent = `${diff.toFixed(2)} (${pct.toFixed(2)}%)`; el.className = diff >= 0 ? 'pos' : 'neg'; }
+    if (diff != null && pct != null) {
+      el.innerHTML = `${pct >= 0 ? '+' : ''}${pct.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %<small class="instrument-change-absolute">${diff >= 0 ? '+' : ''}${formatStockMoney(diff, displayCurrency, 2)}</small>`;
+      el.className = diff >= 0 ? 'pos' : 'neg';
+    }
     else { el.textContent = ' - '; el.className = ''; }
   } else document.getElementById('stock-kpi-change').textContent = ' - ';
 }
@@ -3685,7 +3695,7 @@ const main = document.getElementById('mainContent');
     <p><strong>${code}</strong></p>
 
     <div class="kpi-row">
-      <div class="kpi"><span>Aktuální kurz</span><strong id="cur-kpi-last"> - </strong></div>
+      <div class="kpi instrument-current-value"><span>Aktuální kurz</span><strong id="cur-kpi-last"> - </strong><small id="cur-kpi-last-date" class="instrument-value-date">Datum ocenění se načítá</small></div>
       <div class="kpi"><span>Změna</span><strong id="cur-kpi-change"> - </strong></div>
       <div class="kpi"><span>Poměr kurzu</span><strong id="cur-kpi-ratio"> - </strong></div>
     </div>
@@ -3772,8 +3782,9 @@ function renderCurrencyKPI(data, currencyCode) {
   const dateStr = new Date(last.date).toLocaleDateString('cs-CZ');
 
 
-  document.getElementById('cur-kpi-last').textContent =
-    `${last.value.toFixed(4)} CZK (${dateStr})`;
+  document.getElementById('cur-kpi-last').textContent = `${last.value.toFixed(4)} CZK`;
+  const dateEl = document.getElementById('cur-kpi-last-date');
+  if (dateEl) dateEl.textContent = `Kurz k ${dateStr}`;
 
 
   const ratioEl = document.getElementById('cur-kpi-ratio');
