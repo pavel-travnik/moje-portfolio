@@ -4,7 +4,7 @@
 
 // Soukromé i veřejné endpointy voláme přes APIM. Soukromé portfolio endpointy
 // musí na backendu ověřit Authorization: Bearer <JWT> a user_id brát z tokenu.
-const PORTFOLIO_BUILD = '2026-09-08-portfolio-value-tables-v36';
+const PORTFOLIO_BUILD = '2026-09-10-portfolio-overview-mobile-tables-v37';
 window.PORTFOLIO_BUILD = PORTFOLIO_BUILD;
 console.info('[portfolio.js] loaded build:', PORTFOLIO_BUILD);
 const PORTFOLIO_API = window.PORTFOLIO_API || '/api/private-api';
@@ -105,105 +105,9 @@ function assetTypeLabel(assetType) {
 }
 
 function ensurePortfolioUiStyles() {
-  const styleId = 'portfolio-mobile-table-overrides-v24';
-  if (document.getElementById(styleId)) return;
-
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    /* Jednotné zlaté a zalomené záhlaví portfoliových tabulek. */
-    #instruments-table thead th,
-    #transactions-table thead th {
-      background: #C9A646 !important;
-      color: #111827 !important;
-      white-space: normal !important;
-      overflow-wrap: anywhere !important;
-      word-break: normal !important;
-      line-height: 1.15 !important;
-      vertical-align: middle !important;
-    }
-    #instruments-table thead th .th-line,
-    #transactions-table thead th .th-line {
-      display: block !important;
-    }
-    @media (max-width: 768px) {
-      #instruments-table, #transactions-table {
-        display: table !important;
-        width: 100% !important;
-        table-layout: fixed !important;
-        border-collapse: collapse !important;
-      }
-      #instruments-table thead, #transactions-table thead { display: table-header-group !important; }
-      #instruments-table tbody, #transactions-table tbody { display: table-row-group !important; }
-      #instruments-table tr, #transactions-table tr {
-        display: table-row !important;
-        width: auto !important;
-        margin: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-      }
-      #instruments-table th, #instruments-table td,
-      #transactions-table th, #transactions-table td {
-        display: none !important;
-        padding: 8px 5px !important;
-        border-bottom: 1px solid #e5e7eb !important;
-        font-size: 12px !important;
-        line-height: 1.25 !important;
-        vertical-align: middle !important;
-      }
-      #instruments-table td::before, #transactions-table td::before {
-        content: none !important;
-        display: none !important;
-      }
-
-      #instruments-table th:nth-child(2), #instruments-table td:nth-child(2),
-      #instruments-table th:nth-child(5), #instruments-table td:nth-child(5),
-      #instruments-table th:nth-child(8), #instruments-table td:nth-child(8) {
-        display: table-cell !important;
-      }
-      #instruments-table th:nth-child(2), #instruments-table td:nth-child(2) {
-        width: 44% !important; text-align: left !important;
-        white-space: normal !important; overflow-wrap: anywhere !important;
-      }
-      #instruments-table th:nth-child(5), #instruments-table td:nth-child(5) {
-        width: 25% !important; text-align: right !important; white-space: nowrap !important;
-      }
-      #instruments-table th:nth-child(8), #instruments-table td:nth-child(8) {
-        width: 31% !important; text-align: right !important; white-space: nowrap !important;
-      }
-      #instruments-table tfoot { display: none !important; }
-
-      #transactions-table th:nth-child(2), #transactions-table td:nth-child(2),
-      #transactions-table th:nth-child(3), #transactions-table td:nth-child(3),
-      #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
-        display: table-cell !important;
-      }
-      #transactions-table th:nth-child(2), #transactions-table td:nth-child(2) {
-        width: 50% !important; text-align: left !important;
-        white-space: normal !important; overflow-wrap: anywhere !important;
-      }
-      #transactions-table th:nth-child(3), #transactions-table td:nth-child(3) {
-        width: 18% !important; text-align: center !important; white-space: nowrap !important;
-      }
-      #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
-        width: 32% !important; text-align: right !important; white-space: nowrap !important;
-      }
-      /* Více vzduchu kolem hlavní akce na mobilu. */
-      #tab-transactions .toolbar {
-        padding-top: 14px !important;
-        padding-bottom: 14px !important;
-      }
-      #btn-add-transaction {
-        margin-top: 8px !important;
-        margin-bottom: 8px !important;
-        min-height: 44px !important;
-        padding: 10px 16px !important;
-      }
-    }
-  `;
-  document.head.appendChild(style);
+  // Vzhled portfolia je centralizovaný ve styles.css.
+  // Starší dynamické mobilní styly by přepisovaly finální desktopovou hlavičku.
 }
-
 function setSortDirectionButton(btn, asc) {
   if (!btn) return;
   btn.textContent = '';
@@ -419,15 +323,15 @@ function openCreatePortfolioModal() {
         </div>
         <div class="portfolio-kpi-grid">
           <div class="portfolio-kpi-primary">
-            <div class="kpi portfolio-kpi-highlight"><span>Aktuální hodnota portfolia</span><strong id="pf-kpi-value">—</strong></div>
+            <div class="kpi instrument-current-value portfolio-current-value"><span>Aktuální hodnota portfolia</span><strong id="pf-kpi-value">—</strong><small id="pf-kpi-value-date" class="instrument-value-date">Datum přepočtu se načítá</small></div>
           </div>
           <div class="portfolio-kpi-pair">
             <div class="kpi"><span>Vstupní investice</span><strong id="pf-kpi-input-investment">—</strong></div>
             <div class="kpi"><span>Denní změna</span><strong id="pf-kpi-daily">—</strong></div>
-            <div class="kpi"><span>Poslední přepočet</span><strong id="pf-kpi-last-valuation">—</strong></div>
+
           </div>
           <div class="portfolio-kpi-secondary">
-            <div class="kpi portfolio-kpi-highlight"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
+            <div class="kpi portfolio-unrealized-kpi"><span>Nerealizovaný zisk</span><strong id="pf-kpi-unrealized">—</strong><small id="pf-kpi-unrealized-pct">—</small></div>
             <div class="kpi"><span>Vážený výnos nakoupených nástrojů 3Y</span><strong id="pf-kpi-3y">—</strong><small id="pf-kpi-3y-coverage">—</small></div>
             <div class="kpi"><span>Největší pozice</span><strong id="pf-kpi-largest">—</strong><small id="pf-kpi-largest-name">—</small></div>
             <div class="kpi"><span>Top 3 pozice</span><strong id="pf-kpi-top3">—</strong><small>podíl na portfoliu</small></div>
@@ -463,7 +367,7 @@ function openCreatePortfolioModal() {
             <th data-key="value">Hodnota</th>
             <th data-key="return3y"><span class="th-line">Výnos nástroje</span><span class="th-line">3Y</span></th>
             <th data-key="weight">Podíl</th>
-            <th data-key="unrealizedPnl"><span class="th-line">Nerealizovaný</span><span class="th-line">zisk</span></th>
+            <th data-key="unrealizedPnl"><span class="desktop-th-label"><span class="th-line">Nerealizovaný</span><span class="th-line">zisk</span></span><span class="mobile-th-label">Zisk</span></th>
             <th data-key="lastValuation"><span class="th-line">Poslední</span><span class="th-line">ocenění</span></th>
           </tr></thead>
           <tbody id="portfolio-instruments"></tbody>
@@ -499,7 +403,7 @@ function openCreatePortfolioModal() {
             <th data-key="type">Směr</th>
             <th data-key="quantity">Počet kusů</th>
             <th data-key="price">Nákupní cena za kus</th>
-            <th data-key="investment">Vstupní investice</th>
+            <th data-key="investment"><span class="desktop-th-label">Vstupní investice</span><span class="mobile-th-label">Investice</span></th>
             <th data-key="status">Stav</th>
             <th data-key="action">Akce</th>
           </tr></thead>
@@ -1488,11 +1392,17 @@ function renderPortfolioOverview(data) {
   const dailyDiff = nullablePortfolioNumber(val.pnl_day_czk);
   const dailyPct = nullablePortfolioNumber(val.pnl_day_pct);
   if (dailyEl) {
-    dailyEl.textContent = dailyDiff === null ? '—' : `${formatSignedPortfolioMoney(dailyDiff)}${dailyPct === null ? '' : ` (${dailyPct > 0 ? '+' : ''}${fmtNumber(dailyPct * 100)} %)`}`;
-    dailyEl.className = dailyDiff === null ? '' : dailyDiff >= 0 ? 'pos' : 'neg';
+    if (dailyDiff === null) {
+      dailyEl.textContent = '—';
+      dailyEl.className = '';
+    } else {
+      const pctText = dailyPct === null ? '—' : `${dailyPct >= 0 ? '+' : ''}${fmtNumber(dailyPct * 100)} %`;
+      dailyEl.innerHTML = `${pctText}<small class="instrument-change-absolute">${formatSignedPortfolioMoney(dailyDiff)}</small>`;
+      dailyEl.className = dailyDiff >= 0 ? 'pos' : 'neg';
+    }
   }
-  const lastEl = document.getElementById('pf-kpi-last-valuation');
-  if (lastEl) lastEl.textContent = formatPortfolioDate(portfolioLastValuationDate(data));
+  const valueDateEl = document.getElementById('pf-kpi-value-date');
+  if (valueDateEl) valueDateEl.textContent = `Přepočet k ${formatPortfolioDate(portfolioLastValuationDate(data))}`;
 
   const withInvestment = positions
     .map(p => ({ investment: positionInvestmentValue(p), unrealized: positionUnrealizedPnl(p) }))
