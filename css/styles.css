@@ -3875,3 +3875,233 @@ DETAIL INVESTICNIHO NASTROJE - PREHLEDNE KPI v50
   .kpi-row { grid-template-columns: 1fr; }
   .kpi-row .instrument-current-value { grid-column: 1; }
 }
+
+
+/* =====================================================
+PORTFOLIO - PREHLED A MOBILNI TABULKY v37
+Stejny vzor hlavni hodnoty jako detail investicniho nastroje.
+Mobilni zahlavi zachovava desktopovy vzhled bez plne zlate vyplne.
+===================================================== */
+.portfolio-current-value {
+  width: min(100%, 520px);
+  min-height: 118px;
+}
+.portfolio-kpi-primary {
+  display: block !important;
+}
+.portfolio-kpi-primary .instrument-current-value {
+  width: 100%;
+  max-width: 520px;
+}
+.portfolio-kpi-pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+.portfolio-unrealized-kpi {
+  background: rgba(201,166,70,.08) !important;
+  border-color: rgba(201,166,70,.40) !important;
+}
+.mobile-th-label { display: none; }
+
+/* Desktop i mobil: stejna zlata typografie a spodni linka hlavicky. */
+#instruments-table.fund-table thead th,
+#transactions-table.fund-table thead th {
+  background: transparent !important;
+  color: var(--gold, #c9a646) !important;
+  border: 0 !important;
+  border-bottom: 2px solid var(--gold, #c9a646) !important;
+  font-weight: 650 !important;
+  vertical-align: middle !important;
+  line-height: 1.15 !important;
+}
+
+@media (max-width: 768px) {
+  .portfolio-kpi-pair,
+  .portfolio-kpi-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .portfolio-kpi-grid .kpi {
+    padding: 12px !important;
+  }
+  .portfolio-current-value {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 108px;
+    padding: 15px 16px 14px 19px !important;
+  }
+
+  /* Skutecne kompaktni tabulky, ne mobilni karty. */
+  #instruments-table.fund-table,
+  #transactions-table.fund-table {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+  #instruments-table.fund-table thead,
+  #transactions-table.fund-table thead { display: table-header-group !important; }
+  #instruments-table.fund-table tbody,
+  #transactions-table.fund-table tbody { display: table-row-group !important; }
+  #instruments-table.fund-table tr,
+  #transactions-table.fund-table tr {
+    display: table-row !important;
+    background: transparent;
+  }
+  #instruments-table.fund-table th,
+  #instruments-table.fund-table td,
+  #transactions-table.fund-table th,
+  #transactions-table.fund-table td {
+    display: none !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    padding: 8px 4px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    font-size: 10.5px !important;
+    line-height: 1.18 !important;
+    vertical-align: middle !important;
+  }
+  #instruments-table.fund-table thead th,
+  #transactions-table.fund-table thead th {
+    height: 44px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    color: var(--gold, #c9a646) !important;
+    text-align: left;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+  #instruments-table.fund-table td::before,
+  #transactions-table.fund-table td::before {
+    display: none !important;
+    content: none !important;
+  }
+  #instruments-table.fund-table tbody tr:nth-child(even),
+  #transactions-table.fund-table tbody tr:nth-child(even) {
+    background: var(--row-alt, #f2f2f2) !important;
+  }
+  #instruments-table.fund-table tbody tr:hover,
+  #transactions-table.fund-table tbody tr:hover,
+  #instruments-table.fund-table tbody tr.active,
+  #transactions-table.fund-table tbody tr.active {
+    background: var(--gold-light, rgba(201,166,70,.15)) !important;
+  }
+
+  /* Detail: Nazev, Hodnota, Zisk. */
+  #instruments-table.fund-table th:nth-child(2),
+  #instruments-table.fund-table td:nth-child(2),
+  #instruments-table.fund-table th:nth-child(5),
+  #instruments-table.fund-table td:nth-child(5),
+  #instruments-table.fund-table th:nth-child(8),
+  #instruments-table.fund-table td:nth-child(8) {
+    display: table-cell !important;
+  }
+  #instruments-table.fund-table th:nth-child(2),
+  #instruments-table.fund-table td:nth-child(2) {
+    width: 42% !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  #instruments-table.fund-table td:nth-child(2) {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    max-height: 3.05em;
+    overflow: hidden !important;
+  }
+  #instruments-table.fund-table th:nth-child(5),
+  #instruments-table.fund-table td:nth-child(5) {
+    width: 28% !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums;
+  }
+  #instruments-table.fund-table th:nth-child(8),
+  #instruments-table.fund-table td:nth-child(8) {
+    width: 30% !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums;
+  }
+  #instruments-table.fund-table tfoot { display: none !important; }
+
+  /* Transakce: Datum, Typ, Smer, Vstupni investice. */
+  #transactions-table.fund-table th:nth-child(1),
+  #transactions-table.fund-table td:nth-child(1),
+  #transactions-table.fund-table th:nth-child(2),
+  #transactions-table.fund-table td:nth-child(2),
+  #transactions-table.fund-table th:nth-child(3),
+  #transactions-table.fund-table td:nth-child(3),
+  #transactions-table.fund-table th:nth-child(6),
+  #transactions-table.fund-table td:nth-child(6) {
+    display: table-cell !important;
+  }
+  #transactions-table.fund-table th:nth-child(1),
+  #transactions-table.fund-table td:nth-child(1) {
+    width: 19% !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+  }
+  #transactions-table.fund-table th:nth-child(2),
+  #transactions-table.fund-table td:nth-child(2) {
+    width: 37% !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  #transactions-table.fund-table td:nth-child(2) {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    max-height: 3.05em;
+    overflow: hidden !important;
+  }
+  #transactions-table.fund-table th:nth-child(3),
+  #transactions-table.fund-table td:nth-child(3) {
+    width: 14% !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+  #transactions-table.fund-table th:nth-child(6),
+  #transactions-table.fund-table td:nth-child(6) {
+    width: 30% !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums;
+  }
+  .desktop-th-label { display: none !important; }
+  .mobile-th-label { display: inline !important; }
+  #tab-instruments .mobile-sort,
+  #tab-transactions .mobile-sort {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #tab-instruments .mobile-sort label,
+  #tab-transactions .mobile-sort label { font-size: 11px; }
+  #tab-instruments .mobile-sort select,
+  #tab-transactions .mobile-sort select {
+    min-width: 0;
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 390px) {
+  #instruments-table.fund-table th,
+  #instruments-table.fund-table td,
+  #transactions-table.fund-table th,
+  #transactions-table.fund-table td {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+    font-size: 9.5px !important;
+  }
+  #transactions-table.fund-table th:nth-child(1),
+  #transactions-table.fund-table td:nth-child(1) { width: 20% !important; }
+  #transactions-table.fund-table th:nth-child(2),
+  #transactions-table.fund-table td:nth-child(2) { width: 35% !important; }
+  #transactions-table.fund-table th:nth-child(3),
+  #transactions-table.fund-table td:nth-child(3) { width: 14% !important; }
+  #transactions-table.fund-table th:nth-child(6),
+  #transactions-table.fund-table td:nth-child(6) { width: 31% !important; }
+}
