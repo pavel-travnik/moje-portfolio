@@ -3567,16 +3567,16 @@ DETAIL INVESTICNIHO NASTROJE - PREHLEDNE KPI v50
 
 
 /* =====================================================
-MOBILE DETAIL + PORTFOLIO - CLEAN FINAL v38
-Jediný finální blok pro mobilní KPI a portfolio tabulky.
+MOBILE ONLY - DETAIL NASTROJE + PORTFOLIO v39
+Vsechny zmeny v tomto bloku plati pouze do sirky 768 px.
+Desktop zustava beze zmeny.
 ===================================================== */
-
-/* Mobilní souhrn detailu nástroje: nižší a kompaktní dlaždice. */
 @media (max-width: 768px) {
+  /* DETAIL NASTROJE / SOUHRN: kompaktni dlazdice bez zbytecne vysky. */
   .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-auto-rows: auto !important;
+    grid-auto-rows: max-content !important;
     align-items: start !important;
     gap: 8px !important;
     margin: 10px 0 14px !important;
@@ -3603,7 +3603,7 @@ Jediný finální blok pro mobilní KPI a portfolio tabulky.
   .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .kpi > strong {
     font-size: 16px !important;
     line-height: 1.2 !important;
-    overflow-wrap: anywhere;
+    overflow-wrap: anywhere !important;
   }
   .mobile-detail-tabs-ready[data-detail-active="summary"] > .kpi-row[data-detail-section="summary"] .instrument-current-value > strong {
     font-size: 23px !important;
@@ -3614,46 +3614,8 @@ Jediný finální blok pro mobilní KPI a portfolio tabulky.
     font-size: 10px !important;
     line-height: 1.2 !important;
   }
-}
 
-/* Portfolio desktop: zachování standardního tabulkového vzhledu. */
-#instruments-table.fund-table,
-#transactions-table.fund-table {
-  display: table !important;
-  width: 100% !important;
-  table-layout: fixed !important;
-  border-collapse: collapse !important;
-}
-#instruments-table.fund-table thead,
-#transactions-table.fund-table thead { display: table-header-group !important; }
-#instruments-table.fund-table tbody,
-#transactions-table.fund-table tbody { display: table-row-group !important; }
-#instruments-table.fund-table tr,
-#transactions-table.fund-table tr { display: table-row !important; }
-#instruments-table.fund-table thead th,
-#transactions-table.fund-table thead th {
-  display: table-cell !important;
-  height: 52px !important;
-  padding: 8px 10px !important;
-  background: transparent !important;
-  color: var(--gold, #c9a646) !important;
-  border: 0 !important;
-  border-bottom: 2px solid var(--gold, #c9a646) !important;
-  font-weight: 600 !important;
-  line-height: 1.15 !important;
-  vertical-align: middle !important;
-}
-#instruments-table.fund-table tbody td,
-#transactions-table.fund-table tbody td {
-  display: table-cell !important;
-  padding: 10px !important;
-  border-bottom: 1px solid #e5e7eb !important;
-  vertical-align: middle !important;
-}
-.mobile-th-label { display: none; }
-
-/* Portfolio Hodnota: na mobilu je každá vedlejší dlaždice samostatně. */
-@media (max-width: 768px) {
+  /* PORTFOLIO / HODNOTA: vsechny dlazdice pod aktualni hodnotou po jedne. */
   #tab-value .portfolio-kpi-grid,
   #tab-value .portfolio-kpi-primary,
   #tab-value .portfolio-kpi-pair,
@@ -3671,11 +3633,13 @@ Jediný finální blok pro mobilní KPI a portfolio tabulky.
     padding: 12px 14px !important;
   }
   #tab-value .portfolio-current-value {
+    width: 100% !important;
     max-width: none !important;
+    min-height: 0 !important;
     padding: 14px 15px 13px 19px !important;
   }
 
-  /* Společný mobilní tabulkový režim. */
+  /* PORTFOLIO TABULKY: skutecna tabulka, nikoli mobilni karty. */
   #instruments-table.fund-table,
   #transactions-table.fund-table {
     display: table !important;
@@ -3712,7 +3676,11 @@ Jediný finální blok pro mobilní KPI a portfolio tabulky.
   #instruments-table.fund-table thead th,
   #transactions-table.fund-table thead th {
     height: 42px !important;
+    background: transparent !important;
     color: var(--gold, #c9a646) !important;
+    border: 0 !important;
+    border-bottom: 2px solid var(--gold, #c9a646) !important;
+    font-weight: 600 !important;
     white-space: normal !important;
     word-break: normal !important;
   }
@@ -3732,7 +3700,7 @@ Jediný finální blok pro mobilní KPI a portfolio tabulky.
     background: var(--gold-light, rgba(201,166,70,.15)) !important;
   }
 
-  /* Detail portfolia: pouze Název, Hodnota, Zisk. */
+  /* DETAIL: pouze Nazev, Hodnota a Zisk. */
   #instruments-table.fund-table th:nth-child(2),
   #instruments-table.fund-table td:nth-child(2),
   #instruments-table.fund-table th:nth-child(5),
@@ -3766,7 +3734,7 @@ Jediný finální blok pro mobilní KPI a portfolio tabulky.
   }
   #instruments-table.fund-table tfoot { display: none !important; }
 
-  /* Transakce: pouze Datum, Typ, Směr, Investice. */
+  /* TRANSAKCE: pouze Datum, Typ, Smer a Investice. */
   #transactions-table.fund-table th:nth-child(1),
   #transactions-table.fund-table td:nth-child(1),
   #transactions-table.fund-table th:nth-child(2),
