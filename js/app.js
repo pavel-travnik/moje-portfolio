@@ -1240,6 +1240,7 @@ function updateSeoForPage(page) {
     akcie: ['Akcie | Ceny, výkonnost a riziko | Moje portfolio', 'Přehled vybraných akcií, historického vývoje cen, výkonnosti, rizikových ukazatelů a dalších tržních údajů.'],
     etf: ['ETF | Přehled, výkonnost a riziko | Moje portfolio', 'Přehled vybraných ETF včetně historického vývoje ceny, výkonnosti, rizika a posledního dostupného ocenění.'],
     indexy: ['Akciové indexy | Historický vývoj | Moje portfolio', 'Přehled vybraných světových akciových indexů, jejich hodnoty, dlouhodobé výkonnosti a historického vývoje.'],
+    pruvodce: ['Průvodce investováním | Moje portfolio', 'Interaktivní průvodce investováním v 10 krocích. Srozumitelně vysvětluje akcie, ETF, fondy, riziko, diverzifikaci, dividendy, výnos a sílu času.'],
     vyhledavani: ['Vyhledávání investičních nástrojů | Moje portfolio', 'Vyhledávání a filtrování investičních nástrojů podle typu, měny, výnosu a rizika.'],
     crypto: ['Kryptoměny | Ceny a historický vývoj | Moje portfolio', 'Přehled vybraných kryptoměn a digitálních aktiv včetně cen, výkonnosti a historického vývoje.'],
     meny: ['Měnové kurzy | Vývoj kurzů vůči CZK | Moje portfolio', 'Přehled vybraných měnových kurzů vůči české koruně, jejich aktuálních hodnot a historického vývoje.'],
@@ -1325,6 +1326,19 @@ if (!page || page === "undefined") {
         }
     }
 
+    // ===============================
+    // INTERAKTIVNI PRUVODCE INVESTOVANIM
+    // ===============================
+    if (page === 'pruvodce') {
+        if (typeof window.loadInvestmentGuidePage === 'function') {
+            window.loadInvestmentGuidePage();
+            trackCurrentPage(page);
+            if (pushState) history.pushState({ page }, '', '/pruvodce');
+        } else {
+            main.innerHTML = '<p>Průvodce se nepodařilo načíst. Obnovte prosím stránku.</p>';
+        }
+        return;
+    }
     // ===============================
     // DETAIL PAGES
     // ===============================
