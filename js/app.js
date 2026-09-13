@@ -4043,4 +4043,74 @@ function normalizeSearchInstrument(item,type,route,id){return{type,route,id,name
 async function loadGlobalInstrumentUniverse(){const[stocks,funds,dps,currencies]=await Promise.all([ensureStockUniverse(),ensurePodiloveFondyList(),cachedJsonFetch(publicDataProxyUrl('dps-list')),cachedJsonFetch(publicDataProxyUrl('currencies-list'))]),r=[];(stocks||[]).forEach(x=>{const sec=x.sector,type=sec==='ETF'?'ETF':sec==='Cryptocurrency'?'Kryptoměny':sec==='Index'?'Indexy':'Akcie',route=sec==='ETF'?'etf':sec==='Cryptocurrency'?'crypto':sec==='Index'?'indexy':'akcie';r.push(normalizeSearchInstrument(x,type,route,x.ticker))});(funds||[]).forEach(x=>r.push(normalizeSearchInstrument(x,'Podílové fondy','podilove-fondy',x.isin||x.ISIN)));(dps||[]).forEach(x=>r.push(normalizeSearchInstrument(x,'Penze','penze',x.isin||x.ISIN)));(currencies||[]).forEach(x=>r.push(normalizeSearchInstrument(x,'Měny','meny',x.code)));return r.filter(x=>x.id)}
 function searchNumber(id){const r=document.getElementById(id)?.value.trim().replace(',','.');return r===''||r===undefined?null:Number(r)}
 function renderInstrumentSearchPage(){const main=document.getElementById('mainContent');if(!main)return;main.innerHTML=`<section class="section-intro"><div class="intro-heading"><span class="icon-badge">⌕</span><div><h2>Vyhledávání investičních nástrojů</h2><p class="intro-lead">Vyhledejte instrument podle názvu, tickeru nebo ISIN a omezte výsledky podle typu, měny, výnosu a rizika.</p></div></div></section><form id="instrument-search-form" class="instrument-search-form"><label class="search-wide">Název, ticker nebo ISIN<input id="search-text" type="search"></label><label>Typ<select id="search-type"><option value="">Všechny typy</option></select></label><label>Měna<select id="search-currency"><option value="">Všechny měny</option></select></label><label>Výnos 3Y od (%)<input id="search-perf3-min" type="number" step="0.1"></label><label>Výnos 3Y do (%)<input id="search-perf3-max" type="number" step="0.1"></label><label>Výnos 5Y od (%)<input id="search-perf5-min" type="number" step="0.1"></label><label>Výnos 5Y do (%)<input id="search-perf5-max" type="number" step="0.1"></label><label>Riziko od<select id="search-risk-min"><option value="">Bez omezení</option>${[1,2,3,4,5,6,7].map(x=>`<option>${x}</option>`).join('')}</select></label><label>Riziko do<select id="search-risk-max"><option value="">Bez omezení</option>${[1,2,3,4,5,6,7].map(x=>`<option>${x}</option>`).join('')}</select></label><div class="instrument-search-actions"><button type="submit" class="btn-primary">Vyhledat</button><button type="reset" class="btn-secondary">Zrušit filtry</button></div></form><div id="instrument-search-summary" class="instrument-search-summary">Načítám instrumenty…</div><div id="instrument-search-results"></div>`;const form=document.getElementById('instrument-search-form'),results=document.getElementById('instrument-search-results'),summary=document.getElementById('instrument-search-summary');let universe=[];const range=(v,min,max)=>(min===null&&max===null)||v!==null&&(!Number.isFinite(min)||v>=min)&&(!Number.isFinite(max)||v<=max);function apply(){const q=document.getElementById('search-text').value.trim().toLocaleLowerCase('cs'),type=document.getElementById('search-type').value,curr=document.getElementById('search-currency').value,p3a=searchNumber('search-perf3-min'),p3b=searchNumber('search-perf3-max'),p5a=searchNumber('search-perf5-min'),p5b=searchNumber('search-perf5-max'),ra=searchNumber('search-risk-min'),rb=searchNumber('search-risk-max');renderSearchResults(universe.filter(x=>(!q||`${x.name} ${x.code}`.toLocaleLowerCase('cs').includes(q))&&(!type||x.type===type)&&(!curr||x.currency===curr)&&range(x.perf3Y,p3a,p3b)&&range(x.perf5Y,p5a,p5b)&&range(x.risk,ra,rb)),universe.length,results,summary)}form.onsubmit=e=>{e.preventDefault();apply()};form.onreset=()=>setTimeout(apply);form.oninput=apply;loadGlobalInstrumentUniverse().then(a=>{universe=a;const types=[...new Set(a.map(x=>x.type))].sort(),curr=[...new Set(a.map(x=>x.currency).filter(Boolean))].sort();document.getElementById('search-type').insertAdjacentHTML('beforeend',types.map(x=>`<option>${escapeHtml(x)}</option>`).join(''));document.getElementById('search-currency').insertAdjacentHTML('beforeend',curr.map(x=>`<option>${escapeHtml(x)}</option>`).join(''));apply()}).catch(()=>summary.textContent='Instrumenty se nepodařilo načíst.')}
-function renderSearchResults(items,total,c,s){s.textContent=`Nalezeno ${items.length} z ${total} instrumentů`;if(!items.length){c.innerHTML='<p class="search-empty">Zadaným kritériím neodpovídá žádný instrument.</p>';return}c.innerHTML=[...new Set(items.map(x=>x.type))].map(type=>{const rows=items.filter(x=>x.type===type).sort((a,b)=>a.name.localeCompare(b.name,'cs'));return `<section class="search-result-group"><h3>${type} <small>${rows.length}</small></h3><div class="search-table-wrap"><table class="fund-table search-results-table"><thead><tr><th>Název</th><th>Kód / ISIN</th><th>Měna</th><th>Výnos 3Y</th><th>Výnos 5Y</th><th>Riziko</th><th>Poslední ocenění</th><th>Datum</th></tr></thead><tbody>${rows.map(x=>`<tr data-page="${x.route}/${encodeURIComponent(x.id)}"><td>${escapeHtml(x.name)}</td><td>${escapeHtml(x.code)}</td><td>${escapeHtml(x.currency||'—')}</td><td>${formatPerf(x.perf3Y)}</td><td>${formatPerf(x.perf5Y)}</td><td>${x.risk===null?'—':x.risk+' / 7'}</td><td>${formatOverviewValue(x.lastValue,{suffix:x.currency})}</td><td>${formatOverviewDate(x.lastDate)}</td></tr>`).join('')}</tbody></table></div></section>`}).join('');c.querySelectorAll('tr[data-page]').forEach(r=>r.onclick=()=>loadPage(r.dataset.page))}
+function renderSearchResults(items, total, c, s) {
+  s.textContent = `Nalezeno ${items.length} z ${total} instrumentů`;
+  if (!items.length) {
+    c.innerHTML = '<p class="search-empty">Zadaným kritériím neodpovídá žádný instrument.</p>';
+    return;
+  }
+
+  const sortState = window.__instrumentSearchSortState || (window.__instrumentSearchSortState = {});
+  const valueForSort = (item, key) => {
+    const value = item?.[key];
+    if (value == null || value === '') return key === 'name' || key === 'code' || key === 'currency' ? '' : Number.NEGATIVE_INFINITY;
+    return typeof value === 'string' ? value.toLocaleLowerCase('cs') : Number(value);
+  };
+
+  c.innerHTML = [...new Set(items.map(x => x.type))].map(type => {
+    const state = sortState[type] || (sortState[type] = { key: 'name', asc: true });
+    const rows = items.filter(x => x.type === type).sort((a, b) => {
+      const A = valueForSort(a, state.key);
+      const B = valueForSort(b, state.key);
+      if (typeof A === 'string' || typeof B === 'string') {
+        return String(A).localeCompare(String(B), 'cs') * (state.asc ? 1 : -1);
+      }
+      return (A - B) * (state.asc ? 1 : -1);
+    });
+    const th = (key, label, extraClass = '') => `<th data-key="${key}" class="${extraClass} ${state.key === key ? (state.asc ? 'sort-asc' : 'sort-desc') : ''}">${label}</th>`;
+    return `<section class="search-result-group" data-search-type="${escapeHtml(type)}">
+      <h3>${type} <small>${rows.length}</small></h3>
+      <div class="search-table-wrap">
+        <table class="fund-table overview-table search-results-table">
+          <thead><tr>
+            ${th('name', 'Název')}
+            ${th('code', 'Kód / ISIN', 'search-col-code')}
+            ${th('currency', 'Měna')}
+            ${th('perf3Y', 'Výnos 3Y')}
+            ${th('perf5Y', 'Výnos 5Y')}
+            ${th('risk', 'Riziko', 'search-col-risk')}
+            ${th('lastValue', 'Poslední ocenění', 'search-col-last-value')}
+            ${th('lastDate', 'Datum', 'search-col-date')}
+          </tr></thead>
+          <tbody>${rows.map(x => `<tr data-page="${x.route}/${encodeURIComponent(x.id)}">
+            <td data-label="Název">${escapeHtml(x.name)}</td>
+            <td data-label="Kód / ISIN" class="search-col-code">${escapeHtml(x.code)}</td>
+            <td data-label="Měna">${escapeHtml(x.currency || '—')}</td>
+            <td data-label="Výnos 3Y">${formatPerf(x.perf3Y)}</td>
+            <td data-label="Výnos 5Y">${formatPerf(x.perf5Y)}</td>
+            <td data-label="Riziko" class="search-col-risk">${x.risk === null ? '—' : x.risk + ' / 7'}</td>
+            <td data-label="Poslední ocenění" class="search-col-last-value">${formatOverviewValue(x.lastValue, { suffix: x.currency })}</td>
+            <td data-label="Datum" class="search-col-date">${formatOverviewDate(x.lastDate)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </section>`;
+  }).join('');
+
+  c.querySelectorAll('.search-results-table th[data-key]').forEach(header => {
+    header.addEventListener('click', event => {
+      event.stopPropagation();
+      const section = header.closest('.search-result-group');
+      const type = section?.dataset.searchType;
+      if (!type) return;
+      const state = sortState[type] || (sortState[type] = { key: 'name', asc: true });
+      const key = header.dataset.key;
+      state.asc = state.key === key ? !state.asc : true;
+      state.key = key;
+      renderSearchResults(items, total, c, s);
+    });
+  });
+  c.querySelectorAll('tr[data-page]').forEach(row => {
+    row.onclick = () => loadPage(row.dataset.page);
+  });
+}
